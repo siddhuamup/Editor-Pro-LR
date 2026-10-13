@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="spectrum_canvas">#121212</color>
+    <color name="spectrum_surface">#1E1E1E</color>
+    <color name="spectrum_surface_elevated">#2A2A2A</color>
+    <color name="spectrum_border">#383838</color>
+    <color name="spectrum_blue_400">#1473E6</color>
+    <color name="spectrum_blue_500">#2680EB</color>
+    <color name="spectrum_text_primary">#FFFFFF</color>
+    <color name="spectrum_text_secondary">#A2A2A2</color>
+    <color name="spectrum_mask_overlay">#80E02B2B</color>
+</resources>
