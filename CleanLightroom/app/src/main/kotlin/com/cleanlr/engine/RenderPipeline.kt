@@ -41,6 +41,26 @@ class RenderPipeline(private val context: Context) {
             -1.0f,  1.0f, 0.0f, 0.0f,
              1.0f,  1.0f, 1.0f, 0.0f
         )
+
+        /**
+         * Authentic 12-Stage Lightroom Core Pipeline Sequence (Section 2.1 Order of Operations)
+         */
+        enum class PipelineStage(val stageNumber: Int, val title: String) {
+            STAGE_1_RAW_DEMOSAIC_LENS(1, "RAW De-Bayering & Lens Distortion/Vignette Correction"),
+            STAGE_2_WHITE_BALANCE(2, "White Balance Matrix (Bradford CAT: Kelvin & Tint)"),
+            STAGE_3_MELISSA_CONVERSION(3, "Color Matrix Conversion to Melissa RGB (Linear ProPhoto)"),
+            STAGE_4_EXPOSURE_RECONSTRUCTION(4, "Exposure Gain (col * 2^EV) & Highlight Reconstruction Knee"),
+            STAGE_5_DYNAMIC_RANGE(5, "Dynamic Range Mapping (Highlights, Shadows, Whites, Blacks in Log2)"),
+            STAGE_6_SPATIAL_FILTERING(6, "Spatial Filtering: Texture (High-freq), Clarity (Mid-freq), Dehaze"),
+            STAGE_7_LOCAL_MASKING(7, "Local Masking Compositing (Brush/Gradient/AI Delta Blending)"),
+            STAGE_8_TONE_CURVES(8, "Tone Curves (Parametric & Point Splines)"),
+            STAGE_9_COLOR_SCIENCE(9, "HSL 8-Channel Mixer, Vibrance & 3-Way Color Grading Wheels"),
+            STAGE_10_DETAILS(10, "Details: Unsharp Mask Sharpening & Noise Reduction"),
+            STAGE_11_GEOMETRY(11, "Geometry Transform & Crop"),
+            STAGE_12_COLOR_MANAGEMENT(12, "Output Conversion to Display P3 / sRGB (Gamma 2.2 / lin2srgb.fsh)")
+        }
+
+        fun getNormativeStages(): List<PipelineStage> = PipelineStage.entries
     }
 
     var useNineStagePipeline: Boolean = true
@@ -384,19 +404,8 @@ class RenderPipeline(private val context: Context) {
             // -----------------------------------------------------------------
 
             // -----------------------------------------------------------------
-            // STAGE 6: Color Science & Color Mixer (8 HSL channels & Wheels)
-            // -----------------------------------------------------------------
-            stage6ColorScience.process(
-                hsl = activeRecipe.hsl,
-                grading = activeRecipe.colorGrading,
-                vibrance = activeRecipe.presence.vibrance,
-                saturation = activeRecipe.presence.saturation,
-                pingPong = pingPong,
-                vaoId = vaoId
-            )
-
-            // -----------------------------------------------------------------
             // STAGE 7: Curves & Creative 3D LUTs (Monotone Cubic Splines)
+            // (Section 2.1 Order of Operations: Step 8 Tone Curves)
             // -----------------------------------------------------------------
             stage7CurvesLut.process(
                 curves = activeRecipe.curves,
@@ -408,7 +417,21 @@ class RenderPipeline(private val context: Context) {
             )
 
             // -----------------------------------------------------------------
+            // STAGE 6: Color Science & Color Mixer (8 HSL channels & Wheels)
+            // (Section 2.1 Order of Operations: Step 9 HSL & Color Grading)
+            // -----------------------------------------------------------------
+            stage6ColorScience.process(
+                hsl = activeRecipe.hsl,
+                grading = activeRecipe.colorGrading,
+                vibrance = activeRecipe.presence.vibrance,
+                saturation = activeRecipe.presence.saturation,
+                pingPong = pingPong,
+                vaoId = vaoId
+            )
+
+            // -----------------------------------------------------------------
             // STAGE 8: Details & Effects (Sharpening, Vignette, Film Grain)
+            // (Section 2.1 Order of Operations: Step 10 Details)
             // -----------------------------------------------------------------
             stage8Details.process(
                 detail = activeRecipe.detail,
@@ -419,6 +442,7 @@ class RenderPipeline(private val context: Context) {
 
         // ---------------------------------------------------------------------
         // STAGE 9: Color Management & Output Display (lin2srgb.fsh EOTF & Blit)
+        // (Section 2.1 Order of Operations: Step 12 Output Conversion)
         // Blits the high-dynamic range ProPhoto Linear buffer to the screen/target
         // ---------------------------------------------------------------------
         val finalInputTexture = pingPong.currentRead?.textureId ?: imageTextureId
@@ -428,7 +452,8 @@ class RenderPipeline(private val context: Context) {
             targetGamut = Stage9ColorManagement.GAMUT_SRGB,
             viewportWidth = viewportWidth,
             viewportHeight = viewportHeight,
-            vaoId = vaoId
+            vaoId = vaoId,
+            altClippingMode = if (showOriginal) 0 else altClippingMode
         )
     }
 

@@ -9,6 +9,7 @@ out vec4 fragColor;
 
 uniform sampler2D uInputTexture;
 uniform int uTargetGamut; // 0 = sRGB (default), 1 = Display P3
+uniform int uAltClippingMode; // 0 = Normal, 1 = Whites/Exposure (black canvas), 2 = Blacks (white canvas)
 
 // Matrix: ProPhoto RGB Linear to sRGB Linear (row sum = 1.0, preserving neutral gray)
 const mat3 M_proPhoto2sRGB = mat3(
@@ -51,6 +52,31 @@ void main() {
 
     // 2. Apply EOTF / Gamma curve (lin2srgb.fsh)
     vec3 finalDisplayColor = lin2srgb(displayLinear);
+
+    // 3. Alt-Clipping Overlay Preview Mode (Section 4.1 Alt/Option Secret Previews)
+    if (uAltClippingMode == 1) { // Alt + Whites / Exposure
+        // Full screen black; clipped pixels illuminate in their color or white
+        bool clipR = displayLinear.r >= 1.0 || finalDisplayColor.r >= 1.0;
+        bool clipG = displayLinear.g >= 1.0 || finalDisplayColor.g >= 1.0;
+        bool clipB = displayLinear.b >= 1.0 || finalDisplayColor.b >= 1.0;
+        if (clipR && clipG && clipB) {
+            fragColor = vec4(1.0, 1.0, 1.0, 1.0); // Pure blown white
+        } else if (clipR || clipG || clipB) {
+            fragColor = vec4(float(clipR), float(clipG), float(clipB), 1.0);
+        } else {
+            fragColor = vec4(0.0, 0.0, 0.0, 1.0); // Black canvas
+        }
+        return;
+    } else if (uAltClippingMode == 2) { // Alt + Blacks
+        // Full screen white; crushed shadow pixels illuminate in blue
+        bool crush = (displayLinear.r <= 0.001 || displayLinear.g <= 0.001 || displayLinear.b <= 0.001);
+        if (crush) {
+            fragColor = vec4(0.0, 0.33, 1.0, 1.0); // Blue crushed shadows
+        } else {
+            fragColor = vec4(1.0, 1.0, 1.0, 1.0); // White canvas
+        }
+        return;
+    }
 
     fragColor = vec4(finalDisplayColor, 1.0);
 }

@@ -24,6 +24,7 @@ class Stage9ColorManagement(private val context: Context) {
     private var programId = 0
     private var locInputTexture = -1
     private var locTargetGamut = -1
+    private var locAltClippingMode = -1
 
     var isInitialized = false
         private set
@@ -44,6 +45,7 @@ class Stage9ColorManagement(private val context: Context) {
 
         locInputTexture = GLES30.glGetUniformLocation(programId, "uInputTexture")
         locTargetGamut = GLES30.glGetUniformLocation(programId, "uTargetGamut")
+        locAltClippingMode = GLES30.glGetUniformLocation(programId, "uAltClippingMode")
 
         isInitialized = true
         Log.d(TAG, "Stage 9 Color Management initialized successfully")
@@ -58,7 +60,8 @@ class Stage9ColorManagement(private val context: Context) {
         targetGamut: Int = GAMUT_SRGB,
         viewportWidth: Int,
         viewportHeight: Int,
-        vaoId: Int
+        vaoId: Int,
+        altClippingMode: Int = 0
     ) {
         if (!isInitialized || inputTextureId <= 0) return
 
@@ -74,6 +77,7 @@ class Stage9ColorManagement(private val context: Context) {
 
         // Target Gamut (0 = sRGB, 1 = Display P3)
         GLES30.glUniform1i(locTargetGamut, targetGamut)
+        GLES30.glUniform1i(locAltClippingMode, altClippingMode)
 
         // Draw quad
         GLES30.glBindVertexArray(vaoId)
@@ -87,7 +91,8 @@ class Stage9ColorManagement(private val context: Context) {
     fun process(
         pingPong: PingPongFbo,
         targetGamut: Int = GAMUT_SRGB,
-        vaoId: Int
+        vaoId: Int,
+        altClippingMode: Int = 0
     ): Boolean {
         if (!isInitialized) return false
 
@@ -102,6 +107,7 @@ class Stage9ColorManagement(private val context: Context) {
         GLES30.glUniform1i(locInputTexture, 0)
 
         GLES30.glUniform1i(locTargetGamut, targetGamut)
+        GLES30.glUniform1i(locAltClippingMode, altClippingMode)
 
         GLES30.glBindVertexArray(vaoId)
         GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4)

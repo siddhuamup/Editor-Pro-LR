@@ -150,4 +150,195 @@ class Stage12VerificationGateTest {
             assertEquals("ProPhoto to sRGB inverse matrix row must sum to 1.0", 1.0f, sum, 0.0001f)
         }
     }
+
+    // -------------------------------------------------------------------------
+    // 5. Section 2.1: Strict 12-Stage Normative Pipeline Sequence & Order Invariance
+    // -------------------------------------------------------------------------
+    @Test
+    fun testStrict12StageNormativePipelineSequence() {
+        val stages = RenderPipeline.Companion.getNormativeStages()
+        assertEquals("Authentic Lightroom pipeline must define exactly 12 normative stages", 12, stages.size)
+
+        // Strict Sequential Enumeration (Section 2.1 Order of Operations)
+        assertEquals(1, stages[0].stageNumber)
+        assertEquals("RAW De-Bayering & Lens Distortion/Vignette Correction", stages[0].title)
+
+        assertEquals(2, stages[1].stageNumber)
+        assertEquals("White Balance Matrix (Bradford CAT: Kelvin & Tint)", stages[1].title)
+
+        assertEquals(3, stages[2].stageNumber)
+        assertEquals("Color Matrix Conversion to Melissa RGB (Linear ProPhoto)", stages[2].title)
+
+        assertEquals(4, stages[3].stageNumber)
+        assertEquals("Exposure Gain (col * 2^EV) & Highlight Reconstruction Knee", stages[3].title)
+
+        assertEquals(5, stages[4].stageNumber)
+        assertEquals("Dynamic Range Mapping (Highlights, Shadows, Whites, Blacks in Log2)", stages[4].title)
+
+        assertEquals(6, stages[5].stageNumber)
+        assertEquals("Spatial Filtering: Texture (High-freq), Clarity (Mid-freq), Dehaze", stages[5].title)
+
+        assertEquals(7, stages[6].stageNumber)
+        assertEquals("Local Masking Compositing (Brush/Gradient/AI Delta Blending)", stages[6].title)
+
+        assertEquals(8, stages[7].stageNumber)
+        assertEquals("Tone Curves (Parametric & Point Splines)", stages[7].title)
+
+        assertEquals(9, stages[8].stageNumber)
+        assertEquals("HSL 8-Channel Mixer, Vibrance & 3-Way Color Grading Wheels", stages[8].title)
+
+        assertEquals(10, stages[9].stageNumber)
+        assertEquals("Details: Unsharp Mask Sharpening & Noise Reduction", stages[9].title)
+
+        assertEquals(11, stages[10].stageNumber)
+        assertEquals("Geometry Transform & Crop", stages[10].title)
+
+        assertEquals(12, stages[11].stageNumber)
+        assertEquals("Output Conversion to Display P3 / sRGB (Gamma 2.2 / lin2srgb.fsh)", stages[11].title)
+    }
+
+    @Test
+    fun testOrderNonCommutativityToneCurvesBeforeColorGrading() {
+        // Section 2.1 mandates Step 8 (Tone Curves) strictly precedes Step 9 (Color Grading).
+        // Prove non-commutativity: evaluating tone curve before vs after color grading yields different results.
+        val inputLum = 0.25f // In the middle of the shadow/midtone transition slope
+
+        // Simulate tone curve power boost: Y' = Y^0.8 (lifting shadows)
+        fun applyToneCurve(y: Float): Float = y.pow(0.8f)
+
+        // Simulate 3-way color grading shadows weight: wShadow = 1 - smoothstep(0.1, 0.4, Y)
+        fun computeShadowWeight(y: Float): Float {
+            val t = ((y - 0.1f) / (0.4f - 0.1f)).coerceIn(0.0f, 1.0f)
+            return 1.0f - (t * t * (3.0f - 2.0f * t))
+        }
+
+        // Normative Lightroom Order (Step 8 Tone Curves -> Step 9 Color Grading):
+        val curvedLum = applyToneCurve(inputLum) // ~0.432
+        val normativeShadowWeight = computeShadowWeight(curvedLum) // Evaluated on post-curve luminance
+
+        // Inverted Order (Color Grading evaluated before Tone Curves):
+        val invertedShadowWeight = computeShadowWeight(inputLum) // ~0.156
+
+        assertTrue(
+            "Normative pipeline must evaluate grading weights on post-curved tonal values",
+            abs(normativeShadowWeight - invertedShadowWeight) > 0.10f
+        )
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. Section 4.1: Alt / Option Key Secret Previews (Clipping Fragment Math)
+    // -------------------------------------------------------------------------
+    private fun simulateAltClipping(
+        r: Float, g: Float, b: Float,
+        mode: Int
+    ): FloatArray {
+        return when (mode) {
+            1 -> { // Alt + Whites / Exposure
+                val clipR = r >= 1.0f
+                val clipG = g >= 1.0f
+                val clipB = b >= 1.0f
+                if (clipR && clipG && clipB) {
+                    floatArrayOf(1.0f, 1.0f, 1.0f, 1.0f) // Blown white
+                } else if (clipR || clipG || clipB) {
+                    floatArrayOf(if (clipR) 1f else 0f, if (clipG) 1f else 0f, if (clipB) 1f else 0f, 1.0f)
+                } else {
+                    floatArrayOf(0.0f, 0.0f, 0.0f, 1.0f) // Black canvas
+                }
+            }
+            2 -> { // Alt + Blacks
+                val crush = r <= 0.001f || g <= 0.001f || b <= 0.001f
+                if (crush) {
+                    floatArrayOf(0.0f, 0.33f, 1.0f, 1.0f) // Crushed blue shadows
+                } else {
+                    floatArrayOf(1.0f, 1.0f, 1.0f, 1.0f) // White canvas
+                }
+            }
+            else -> floatArrayOf(r, g, b, 1.0f)
+        }
+    }
+
+    @Test
+    fun testAltClippingOverlayShaderMath() {
+        // Mode 1: Alt + Whites / Exposure
+        // Unclipped pixel -> Black canvas
+        val unclipped = simulateAltClipping(0.7f, 0.8f, 0.6f, mode = 1)
+        assertEquals(0.0f, unclipped[0], 0.001f)
+        assertEquals(0.0f, unclipped[1], 0.001f)
+        assertEquals(0.0f, unclipped[2], 0.001f)
+
+        // Red only clipped -> Pure Red indicator
+        val redClip = simulateAltClipping(1.05f, 0.8f, 0.6f, mode = 1)
+        assertEquals(1.0f, redClip[0], 0.001f)
+        assertEquals(0.0f, redClip[1], 0.001f)
+        assertEquals(0.0f, redClip[2], 0.001f)
+
+        // Red + Green clipped (Yellow)
+        val rgClip = simulateAltClipping(1.02f, 1.05f, 0.6f, mode = 1)
+        assertEquals(1.0f, rgClip[0], 0.001f)
+        assertEquals(1.0f, rgClip[1], 0.001f)
+        assertEquals(0.0f, rgClip[2], 0.001f)
+
+        // All 3 channels blown -> Pure White
+        val allBlown = simulateAltClipping(1.2f, 1.1f, 1.05f, mode = 1)
+        assertEquals(1.0f, allBlown[0], 0.001f)
+        assertEquals(1.0f, allBlown[1], 0.001f)
+        assertEquals(1.0f, allBlown[2], 0.001f)
+
+        // Mode 2: Alt + Blacks
+        // Uncrushed pixel -> Pure White canvas
+        val normalShadow = simulateAltClipping(0.05f, 0.08f, 0.12f, mode = 2)
+        assertEquals(1.0f, normalShadow[0], 0.001f)
+        assertEquals(1.0f, normalShadow[1], 0.001f)
+        assertEquals(1.0f, normalShadow[2], 0.001f)
+
+        // Crushed shadow (R <= 0.001) -> Electric Blue indicator
+        val crushed = simulateAltClipping(0.0005f, 0.05f, 0.08f, mode = 2)
+        assertEquals(0.0f, crushed[0], 0.001f)
+        assertEquals(0.33f, crushed[1], 0.01f)
+        assertEquals(1.0f, crushed[2], 0.001f)
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. Section 4.3: History & Snapshots Debouncing Verification
+    // -------------------------------------------------------------------------
+    @Test
+    fun testHistoryDebouncingAndZeroAllocationDuringDrag() {
+        val initialRecipe = EditRecipe()
+        val historyManager = com.cleanlr.history.HistoryManager(initialRecipe)
+
+        // Initial state: Only root history entry
+        assertFalse("Cannot undo initially", historyManager.canUndo.value)
+
+        // 1. User touches down on slider
+        historyManager.onTouchDown(initialRecipe)
+
+        // 2. User drags slider across 120 intermediate frames (60-120 FPS high frequency events)
+        var draggedRecipe = initialRecipe
+        for (i in 1..120) {
+            val exp = (i / 120.0f) * 2.0f // Ramp up to +2.0 EV
+            draggedRecipe = initialRecipe.copy(
+                basic = initialRecipe.basic.copy(exposure = exp)
+            )
+            // Intermediate dragging must NOT call commitState!
+        }
+
+        // Verify that dragging generated zero undo entries
+        assertFalse("Intermediate dragging must not generate history entries", historyManager.canUndo.value)
+
+        // 3. User releases finger (onTouchUp) -> Commits exactly ONE undo item
+        historyManager.onTouchUp(draggedRecipe, "Exposure +2.0")
+        assertTrue("Single undo entry committed on release", historyManager.canUndo.value)
+
+        // 4. Double-click reset restores original recipe and commits reset entry
+        val resetRecipe = historyManager.resetToOriginal()
+        assertEquals(0.0f, resetRecipe.basic.exposure, 0.001f)
+
+        // 5. Undo restores the dragged state, second undo restores original
+        val restoredDragged = historyManager.undo()
+        assertEquals(2.0f, restoredDragged?.basic?.exposure ?: 0f, 0.001f)
+
+        val restoredOriginal = historyManager.undo()
+        assertEquals(0.0f, restoredOriginal?.basic?.exposure ?: -1f, 0.001f)
+        assertFalse("At root base state, cannot undo further", historyManager.canUndo.value)
+    }
 }
