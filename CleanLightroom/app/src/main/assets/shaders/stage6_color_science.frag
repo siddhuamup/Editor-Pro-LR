@@ -119,8 +119,9 @@ void main() {
     // Centers: Red=0.0, Orange=0.0833, Yellow=0.1667, Green=0.3333,
     //          Aqua=0.5000, Blue=0.6667, Purple=0.7778, Magenta=0.8889
     const float sigma = 0.065; // ~23 degree standard deviation for smooth overlap
-    float wRed     = gaussianHueWeight(h, 0.0000, sigma) + gaussianHueWeight(h, 1.0000, sigma);
-    float wOrange  = gaussianHueWeight(h, 0.0833, sigma);
+    const float sigmaOrange = 0.050; // ~18 degree narrow standard deviation for skin tone protection (Part B Section 2.B)
+    float wRed     = gaussianHueWeight(h, 0.0000, sigma);
+    float wOrange  = gaussianHueWeight(h, 0.0833, sigmaOrange);
     float wYellow  = gaussianHueWeight(h, 0.1667, sigma);
     float wGreen   = gaussianHueWeight(h, 0.3333, sigma);
     float wAqua    = gaussianHueWeight(h, 0.5000, sigma);

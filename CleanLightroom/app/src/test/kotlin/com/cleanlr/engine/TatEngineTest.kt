@@ -114,4 +114,72 @@ class TatEngineTest {
         assertTrue(lumAdjusted.green.luminance < -9.0f)
         assertEquals(0.0f, lumAdjusted.green.saturation, 0.001f)
     }
+
+    // -------------------------------------------------------------------------
+    // Sprint A Task T3: HSL Gaussian Weights Circular Distance Audit (H=355°)
+    // -------------------------------------------------------------------------
+    @Test
+    fun testCircularHueDistanceH355RedDominanceAudit() {
+        // H = 355 degrees:
+        // Circular distance to Red (0 deg) is 5 degrees (0.013889 normalized).
+        // Distance to Magenta (320 deg) is 35 degrees (0.097222 normalized).
+        // Distance to Orange (30 deg) is 35 degrees (0.097222 normalized).
+        val h355 = 355.0f / 360.0f
+
+        val distToRed = TatEngine.circularHueDistance(h355, 0.0f)
+        val distToMagenta = TatEngine.circularHueDistance(h355, 320.0f / 360.0f)
+
+        assertEquals("Distance to Red (0 deg) must be exactly 5/360", 5.0f / 360.0f, distToRed, 0.0001f)
+        assertEquals("Distance to Magenta (320 deg) must be exactly 35/360", 35.0f / 360.0f, distToMagenta, 0.0001f)
+
+        // Raw Gaussian weights directly from PDF Page 9 formula: Weight_i(H) = exp(-dist^2 / (2*sigma^2))
+        val rawWeightRed = TatEngine.gaussianWeight(h355, 0.0f)
+        val rawWeightMagenta = TatEngine.gaussianWeight(h355, 320.0f / 360.0f)
+        assertTrue("Raw Red Gaussian weight must exceed 0.95 at 355 deg (got $rawWeightRed)", rawWeightRed > 0.95f)
+        assertTrue("Raw Magenta Gaussian weight must be low (< 0.35) at 355 deg (got $rawWeightMagenta)", rawWeightMagenta < 0.35f)
+
+        val weights = TatEngine.computeChannelWeights(h355)
+
+        // Red must be the overwhelming dominant channel
+        assertEquals("Dominant channel for 355 deg MUST be Red (prevents magenta-skin disaster)", "Red", weights.dominantChannelName())
+        assertTrue("Normalized Red weight must exceed 0.60 at 355 deg (got ${weights.red})", weights.red > 0.60f)
+        assertTrue("Normalized Magenta weight must be significantly lower than Red (< 0.30)", weights.magenta < 0.30f)
+    }
+
+    @Test
+    fun testPeakWeightsUniformityAndOrangeSkinProtection() {
+        // 1. Peak raw weight at exact center of each channel must be 1.0 (never 2.0x for Red!)
+        val centers = floatArrayOf(
+            0.0f,               // Red
+            30.0f / 360.0f,     // Orange
+            60.0f / 360.0f,     // Yellow
+            120.0f / 360.0f,    // Green
+            180.0f / 360.0f,    // Aqua
+            240.0f / 360.0f,    // Blue
+            280.0f / 360.0f,    // Purple
+            320.0f / 360.0f     // Magenta
+        )
+
+        for (center in centers) {
+            val rawPeak = TatEngine.gaussianWeight(center, center)
+            assertEquals("Raw peak weight at center must be 1.0", 1.0f, rawPeak, 0.0001f)
+
+            val weights = TatEngine.computeChannelWeights(center)
+            val maxWeight = maxOf(
+                weights.red, weights.orange, weights.yellow, weights.green,
+                weights.aqua, weights.blue, weights.purple, weights.magenta
+            )
+            assertTrue("Normalized peak weight at center $center must be in [0.50..1.0] (got $maxWeight)", maxWeight in 0.50f..1.0f)
+        }
+
+        // 2. Orange Skin Protection: narrow sigma (18 deg = 0.050)
+        // At 50 degrees (transition to yellow), Orange weight drops sharply to preserve skin tones
+        val h50 = 50.0f / 360.0f
+        val rawOrange50 = TatEngine.gaussianWeight(h50, 30.0f / 360.0f, 0.050f)
+        val rawOrange50Standard = TatEngine.gaussianWeight(h50, 30.0f / 360.0f, 0.065f)
+        assertTrue("Narrow sigma (0.050) must suppress Orange bleed significantly compared to standard sigma (0.065)", rawOrange50 < rawOrange50Standard - 0.10f)
+        assertTrue("At 50 deg, raw Orange weight must drop < 0.58 (got $rawOrange50)", rawOrange50 < 0.58f)
+        val weights50 = TatEngine.computeChannelWeights(h50)
+        assertTrue("At 50 deg, normalized Orange weight must drop < 0.40 (got ${weights50.orange})", weights50.orange < 0.40f)
+    }
 }

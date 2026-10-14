@@ -50,7 +50,7 @@ object TatEngine {
         return min(d, 1.0f - d)
     }
 
-    private fun gaussianWeight(h: Float, center: Float, sigma: Float = SIGMA): Float {
+    fun gaussianWeight(h: Float, center: Float, sigma: Float = SIGMA): Float {
         val dist = circularHueDistance(h, center)
         return exp(-(dist * dist) / (2.0f * sigma * sigma))
     }
@@ -84,8 +84,8 @@ object TatEngine {
      * Computes the 8-channel normalized weights for a given hue (h in [0.0..1.0])
      */
     fun computeChannelWeights(h: Float): TatChannelWeights {
-        val rawRed = gaussianWeight(h, 0.0f) + gaussianWeight(h, 1.0f)
-        val rawOrange = gaussianWeight(h, 0.0833f)  // 30 deg
+        val rawRed = gaussianWeight(h, 0.0f)
+        val rawOrange = gaussianWeight(h, 0.0833f, 0.050f)  // 30 deg, sigma=18 deg narrow for skin protection (Part B Section 2.B)
         val rawYellow = gaussianWeight(h, 0.1667f)  // 60 deg
         val rawGreen = gaussianWeight(h, 0.3333f)   // 120 deg
         val rawAqua = gaussianWeight(h, 0.5000f)    // 180 deg
