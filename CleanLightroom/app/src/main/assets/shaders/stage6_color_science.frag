@@ -148,20 +148,24 @@ void main() {
     }
 
     // 3. Smart Vibrance (Skin Protection Algorithm) & Global Saturation
-    if (abs(uVibrance) > 0.01 || abs(uSaturation) > 0.01) {
-        // Skin tone detection around Orange/Warm Peach (H ~ 0.0833, ~30 degrees)
-        float skinDist = hueDistance(h, 0.0833);
-        float skinFactor = exp(-(skinDist * skinDist) / (2.0 * 0.035 * 0.035));
+    // Exact Math (Document Section 1.3):
+    // BaseBoost = (uVibrance / 100.0) * (1.0 - S_orig)
+    // SkinDist = |(H - 30°) / 25°|, SkinWeight = clamp(1.0 - SkinDist^2, 0.0, 1.0)
+    // Boost_final = BaseBoost * (1.0 - 0.75 * SkinWeight)
+    // S_new = clamp(S_orig + Boost_final, 0.0, 1.0)
+    if (abs(uVibrance) > 0.001) {
+        float skinDegDist = hueDistance(h, 30.0 / 360.0) * 360.0;
+        float skinDist = skinDegDist / 25.0;
+        float skinWeight = clamp(1.0 - skinDist * skinDist, 0.0, 1.0);
 
-        // Vibrance protects skin by 85% and protects already saturated areas (1.0 - s)
-        float vibAmount = uVibrance / 100.0;
-        float skinProtection = 1.0 - 0.85 * skinFactor;
-        float vibGain = vibAmount * (1.0 - s) * skinProtection;
+        float baseBoost = (uVibrance / 100.0) * (1.0 - s);
+        float boostFinal = baseBoost * (1.0 - 0.75 * skinWeight);
 
-        // Global saturation scales uniformly across all hues
-        float satGain = (uSaturation / 100.0) * s;
+        s = clamp(s + boostFinal, 0.0, 1.0);
+    }
 
-        s = clamp(s + vibGain + satGain, 0.0, 1.0);
+    if (abs(uSaturation) > 0.001) {
+        s = clamp(s * (1.0 + uSaturation / 100.0), 0.0, 1.0);
     }
 
     // Convert back from HSL to RGB
