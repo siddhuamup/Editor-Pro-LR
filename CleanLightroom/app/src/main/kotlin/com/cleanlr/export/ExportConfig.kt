@@ -26,5 +26,6 @@ data class ExportConfig(
     val format: ExportFormat = ExportFormat.JPEG,
     val quality: Int = 90,
     val maxDimension: Int? = null,
-    val includeExif: Boolean = true
+    val includeExif: Boolean = true,
+    val autoShare: Boolean = false
 )

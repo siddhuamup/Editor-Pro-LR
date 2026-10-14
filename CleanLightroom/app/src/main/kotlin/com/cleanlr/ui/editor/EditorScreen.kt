@@ -21,8 +21,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cleanlr.ui.components.*
@@ -232,22 +234,55 @@ fun EditorScreen(
                     }
                 }
 
-                // Export Toast
+                // Export Toast with Native Share Action
                 exportStatus?.let { status ->
+                    val lastExportedUri by viewModel.lastExportedUri.collectAsState()
+                    val context = androidx.compose.ui.platform.LocalContext.current
                     Surface(
                         color = SpectrumElevated,
                         shape = RoundedCornerShape(8.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SpectrumBorder),
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 16.dp)
-                            .clickable { viewModel.clearExportStatus() }
                     ) {
-                        Text(
-                            text = status,
-                            color = SpectrumTextPrimary,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = status,
+                                color = SpectrumTextPrimary,
+                                fontSize = 12.sp,
+                                modifier = Modifier.clickable { viewModel.clearExportStatus() }
+                            )
+
+                            if (lastExportedUri != null && status.contains("Exported")) {
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(SpectrumBlue)
+                                        .clickable { viewModel.shareLastExport(context) }
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Share,
+                                        contentDescription = "Share",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Share",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

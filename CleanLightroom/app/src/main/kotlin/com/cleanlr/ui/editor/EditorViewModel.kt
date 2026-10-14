@@ -1,6 +1,7 @@
 package com.cleanlr.ui.editor
 
 import android.app.Application
+import android.content.Context
 import android.graphics.*
 import android.net.Uri
 import android.util.Log
@@ -67,6 +68,12 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     private val _exportStatus = MutableStateFlow<String?>(null)
     val exportStatus: StateFlow<String?> = _exportStatus.asStateFlow()
+
+    private val _lastExportedUri = MutableStateFlow<android.net.Uri?>(null)
+    val lastExportedUri: StateFlow<android.net.Uri?> = _lastExportedUri.asStateFlow()
+
+    private val _lastExportedFormat = MutableStateFlow<com.cleanlr.export.ExportFormat>(com.cleanlr.export.ExportFormat.JPEG)
+    val lastExportedFormat: StateFlow<com.cleanlr.export.ExportFormat> = _lastExportedFormat.asStateFlow()
 
     // Targeted Adjustment Tool (TAT) State
     private val _isTatActive = MutableStateFlow(false)
@@ -417,8 +424,19 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                     // Export directly via Headless Renderer
                     val renderer = com.cleanlr.export.HeadlessGlRenderer(context)
                     val rendered = renderer.renderFullResolution(bmp, current)
-                    saveSampleToMediaStore(rendered, config)
+                    val outputUri = com.cleanlr.export.MediaStoreWriter.saveImage(
+                        context = context,
+                        bitmap = rendered,
+                        config = config,
+                        recipe = current
+                    )
+                    _lastExportedUri.value = outputUri
+                    _lastExportedFormat.value = config.format
                     _exportStatus.value = "Exported to Pictures/CleanLightroom"
+
+                    if (config.autoShare) {
+                        shareLastExport(context)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("EditorViewModel", "Export failed", e)
@@ -427,48 +445,10 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         }
     }
 
-    private fun saveSampleToMediaStore(
-        bitmap: Bitmap,
-        config: com.cleanlr.export.ExportConfig = com.cleanlr.export.ExportConfig()
-    ) {
-        val context = getApplication<Application>()
-        val extension = when (config.format) {
-            com.cleanlr.export.ExportFormat.JPEG -> "jpg"
-            com.cleanlr.export.ExportFormat.PNG -> "png"
-            com.cleanlr.export.ExportFormat.WEBP -> "webp"
-        }
-        val mimeType = when (config.format) {
-            com.cleanlr.export.ExportFormat.JPEG -> "image/jpeg"
-            com.cleanlr.export.ExportFormat.PNG -> "image/png"
-            com.cleanlr.export.ExportFormat.WEBP -> "image/webp"
-        }
-        val compressFormat = when (config.format) {
-            com.cleanlr.export.ExportFormat.JPEG -> Bitmap.CompressFormat.JPEG
-            com.cleanlr.export.ExportFormat.PNG -> Bitmap.CompressFormat.PNG
-            com.cleanlr.export.ExportFormat.WEBP -> {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                    Bitmap.CompressFormat.WEBP_LOSSY
-                } else {
-                    @Suppress("DEPRECATION")
-                    Bitmap.CompressFormat.WEBP
-                }
-            }
-        }
-        val filename = "CleanLR_Export_${System.currentTimeMillis()}.$extension"
-        val values = android.content.ContentValues().apply {
-            put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, filename)
-            put(android.provider.MediaStore.Images.Media.MIME_TYPE, mimeType)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/CleanLightroom")
-            }
-        }
-        val resolver = context.contentResolver
-        val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        if (uri != null) {
-            resolver.openOutputStream(uri)?.use {
-                bitmap.compress(compressFormat, config.quality, it)
-            }
-        }
+    fun shareLastExport(context: Context) {
+        val uri = _lastExportedUri.value ?: return
+        val mimeType = com.cleanlr.export.MediaStoreWriter.getMimeType(_lastExportedFormat.value)
+        com.cleanlr.export.MediaStoreWriter.launchShare(context, uri, mimeType)
     }
 
     fun clearExportStatus() {

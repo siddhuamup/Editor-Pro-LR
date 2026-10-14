@@ -43,6 +43,7 @@ fun ExportConfigBottomSheet(
     var quality by remember { mutableStateOf(initialConfig.quality.toFloat()) }
     var isLongEdge2048 by remember { mutableStateOf(initialConfig.maxDimension == 2048) }
     var includeExif by remember { mutableStateOf(initialConfig.includeExif) }
+    var autoShare by remember { mutableStateOf(initialConfig.autoShare) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -327,7 +328,44 @@ fun ExportConfigBottomSheet(
                 )
             }
 
-            // 5. Action Buttons
+            // 5. Native Share Sheet Toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(SpectrumSurface)
+                    .clickable { autoShare = !autoShare }
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Share Photo After Export",
+                        color = SpectrumTextPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "Automatically opens the system Share Sheet upon completion",
+                        color = SpectrumTextSecondary,
+                        fontSize = 11.sp
+                    )
+                }
+
+                Switch(
+                    checked = autoShare,
+                    onCheckedChange = { autoShare = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = SpectrumBlue,
+                        uncheckedThumbColor = SpectrumTextSecondary,
+                        uncheckedTrackColor = SpectrumBorder
+                    )
+                )
+            }
+
+            // 6. Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -352,7 +390,8 @@ fun ExportConfigBottomSheet(
                             format = format,
                             quality = quality.toInt().coerceIn(1, 100),
                             maxDimension = if (isLongEdge2048) 2048 else null,
-                            includeExif = includeExif && format == ExportFormat.JPEG
+                            includeExif = includeExif && format == ExportFormat.JPEG,
+                            autoShare = autoShare
                         )
                         onExportConfirmed(finalConfig)
                         onDismiss()

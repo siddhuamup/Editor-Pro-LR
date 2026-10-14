@@ -123,16 +123,31 @@ class ExportImageWorker(
             } catch (ignored: Exception) {}
             setProgress(workDataOf("progress" to 80))
 
-            // Save to MediaStore with Exif preservation and recipe embedding
-            val outputUri = saveBitmapToMediaStore(renderedBitmap, config, recipe, sourceUri)
+            // Save to MediaStore via MediaStoreWriter
+            val outputUri = MediaStoreWriter.saveImage(
+                context = applicationContext,
+                bitmap = renderedBitmap,
+                config = config,
+                recipe = recipe,
+                sourceUri = sourceUri
+            )
 
             setProgress(workDataOf("progress" to 100))
 
-            if (outputUri != null) {
-                Result.success(workDataOf(KEY_OUTPUT_URI to outputUri.toString()))
-            } else {
-                Result.failure()
+            // Auto-launch native share sheet if enabled in config
+            if (config.autoShare) {
+                try {
+                    MediaStoreWriter.launchShare(
+                        context = applicationContext,
+                        imageUri = outputUri,
+                        mimeType = MediaStoreWriter.getMimeType(config.format)
+                    )
+                } catch (e: Exception) {
+                    Log.w(TAG, "Auto-share launch failed: ${e.message}")
+                }
             }
+
+            Result.success(workDataOf(KEY_OUTPUT_URI to outputUri.toString()))
         } catch (e: Exception) {
             Log.e(TAG, "Error during export", e)
             Result.failure()
@@ -148,78 +163,5 @@ class ExportImageWorker(
             progressPercent = 0,
             indeterminate = true
         )
-    }
-
-    private fun saveBitmapToMediaStore(
-        bitmap: Bitmap,
-        config: ExportConfig,
-        recipe: EditRecipe,
-        sourceUri: Uri
-    ): Uri? {
-        val extension = when (config.format) {
-            ExportFormat.JPEG -> "jpg"
-            ExportFormat.PNG -> "png"
-            ExportFormat.WEBP -> "webp"
-        }
-        val mimeType = when (config.format) {
-            ExportFormat.JPEG -> "image/jpeg"
-            ExportFormat.PNG -> "image/png"
-            ExportFormat.WEBP -> "image/webp"
-        }
-        val compressFormat = when (config.format) {
-            ExportFormat.JPEG -> Bitmap.CompressFormat.JPEG
-            ExportFormat.PNG -> Bitmap.CompressFormat.PNG
-            ExportFormat.WEBP -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    Bitmap.CompressFormat.WEBP_LOSSY
-                } else {
-                    @Suppress("DEPRECATION")
-                    Bitmap.CompressFormat.WEBP
-                }
-            }
-        }
-
-        val filename = "CleanLR_${System.currentTimeMillis()}.$extension"
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, filename)
-            put(MediaStore.Images.Media.MIME_TYPE, mimeType)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/CleanLightroom")
-                put(MediaStore.Images.Media.IS_PENDING, 1)
-            }
-        }
-
-        val resolver = applicationContext.contentResolver
-        val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-
-        if (imageUri != null) {
-            resolver.openOutputStream(imageUri)?.use { outStream: OutputStream ->
-                bitmap.compress(compressFormat, config.quality, outStream)
-            }
-
-            // Inject preserved Exif metadata & embedded EditRecipe (JPEG only)
-            if (config.includeExif && config.format == ExportFormat.JPEG) {
-                try {
-                    resolver.openFileDescriptor(imageUri, "rw")?.use { pfd ->
-                        val targetExif = androidx.exifinterface.media.ExifInterface(pfd.fileDescriptor)
-                        val sourceExif = resolver.openInputStream(sourceUri)?.use { inStream ->
-                            runCatching { androidx.exifinterface.media.ExifInterface(inStream) }.getOrNull()
-                        }
-                        ExportMetadataWriter.copyExifTags(sourceExif, targetExif)
-                        ExportMetadataWriter.embedRecipe(targetExif, recipe)
-                        targetExif.saveAttributes()
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Exif injection skipped or unsupported on target storage: ${e.message}")
-                }
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                contentValues.clear()
-                contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
-                resolver.update(imageUri, contentValues, null, null)
-            }
-        }
-        return imageUri
     }
 }

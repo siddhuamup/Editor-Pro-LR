@@ -95,87 +95,22 @@ class DefaultBatchItemProcessor(private val context: Context) : BatchItemProcess
 
         onItemProgress(75)
 
-        // 4. Save to MediaStore
+        // 4. Save to MediaStore via unified MediaStoreWriter
         val outputUri = try {
-            saveToMediaStore(context, renderedBitmap, item)
+            MediaStoreWriter.saveImage(
+                context = context,
+                bitmap = renderedBitmap,
+                config = item.config,
+                recipe = item.recipe,
+                sourceUri = item.sourceUri,
+                customFilename = "CleanLR_${System.currentTimeMillis()}_${item.id.take(6)}"
+            )
         } finally {
             renderedBitmap.recycle()
         }
 
         onItemProgress(100)
         return@withContext outputUri.toString()
-    }
-
-    private fun saveToMediaStore(
-        context: Context,
-        bitmap: Bitmap,
-        item: BatchExportItem
-    ): Uri {
-        val extension = when (item.config.format) {
-            ExportFormat.JPEG -> "jpg"
-            ExportFormat.PNG -> "png"
-            ExportFormat.WEBP -> "webp"
-        }
-        val mimeType = when (item.config.format) {
-            ExportFormat.JPEG -> "image/jpeg"
-            ExportFormat.PNG -> "image/png"
-            ExportFormat.WEBP -> "image/webp"
-        }
-        val compressFormat = when (item.config.format) {
-            ExportFormat.JPEG -> Bitmap.CompressFormat.JPEG
-            ExportFormat.PNG -> Bitmap.CompressFormat.PNG
-            ExportFormat.WEBP -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    Bitmap.CompressFormat.WEBP_LOSSY
-                } else {
-                    @Suppress("DEPRECATION")
-                    Bitmap.CompressFormat.WEBP
-                }
-            }
-        }
-
-        val filename = "CleanLR_${System.currentTimeMillis()}_${item.id.take(6)}.$extension"
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, filename)
-            put(MediaStore.Images.Media.MIME_TYPE, mimeType)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/CleanLightroom")
-                put(MediaStore.Images.Media.IS_PENDING, 1)
-            }
-        }
-
-        val resolver = context.contentResolver
-        val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-            ?: throw IllegalStateException("MediaStore insert returned null")
-
-        resolver.openOutputStream(imageUri)?.use { outStream: OutputStream ->
-            bitmap.compress(compressFormat, item.config.quality, outStream)
-        }
-
-        // 5. Exif and non-destructive recipe preservation
-        if (item.config.includeExif && item.config.format == ExportFormat.JPEG) {
-            try {
-                resolver.openFileDescriptor(imageUri, "rw")?.use { pfd ->
-                    val targetExif = androidx.exifinterface.media.ExifInterface(pfd.fileDescriptor)
-                    val sourceExif = resolver.openInputStream(item.sourceUri)?.use { inStream ->
-                        runCatching { androidx.exifinterface.media.ExifInterface(inStream) }.getOrNull()
-                    }
-                    ExportMetadataWriter.copyExifTags(sourceExif, targetExif)
-                    ExportMetadataWriter.embedRecipe(targetExif, item.recipe)
-                    targetExif.saveAttributes()
-                }
-            } catch (e: Exception) {
-                Log.w("DefaultBatchProcessor", "Exif embedding skipped: ${e.message}")
-            }
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            contentValues.clear()
-            contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
-            resolver.update(imageUri, contentValues, null, null)
-        }
-
-        return imageUri
     }
 }
 
