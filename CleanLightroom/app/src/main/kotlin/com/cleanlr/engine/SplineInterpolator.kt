@@ -2,12 +2,14 @@ package com.cleanlr.engine
 
 import com.cleanlr.model.CurvePoint
 import com.cleanlr.model.ToneCurves
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
 
 /**
  * Fritsch-Carlson Monotone Cubic Hermite Spline Interpolator
+ * Implements Lightroom CParametricCurveTag 4-Zone Spline Mapping & Point Curves.
  * Guarantees monotonicity to prevent overshoot and solarization artifacts in tone curves.
  */
 object SplineInterpolator {
@@ -51,7 +53,7 @@ object SplineInterpolator {
 
         // 3. Fritsch-Carlson monotonicity condition
         for (i in 0 until n - 1) {
-            if (kotlin.math.abs(delta[i]) < 1e-7) {
+            if (abs(delta[i]) < 1e-7) {
                 d[i] = 0.0
                 d[i + 1] = 0.0
             } else {
@@ -95,43 +97,82 @@ object SplineInterpolator {
     }
 
     /**
-     * Generates a 256-byte 1D LUT texture buffer from parametric curve & point curve.
+     * Computes the 5 Control Nodes for the 4-zone Parametric Tone Curve
+     * Formulas (Lightroom CParametricCurveTag):
+     * Node 0: (0, 0)
+     * Node 1: (Split_shadow, Split_shadow + ((S_shadows + S_darks) / 2) * 0.25)
+     * Node 2: (Split_mid, Split_mid + ((S_darks + S_lights) / 2) * 0.35)
+     * Node 3: (Split_highlight, Split_highlight + ((S_lights + S_highlights) / 2) * 0.25)
+     * Node 4: (255, 255)
+     */
+    fun computeParametricNodes(curves: ToneCurves): List<CurvePoint> {
+        val sShadow = curves.parametricShadows
+        val sDarks = curves.parametricDarks
+        val sLights = curves.parametricLights
+        val sHighlights = curves.parametricHighlights
+
+        val x0 = 0.0f
+        val y0 = 0.0f
+
+        val x1 = curves.splitShadow.coerceIn(1.0f, curves.splitMid - 1.0f)
+        val y1 = (x1 + ((sShadow + sDarks) / 2.0f) * 0.25f).coerceIn(0.0f, 255.0f)
+
+        val x2 = curves.splitMid.coerceIn(x1 + 1.0f, curves.splitHighlight - 1.0f)
+        val y2 = (x2 + ((sDarks + sLights) / 2.0f) * 0.35f).coerceIn(0.0f, 255.0f)
+
+        val x3 = curves.splitHighlight.coerceIn(x2 + 1.0f, 254.0f)
+        val y3 = (x3 + ((sLights + sHighlights) / 2.0f) * 0.25f).coerceIn(0.0f, 255.0f)
+
+        val x4 = 255.0f
+        val y4 = 255.0f
+
+        return listOf(
+            CurvePoint(x0, y0),
+            CurvePoint(x1, y1),
+            CurvePoint(x2, y2),
+            CurvePoint(x3, y3),
+            CurvePoint(x4, y4)
+        )
+    }
+
+    /**
+     * Generates a 256-byte 1D LUT texture buffer exclusively for the 4-Zone Parametric Curve.
+     */
+    fun generateParametricLut256(curves: ToneCurves): ByteArray {
+        val nodes = computeParametricNodes(curves)
+        val spline = evaluateSpline(nodes)
+        val result = ByteArray(256)
+        for (i in 0..255) {
+            result[i] = spline[i].toInt().coerceIn(0, 255).toByte()
+        }
+        return result
+    }
+
+    /**
+     * Generates a 256-byte 1D LUT texture buffer exclusively for the Point Curve.
+     */
+    fun generatePointCurveLut256(points: List<CurvePoint>): ByteArray {
+        val spline = evaluateSpline(points)
+        val result = ByteArray(256)
+        for (i in 0..255) {
+            result[i] = spline[i].toInt().coerceIn(0, 255).toByte()
+        }
+        return result
+    }
+
+    /**
+     * Chains both curves: PointCurve(ParametricCurve(x)).
+     * Used when chaining without two texture passes.
      */
     fun generateLut256(curves: ToneCurves): ByteArray {
-        val baseSpline = evaluateSpline(curves.pointCurve)
+        val paramLut = generateParametricLut256(curves)
+        val pointSpline = evaluateSpline(curves.pointCurve)
+
         val result = ByteArray(256)
-
-        // Split thresholds
-        val s0 = curves.splitShadow
-        val s1 = curves.splitMid
-        val s2 = curves.splitHighlight
-
-        val pHighlights = curves.parametricHighlights / 100.0f
-        val pLights = curves.parametricLights / 100.0f
-        val pDarks = curves.parametricDarks / 100.0f
-        val pShadows = curves.parametricShadows / 100.0f
-
         for (i in 0..255) {
-            val inVal = i.toFloat()
-            var paramOffset = 0.0f
-
-            // 4-zone parametric curve offset
-            if (inVal < s0) {
-                val factor = (s0 - inVal) / max(1.0f, s0)
-                paramOffset += pShadows * factor * 35.0f
-            } else if (inVal < s1) {
-                val factor = (s1 - inVal) / max(1.0f, s1 - s0)
-                paramOffset += pDarks * factor * 25.0f
-            } else if (inVal < s2) {
-                val factor = (inVal - s1) / max(1.0f, s2 - s1)
-                paramOffset += pLights * factor * 25.0f
-            } else {
-                val factor = (inVal - s2) / max(1.0f, 255.0f - s2)
-                paramOffset += pHighlights * factor * 35.0f
-            }
-
-            val combined = min(255.0f, max(0.0f, baseSpline[i] + paramOffset))
-            result[i] = combined.toInt().toByte()
+            val paramOut = paramLut[i].toInt() and 0xFF
+            val finalVal = pointSpline[paramOut].toInt().coerceIn(0, 255)
+            result[i] = finalVal.toByte()
         }
         return result
     }

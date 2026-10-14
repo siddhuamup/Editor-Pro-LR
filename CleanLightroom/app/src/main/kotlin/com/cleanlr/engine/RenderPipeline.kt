@@ -386,7 +386,7 @@ class RenderPipeline(private val context: Context) {
             // -----------------------------------------------------------------
             stage7CurvesLut.process(
                 curves = activeRecipe.curves,
-                curveTexId = lutTextureId,
+                customPointCurveTexId = lutTextureId,
                 custom3dLutTexId = 0,
                 lut3dIntensity = 0.0f,
                 pingPong = pingPong,
