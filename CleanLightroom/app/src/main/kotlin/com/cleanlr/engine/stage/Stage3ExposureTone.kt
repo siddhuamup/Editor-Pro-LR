@@ -27,6 +27,7 @@ class Stage3ExposureTone(private val context: Context) {
 
     private var programId = 0
     private var locImageTexture = -1
+    private var locTexelSize = -1
     private var locExposure = -1
     private var locContrast = -1
     private var locHighlights = -1
@@ -52,6 +53,7 @@ class Stage3ExposureTone(private val context: Context) {
         }
 
         locImageTexture = GLES30.glGetUniformLocation(programId, "uImageTexture")
+        locTexelSize = GLES30.glGetUniformLocation(programId, "uTexelSize")
         locExposure = GLES30.glGetUniformLocation(programId, "uExposure")
         locContrast = GLES30.glGetUniformLocation(programId, "uContrast")
         locHighlights = GLES30.glGetUniformLocation(programId, "uHighlights")
@@ -113,6 +115,10 @@ class Stage3ExposureTone(private val context: Context) {
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, inputTexture)
         GLES30.glUniform1i(locImageTexture, 0)
+
+        val w = pingPong.width
+        val h = pingPong.height
+        GLES30.glUniform2f(locTexelSize, if (w > 0) 1.0f / w else 0.0f, if (h > 0) 1.0f / h else 0.0f)
 
         GLES30.glUniform1f(locExposure, exposure)
         GLES30.glUniform1f(locContrast, contrast)

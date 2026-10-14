@@ -5,6 +5,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
 
 class Stage3ExposureToneTest {
@@ -33,6 +36,50 @@ class Stage3ExposureToneTest {
 
     private fun computeExposureGain(ev: Float): Float {
         return 2.0f.pow(ev)
+    }
+
+    /**
+     * Exact Normative Luminance Knee Compression (Section 1.5):
+     * L_recovered = 0.85 + 0.15 * (1.0 - exp(-(L - 0.85) / 0.15))
+     */
+    private fun computeLuminanceKnee(l: Float): Float {
+        if (l <= 0.85f) return l
+        return 0.85f + 0.15f * (1.0f - exp(-(l - 0.85f) / 0.15f))
+    }
+
+    /**
+     * Chromaticity Inpainting (Section 1.5):
+     * Propagate R/G and B/G chromaticity ratios from unclipped neighbors to clipped pixel
+     */
+    private fun inpaintClippedChromaticity(
+        clippedCol: FloatArray,
+        unclippedNeighbors: List<FloatArray>
+    ): FloatArray {
+        var chromRSum = 0.0f
+        var chromBSum = 0.0f
+        var weightCount = 0
+
+        for (n in unclippedNeighbors) {
+            val maxC = max(max(n[0], n[1]), n[2])
+            if (maxC < 0.85f && n[1] > 0.001f) {
+                chromRSum += n[0] / n[1]
+                chromBSum += n[2] / n[1]
+                weightCount++
+            }
+        }
+
+        if (weightCount == 0) return clippedCol
+
+        val avgR = chromRSum / weightCount
+        val avgB = chromBSum / weightCount
+
+        // Inpaint using green channel baseline
+        val originalLum = computeProPhotoLuminance(clippedCol[0], clippedCol[1], clippedCol[2])
+        val reconstructed = floatArrayOf(avgR * clippedCol[1], clippedCol[1], avgB * clippedCol[1])
+        val reconLum = computeProPhotoLuminance(reconstructed[0], reconstructed[1], reconstructed[2])
+
+        val scale = if (reconLum > 0.0001f) originalLum / reconLum else 1.0f
+        return floatArrayOf(reconstructed[0] * scale, reconstructed[1] * scale, reconstructed[2] * scale)
     }
 
     @Test
@@ -76,9 +123,6 @@ class Stage3ExposureToneTest {
 
     @Test
     fun testPlus3EVPrecisionBandingFreeCheck() {
-        // Verification Gate Check: +3 EV on highlight gradient
-        // In 8-bit, 2^3 pushes values > 32 (out of 255) to 255 (harsh clipping & banding)
-        // In RGBA16F (Half-Float), values up to 65504.0 are represented with 1024 distinct mantissa steps per power-of-two.
         val inputValues = floatArrayOf(0.10f, 0.101f, 0.102f, 0.103f, 0.104f)
         val ev3Gain = computeExposureGain(3.0f) // 8.0x
 
@@ -87,5 +131,50 @@ class Stage3ExposureToneTest {
             val step = scaled[i + 1] - scaled[i]
             assertTrue("Subtle gradient steps must be strictly distinct and monotonic (> 0)", step > 0.005f)
         }
+    }
+
+    @Test
+    fun testLuminanceKneeCompressionProperties() {
+        // 1. Boundary continuity at L = 0.85
+        val atKneeThreshold = computeLuminanceKnee(0.85f)
+        assertEquals("At L = 0.85, knee output must be exactly 0.85", 0.85f, atKneeThreshold, 0.0001f)
+
+        // 2. Below threshold is strictly unchanged
+        assertEquals(0.50f, computeLuminanceKnee(0.50f), 0.0001f)
+
+        // 3. At L = 1.00: 0.85 + 0.15 * (1.0 - exp(-1.0)) ~ 0.9448
+        val at100 = computeLuminanceKnee(1.00f)
+        val expectedAt100 = 0.85f + 0.15f * (1.0f - exp(-1.0f))
+        assertEquals(expectedAt100, at100, 0.0001f)
+
+        // 4. Overexposed values (L = 2.0, 5.0, 100.0) compress asymptotically to 1.00 without NaN/overflow
+        val at200 = computeLuminanceKnee(2.00f)
+        assertTrue("Luminance at L=2.00 should be compressed below 1.00", at200 < 1.0f)
+        assertTrue("Luminance at L=2.00 should be > 0.99", at200 > 0.99f)
+
+        val atInfinity = computeLuminanceKnee(100.0f)
+        assertEquals("Extreme overexposure should asymptote to 1.00", 1.00f, atInfinity, 0.001f)
+    }
+
+    @Test
+    fun testChromaticityInpaintingBurntSkyRestoration() {
+        // Burnt sky pixel where Green clipped to 1.0 and channels are near white
+        // Original raw clipped pixel: R = 0.95, G = 1.0, B = 0.98 (appears chalky white/gray)
+        val clippedSky = floatArrayOf(0.95f, 1.0f, 0.98f)
+
+        // Surrounding unclipped sky neighbors (Blue sky: R = 0.30, G = 0.50, B = 0.80)
+        // R/G = 0.60, B/G = 1.60
+        val skyNeighbors = listOf(
+            floatArrayOf(0.30f, 0.50f, 0.80f),
+            floatArrayOf(0.32f, 0.52f, 0.82f)
+        )
+
+        val restored = inpaintClippedChromaticity(clippedSky, skyNeighbors)
+
+        // The restored pixel should recover deep sky chromaticity: Blue channel must dominate Red
+        assertTrue("Restored sky blue channel must be substantially higher than red", restored[2] > restored[0])
+        val restoredBGRatio = restored[2] / restored[1]
+        val expectedBGRatio = 0.80f / 0.50f // 1.60
+        assertEquals("B/G chromaticity ratio must match the unclipped sky", expectedBGRatio, restoredBGRatio, 0.05f)
     }
 }
