@@ -55,6 +55,42 @@ enum class HistogramZone(val label: String, val startBin: Int, val endBin: Int) 
     }
 }
 
+object ClippingIndicatorMath {
+    /**
+     * Determines whether shadow clipping occurs in the histogram data.
+     * In Lightroom, shadows are clipped when pixels hit pure black (bin 0) in luma or any color channel.
+     */
+    fun isShadowClipped(data: HistogramData, isForcedActive: Boolean = false): Boolean {
+        if (isForcedActive) return true
+        return (data.lumaBins.isNotEmpty() && data.lumaBins[0] > 0) ||
+                (data.redBins.isNotEmpty() && data.redBins[0] > 0) ||
+                (data.greenBins.isNotEmpty() && data.greenBins[0] > 0) ||
+                (data.blueBins.isNotEmpty() && data.blueBins[0] > 0)
+    }
+
+    /**
+     * Determines whether highlight clipping occurs in the histogram data.
+     * In Lightroom, highlights are clipped when pixels hit pure white (bin 255) in luma or any color channel.
+     */
+    fun isHighlightClipped(data: HistogramData, isForcedActive: Boolean = false): Boolean {
+        if (isForcedActive) return true
+        val lastLuma = data.lumaBins.size - 1
+        val lastRed = data.redBins.size - 1
+        val lastGreen = data.greenBins.size - 1
+        val lastBlue = data.blueBins.size - 1
+        return (lastLuma >= 0 && data.lumaBins[lastLuma] > 0) ||
+                (lastRed >= 0 && data.redBins[lastRed] > 0) ||
+                (lastGreen >= 0 && data.greenBins[lastGreen] > 0) ||
+                (lastBlue >= 0 && data.blueBins[lastBlue] > 0)
+    }
+
+    // Exact normative Adobe Spectrum Dark Clipping Tokens (PDF Part A Section 1 & 2)
+    val SHADOW_CLIPPING_COLOR = spectrum_clipping_shadow   // #0055FF
+    val HIGHLIGHT_CLIPPING_COLOR = spectrum_clipping_high // #FF2222
+    val INACTIVE_COLOR = spectrum_surface_elevated         // #2A2A2A
+    val INACTIVE_BORDER_COLOR = spectrum_text_disabled     // #656565
+}
+
 @Composable
 fun InteractiveHistogram(
     histogramData: HistogramData,
@@ -65,6 +101,8 @@ fun InteractiveHistogram(
     onAdjustWhites: (delta: Float) -> Unit,
     onToggleShadowClipping: () -> Unit = {},
     onToggleHighlightClipping: () -> Unit = {},
+    onJumpToBlacks: () -> Unit = {},
+    onJumpToWhites: () -> Unit = {},
     isShadowClippingActive: Boolean = false,
     isHighlightClippingActive: Boolean = false,
     modifier: Modifier = Modifier
@@ -168,35 +206,73 @@ fun InteractiveHistogram(
                 drawPath(pathB, HistogramBlue.copy(alpha = 0.85f), style = Stroke(width = 1.5f))
                 drawPath(pathL, HistogramLuma.copy(alpha = 0.60f), style = Stroke(width = 1.0f))
 
-                // Left Shadow clipping triangle
-                val shadowCrushed = histogramData.lumaBins[0] > 0 || isShadowClippingActive
-                drawCircle(
-                    color = if (shadowCrushed) ClipBlackIndicator else SpectrumBorder,
-                    radius = 4.dp.toPx(),
-                    center = Offset(10.dp.toPx(), 10.dp.toPx())
+                // -------------------------------------------------------------
+                // Left Shadow clipping triangle (Adobe Lightroom Spec)
+                // -------------------------------------------------------------
+                val shadowCrushed = ClippingIndicatorMath.isShadowClipped(histogramData, isShadowClippingActive)
+                val leftPath = Path().apply {
+                    val cx = 14.dp.toPx()
+                    val cy = 13.dp.toPx()
+                    val halfW = 5.dp.toPx()
+                    val halfH = 4.5.dp.toPx()
+                    moveTo(cx, cy - halfH)
+                    lineTo(cx + halfW, cy + halfH)
+                    lineTo(cx - halfW, cy + halfH)
+                    close()
+                }
+                drawPath(
+                    path = leftPath,
+                    color = if (shadowCrushed) ClippingIndicatorMath.SHADOW_CLIPPING_COLOR else ClippingIndicatorMath.INACTIVE_COLOR
+                )
+                drawPath(
+                    path = leftPath,
+                    color = if (shadowCrushed) Color.White.copy(alpha = 0.8f) else ClippingIndicatorMath.INACTIVE_BORDER_COLOR,
+                    style = Stroke(width = 1.dp.toPx())
                 )
 
-                // Right Highlight clipping triangle
-                val highlightBlown = histogramData.lumaBins[255] > 0 || isHighlightClippingActive
-                drawCircle(
-                    color = if (highlightBlown) ClipWhiteIndicator else SpectrumBorder,
-                    radius = 4.dp.toPx(),
-                    center = Offset(w - 10.dp.toPx(), 10.dp.toPx())
+                // -------------------------------------------------------------
+                // Right Highlight clipping triangle (Adobe Lightroom Spec)
+                // -------------------------------------------------------------
+                val highlightBlown = ClippingIndicatorMath.isHighlightClipped(histogramData, isHighlightClippingActive)
+                val rightPath = Path().apply {
+                    val cx = w - 14.dp.toPx()
+                    val cy = 13.dp.toPx()
+                    val halfW = 5.dp.toPx()
+                    val halfH = 4.5.dp.toPx()
+                    moveTo(cx, cy - halfH)
+                    lineTo(cx + halfW, cy + halfH)
+                    lineTo(cx - halfW, cy + halfH)
+                    close()
+                }
+                drawPath(
+                    path = rightPath,
+                    color = if (highlightBlown) ClippingIndicatorMath.HIGHLIGHT_CLIPPING_COLOR else ClippingIndicatorMath.INACTIVE_COLOR
+                )
+                drawPath(
+                    path = rightPath,
+                    color = if (highlightBlown) Color.White.copy(alpha = 0.8f) else ClippingIndicatorMath.INACTIVE_BORDER_COLOR,
+                    style = Stroke(width = 1.dp.toPx())
                 )
             }
 
-            // Clickable clipping indicator regions (top-left and top-right)
+            // Clickable clipping indicator regions with standard touch targets (44dp x 44dp)
             Box(
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(44.dp)
                     .align(Alignment.TopStart)
-                    .clickable { onToggleShadowClipping() }
+                    .clickable {
+                        onToggleShadowClipping()
+                        onJumpToBlacks()
+                    }
             )
             Box(
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(44.dp)
                     .align(Alignment.TopEnd)
-                    .clickable { onToggleHighlightClipping() }
+                    .clickable {
+                        onToggleHighlightClipping()
+                        onJumpToWhites()
+                    }
             )
 
             // Dynamic hover/drag feedback overlay showing the active slider zone

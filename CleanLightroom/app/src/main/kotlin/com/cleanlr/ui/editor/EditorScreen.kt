@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cleanlr.ui.components.*
 import com.cleanlr.ui.theme.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +35,9 @@ fun EditorScreen(
     viewModel: EditorViewModel,
     modifier: Modifier = Modifier
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val toolScrollState = rememberScrollState()
+
     val recipe by viewModel.recipe.collectAsState()
     val bitmap by viewModel.bitmap.collectAsState()
     val histogramData by viewModel.histogramData.collectAsState()
@@ -270,6 +274,18 @@ fun EditorScreen(
                 onToggleHighlightClipping = {
                     viewModel.setAltClippingMode(if (altClippingMode == 1) 0 else 1)
                 },
+                onJumpToBlacks = {
+                    viewModel.setActiveTab(EditorToolTab.LIGHT)
+                    coroutineScope.launch {
+                        toolScrollState.animateScrollTo(toolScrollState.maxValue)
+                    }
+                },
+                onJumpToWhites = {
+                    viewModel.setActiveTab(EditorToolTab.LIGHT)
+                    coroutineScope.launch {
+                        toolScrollState.animateScrollTo((toolScrollState.maxValue * 0.75f).toInt())
+                    }
+                },
                 isShadowClippingActive = altClippingMode == 2,
                 isHighlightClippingActive = altClippingMode == 1
             )
@@ -310,7 +326,7 @@ fun EditorScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(toolScrollState)
                         .padding(bottom = 16.dp)
                 ) {
                     when (activeTab) {
