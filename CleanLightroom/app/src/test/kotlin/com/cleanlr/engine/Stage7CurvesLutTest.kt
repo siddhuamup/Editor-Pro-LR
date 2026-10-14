@@ -182,4 +182,78 @@ class Stage7CurvesLutTest {
         val blended = originalR + (lutR - originalR) * intensity
         assertEquals(0.50f, blended, 0.001f)
     }
+
+    // -------------------------------------------------------------------------
+    // Sprint A Task T2: Fritsch-Carlson Step-by-Step Mathematical Audit
+    // -------------------------------------------------------------------------
+    @Test
+    fun testFritschCarlsonTauLimiterStepByStepAudit() {
+        // Doc Section 2.A:
+        // Test points engineered to trigger the tau limiter:
+        // (0, 0), (10, 50), (20, 52), (30, 100)
+        // delta_0 = (50 - 0)/10 = 5.0
+        // delta_1 = (52 - 50)/10 = 0.2
+        // Initial d_1 = (5.0 + 0.2) / 2 = 2.6
+        // alpha = d_1 / delta_1 = 2.6 / 0.2 = 13.0 -> alpha^2 = 169 >> 9!
+        val points = listOf(
+            CurvePoint(0f, 0f),
+            CurvePoint(10f, 50f),
+            CurvePoint(20f, 52f),
+            CurvePoint(30f, 100f),
+            CurvePoint(255f, 255f)
+        )
+
+        val lut = SplineInterpolator.evaluateSpline(points)
+
+        // 1. Endpoints match exact control points
+        assertEquals(0f, lut[0], 0.01f)
+        assertEquals(50f, lut[10], 0.01f)
+        assertEquals(52f, lut[20], 0.01f)
+        assertEquals(100f, lut[30], 0.01f)
+        assertEquals(255f, lut[255], 0.01f)
+
+        // 2. Tau limiter guarantees monotonicity: no overshoot between (10, 50) and (20, 52)
+        for (x in 10..20) {
+            assertTrue("Between x=10 and x=20, y must stay within [50, 52] without overshoot", lut[x] in 50.0f..52.001f)
+        }
+
+        // 3. Strict non-decreasing monotonicity across entire 0..255 range (no solarization)
+        for (i in 0 until 255) {
+            assertTrue(
+                "Fritsch-Carlson tau limiter must guarantee strict monotonicity at x=$i (${lut[i]} -> ${lut[i+1]})",
+                lut[i + 1] >= lut[i] - 0.001f
+            )
+        }
+    }
+
+    @Test
+    fun testHermiteBasisPolynomialsAudit() {
+        // Doc Section 2.A Step 4:
+        // h00(t) = 2t^3 - 3t^2 + 1
+        // h10(t) = t^3 - 2t^2 + t
+        // h01(t) = -2t^3 + 3t^2
+        // h11(t) = t^3 - t^2
+        fun h00(t: Double) = 2.0 * t * t * t - 3.0 * t * t + 1.0
+        fun h10(t: Double) = t * t * t - 2.0 * t * t + t
+        fun h01(t: Double) = -2.0 * t * t * t + 3.0 * t * t
+        fun h11(t: Double) = t * t * t - t * t
+
+        // At t = 0: exactly passes through y_k
+        assertEquals(1.0, h00(0.0), 1e-9)
+        assertEquals(0.0, h10(0.0), 1e-9)
+        assertEquals(0.0, h01(0.0), 1e-9)
+        assertEquals(0.0, h11(0.0), 1e-9)
+
+        // At t = 1: exactly passes through y_{k+1}
+        assertEquals(0.0, h00(1.0), 1e-9)
+        assertEquals(0.0, h10(1.0), 1e-9)
+        assertEquals(1.0, h01(1.0), 1e-9)
+        assertEquals(0.0, h11(1.0), 1e-9)
+
+        // Unity partition: h00(t) + h01(t) == 1.0 for all t
+        for (step in 0..10) {
+            val t = step / 10.0
+            assertEquals("Hermite position polynomials must sum to 1.0 at t=$t", 1.0, h00(t) + h01(t), 1e-9)
+        }
+    }
 }
