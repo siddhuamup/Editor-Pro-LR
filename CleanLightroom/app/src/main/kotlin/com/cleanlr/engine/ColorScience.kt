@@ -107,4 +107,73 @@ object ColorScience {
         val ratio = kotlin.math.abs(v) / maxRange
         return sign(v) * ratio.pow(1.0f / exponent)
     }
+
+    fun srgbToLinear(c: Double): Double {
+        return if (c <= 0.04045) {
+            c / 12.92
+        } else {
+            ((c + 0.055) / 1.055).pow(2.4)
+        }
+    }
+
+    fun linearToSrgb(c: Double): Double {
+        val cl = c.coerceIn(0.0, 1.0)
+        return if (cl <= 0.0031308) {
+            12.92 * cl
+        } else {
+            1.055 * cl.pow(1.0 / 2.4) - 0.055
+        }
+    }
+
+    /**
+     * Converts sRGB [0.0 .. 1.0] to CIE L*a*b* under standard D65 illuminant.
+     * Returns DoubleArray(3) with [L*, a*, b*].
+     */
+    fun srgbToLab(r: Double, g: Double, b: Double): DoubleArray {
+        val rLin = srgbToLinear(r)
+        val gLin = srgbToLinear(g)
+        val bLin = srgbToLinear(b)
+
+        // sRGB to CIE XYZ (D65)
+        val x = (0.4124564 * rLin + 0.3575761 * gLin + 0.1804375 * bLin) / 0.95047
+        val y = (0.2126729 * rLin + 0.7151522 * gLin + 0.0721750 * bLin) / 1.00000
+        val z = (0.0193339 * rLin + 0.1191920 * gLin + 0.9503041 * bLin) / 1.08883
+
+        val epsilon = 216.0 / 24389.0 // (6/29)^3
+        val kappa = 24389.0 / 27.0    // (29/3)^3
+
+        fun f(t: Double): Double {
+            return if (t > epsilon) t.pow(1.0 / 3.0) else (kappa * t + 16.0) / 116.0
+        }
+
+        val fx = f(x)
+        val fy = f(y)
+        val fz = f(z)
+
+        val lStar = (116.0 * fy) - 16.0
+        val aStar = 500.0 * (fx - fy)
+        val bStar = 200.0 * (fy - fz)
+
+        return doubleArrayOf(lStar, aStar, bStar)
+    }
+
+    /**
+     * Computes CIE delta E 1976 (standard Euclidean color distance in L*a*b* space).
+     */
+    fun deltaE76(lab1: DoubleArray, lab2: DoubleArray): Double {
+        val dL = lab1[0] - lab2[0]
+        val da = lab1[1] - lab2[1]
+        val db = lab1[2] - lab2[2]
+        return kotlin.math.sqrt(dL * dL + da * da + db * db)
+    }
+
+    /**
+     * Computes CIE delta E 1976 directly from two sRGB colors [0.0 .. 1.0].
+     */
+    fun deltaE76FromSrgb(r1: Double, g1: Double, b1: Double, r2: Double, g2: Double, b2: Double): Double {
+        val lab1 = srgbToLab(r1, g1, b1)
+        val lab2 = srgbToLab(r2, g2, b2)
+        return deltaE76(lab1, lab2)
+    }
 }
+
