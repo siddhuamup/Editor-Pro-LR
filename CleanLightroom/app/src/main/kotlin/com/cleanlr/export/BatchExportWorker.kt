@@ -111,34 +111,24 @@ class BatchExportWorker(
     }
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
-        return createForegroundInfo("Clean Lightroom Exporting...", 0)
+        return ExportNotificationHelper.createForegroundInfo(
+            context = context,
+            notificationId = NOTIFICATION_ID,
+            title = "Clean Lightroom Batch Export",
+            contentText = "Clean Lightroom Exporting...",
+            progressPercent = 0,
+            indeterminate = true
+        )
     }
 
     private fun createForegroundInfo(statusText: String, progressPercent: Int): ForegroundInfo {
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Clean Lightroom Export",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Background image export operations"
-            }
-            manager.createNotificationChannel(channel)
-        }
-
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("Clean Lightroom Batch Export")
-            .setContentText(statusText)
-            .setSmallIcon(android.R.drawable.stat_sys_upload)
-            .setProgress(100, progressPercent, false)
-            .setOngoing(true)
-            .build()
-
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ForegroundInfo(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else {
-            ForegroundInfo(NOTIFICATION_ID, notification)
-        }
+        return ExportNotificationHelper.createForegroundInfo(
+            context = context,
+            notificationId = NOTIFICATION_ID,
+            title = "Clean Lightroom Batch Export",
+            contentText = statusText,
+            progressPercent = progressPercent,
+            indeterminate = false
+        )
     }
 }

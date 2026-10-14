@@ -413,19 +413,8 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
                 val uri = _sourceUri.value
                 if (uri != null) {
-                    // Use WorkManager
-                    val workRequest = OneTimeWorkRequestBuilder<ExportImageWorker>()
-                        .setInputData(
-                            workDataOf(
-                                ExportImageWorker.KEY_IMAGE_URI to uri.toString(),
-                                ExportImageWorker.KEY_RECIPE_JSON to recipeJson,
-                                ExportImageWorker.KEY_QUALITY to 95
-                            )
-                        )
-                        .build()
-
-                    WorkManager.getInstance(context).enqueue(workRequest)
-                    _exportStatus.value = "Export task scheduled"
+                    com.cleanlr.export.ExportManager.enqueueSingle(context, uri, current)
+                    _exportStatus.value = "Export task scheduled (expedited)"
                 } else {
                     // Export directly via Headless Renderer
                     val renderer = com.cleanlr.export.HeadlessGlRenderer(context)

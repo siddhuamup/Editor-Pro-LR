@@ -42,6 +42,21 @@ class ExportImageWorker(
             val recipe = Json.decodeFromString<EditRecipe>(recipeJson)
             val sourceUri = Uri.parse(uriString)
 
+            // 1. Establish Foreground Service notification for Android 12+ FGS compliance
+            try {
+                setForeground(
+                    ExportNotificationHelper.createForegroundInfo(
+                        context = applicationContext,
+                        notificationId = ExportNotificationHelper.NOTIFICATION_ID_SINGLE,
+                        title = "Clean Lightroom Export",
+                        contentText = "फोटो रेंडर होत आहे... (10%)",
+                        progressPercent = 10
+                    )
+                )
+            } catch (e: Exception) {
+                Log.w(TAG, "setForeground non-fatal exception: ${e.message}")
+            }
+
             setProgress(workDataOf("progress" to 10))
 
             // Load source bitmap
@@ -55,12 +70,34 @@ class ExportImageWorker(
                 return@withContext Result.failure()
             }
 
+            try {
+                setForeground(
+                    ExportNotificationHelper.createForegroundInfo(
+                        context = applicationContext,
+                        notificationId = ExportNotificationHelper.NOTIFICATION_ID_SINGLE,
+                        title = "Clean Lightroom Export",
+                        contentText = "GPU शेडर आणि टाइल प्रोसेसिंग चालू आहे... (30%)",
+                        progressPercent = 30
+                    )
+                )
+            } catch (ignored: Exception) {}
             setProgress(workDataOf("progress" to 30))
 
             // Run Headless GL rendering
             val renderer = HeadlessGlRenderer(applicationContext)
             val renderedBitmap = renderer.renderFullResolution(sourceBitmap, recipe)
 
+            try {
+                setForeground(
+                    ExportNotificationHelper.createForegroundInfo(
+                        context = applicationContext,
+                        notificationId = ExportNotificationHelper.NOTIFICATION_ID_SINGLE,
+                        title = "Clean Lightroom Export",
+                        contentText = "MediaStore व Exif सेव्ह होत आहे... (80%)",
+                        progressPercent = 80
+                    )
+                )
+            } catch (ignored: Exception) {}
             setProgress(workDataOf("progress" to 80))
 
             // Save to MediaStore with Exif preservation and recipe embedding
@@ -77,6 +114,17 @@ class ExportImageWorker(
             Log.e(TAG, "Error during export", e)
             Result.failure()
         }
+    }
+
+    override suspend fun getForegroundInfo(): androidx.work.ForegroundInfo {
+        return ExportNotificationHelper.createForegroundInfo(
+            context = applicationContext,
+            notificationId = ExportNotificationHelper.NOTIFICATION_ID_SINGLE,
+            title = "Clean Lightroom Export",
+            contentText = "एक्सपोर्ट सुरू होत आहे...",
+            progressPercent = 0,
+            indeterminate = true
+        )
     }
 
     private fun saveBitmapToMediaStore(
