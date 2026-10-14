@@ -20,12 +20,13 @@ class HeadlessGlRenderer(private val context: Context) {
     private var eglContext: EGLContext = EGL14.EGL_NO_CONTEXT
     private var eglSurface: EGLSurface = EGL14.EGL_NO_SURFACE
     private var activePipeline: RenderPipeline? = null
+    private var pboReader: AsyncPboReader? = null
     var isSessionActive: Boolean = false
         private set
 
     /**
-     * Initializes the offscreen EGL Pbuffer context and the shared 9-Stage RenderPipeline.
-     * Can be kept open across multiple tiles or batch photos to avoid repeated shader re-compilation.
+     * Initializes the offscreen EGL Pbuffer context, shared 9-Stage RenderPipeline,
+     * and dual AsyncPboReader for non-blocking DMA pixel transfers.
      */
     fun beginSession() {
         if (isSessionActive) return
@@ -33,14 +34,19 @@ class HeadlessGlRenderer(private val context: Context) {
         activePipeline = RenderPipeline(context).apply {
             initGL()
         }
+        pboReader = AsyncPboReader().apply {
+            initGL()
+        }
         isSessionActive = true
     }
 
     /**
-     * Releases the RenderPipeline and terminates the offscreen EGL context.
+     * Releases the RenderPipeline, PBO buffers, and terminates the offscreen EGL context.
      */
     fun endSession() {
         if (!isSessionActive) return
+        pboReader?.release()
+        pboReader = null
         activePipeline?.release()
         activePipeline = null
         destroyEgl()
@@ -111,10 +117,18 @@ class HeadlessGlRenderer(private val context: Context) {
         pipeline.render(recipe, altClippingMode = 0, showOriginal = false)
         GLES30.glFinish()
 
-        // Read pixels
+        // Read pixels using Async PBO (zero-stall DMA transfer) with synchronous fallback
         val pixelBuffer = ByteBuffer.allocateDirect(width * height * 4)
             .order(ByteOrder.nativeOrder())
-        GLES30.glReadPixels(0, 0, width, height, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, pixelBuffer)
+        val pbo = pboReader
+        var pboSuccess = false
+        if (pbo != null) {
+            pbo.triggerAsyncRead(width, height)
+            pboSuccess = pbo.readPixelsMapped(width, height, pixelBuffer)
+        }
+        if (!pboSuccess) {
+            GLES30.glReadPixels(0, 0, width, height, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, pixelBuffer)
+        }
 
         // Cleanup temporary render target resources
         GLES30.glDeleteTextures(1, renderTex, 0)
