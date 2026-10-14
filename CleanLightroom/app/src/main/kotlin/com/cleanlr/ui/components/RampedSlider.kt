@@ -14,6 +14,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cleanlr.engine.ColorScience
@@ -24,6 +25,16 @@ import com.cleanlr.ui.theme.SpectrumTextSecondary
 import java.util.Locale
 import kotlin.math.abs
 
+/**
+ * Adobe Spectrum Non-Linear Ramped Slider (PDF Part A Section 1 & 2):
+ * - Track Height: 2.dp (Inactive), 3.dp (Active/Filled segment)
+ * - Thumb Diameter: 16.dp (Pure White #FFFFFF with 2.dp elevation shadow)
+ * - Center Tick (Zero Notch): 2.dp width, 8.dp height
+ * - Touch Target Height: 48.dp (recommended 44.dp to 48.dp)
+ * - Typography: Parameter Name 12.sp Regular (400), Value Label 13.sp Medium (500)
+ * - Non-Linear Ramped Math: f(x) = sign(x) * |x|^1.4 (slows down ~35% in center zone |x| < 0.2)
+ * - Haptic Zero Snap: Magnetic deadzone at |x| < 0.03 with haptic vibration
+ */
 @Composable
 fun RampedSlider(
     label: String,
@@ -52,17 +63,19 @@ fun RampedSlider(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 12.dp)
+            .padding(vertical = 2.dp, horizontal = 12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Parameter Name Font: 12.sp, Weight: Regular (400)
             Text(
                 text = label,
                 color = SpectrumTextSecondary,
                 fontSize = 12.sp,
+                fontWeight = FontWeight.Normal,
                 modifier = Modifier.pointerInput(Unit) {
                     detectTapGestures(
                         onDoubleTap = {
@@ -74,6 +87,8 @@ fun RampedSlider(
                     )
                 }
             )
+
+            // Value Label Font: 13.sp, Weight: Medium (500)
             val displayValue = if (formatPattern.contains("f")) {
                 val prefix = if (isBipolar && value > 0.001f) "+" else ""
                 prefix + String.format(Locale.US, formatPattern, value)
@@ -83,16 +98,18 @@ fun RampedSlider(
             Text(
                 text = displayValue,
                 color = if (abs(value - defaultValue) > 0.001f) SpectrumBlue else SpectrumTextPrimary,
-                fontSize = 12.sp
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium
             )
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(2.dp))
 
+        // Touch Target Height: 48.dp (Normative Spec: 44.dp to 48.dp)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(28.dp)
+                .height(48.dp)
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onDoubleTap = {
@@ -123,8 +140,8 @@ fun RampedSlider(
 
                                 val targetVal = if (isBipolar) {
                                     var sPos = (normX - 0.5f) * 2.0f // -1.0 to 1.0
-                                    // Zero snap magnetic threshold (2% deadzone)
-                                    if (abs(sPos) < 0.04f) {
+                                    // Haptic Zero Snap: Magnetic deadzone at |x| < 0.03
+                                    if (abs(sPos) < 0.03f) {
                                         sPos = 0.0f
                                     }
                                     ColorScience.rampedValue(sPos, maxAbsRange)
@@ -144,28 +161,31 @@ fun RampedSlider(
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val centerY = size.height / 2f
-                val trackHeight = 3.dp.toPx()
-                val thumbRadius = 6.dp.toPx()
+                // Normative Track Dimensions: Inactive 2.dp, Active 3.dp
+                val inactiveTrackHeight = 2.dp.toPx()
+                val activeTrackHeight = 3.dp.toPx()
+                // Normative Thumb: 16.dp Diameter (8.dp Radius) Pure White #FFFFFF
+                val thumbRadius = 8.dp.toPx()
 
-                // Background track
+                // Inactive Background track (2.dp)
                 drawRect(
                     color = SpectrumBorder,
-                    topLeft = Offset(0f, centerY - trackHeight / 2f),
-                    size = Size(size.width, trackHeight)
+                    topLeft = Offset(0f, centerY - inactiveTrackHeight / 2f),
+                    size = Size(size.width, inactiveTrackHeight)
                 )
 
                 if (isBipolar) {
                     val midX = size.width / 2f
 
-                    // Center notch
+                    // Center Tick (Zero Notch): 2.dp width, 8.dp height
                     drawLine(
-                        color = Color.White.copy(alpha = 0.6f),
-                        start = Offset(midX, centerY - 5.dp.toPx()),
-                        end = Offset(midX, centerY + 5.dp.toPx()),
-                        strokeWidth = 1.5.dp.toPx()
+                        color = Color.White.copy(alpha = 0.7f),
+                        start = Offset(midX, centerY - 4.dp.toPx()),
+                        end = Offset(midX, centerY + 4.dp.toPx()),
+                        strokeWidth = 2.dp.toPx()
                     )
 
-                    // Active fill from center to thumb
+                    // Active fill from center to thumb (3.dp)
                     val thumbX = midX + (normalizedPos * (size.width / 2f))
                     val left = minOf(midX, thumbX)
                     val right = maxOf(midX, thumbX)
@@ -173,12 +193,19 @@ fun RampedSlider(
                     if (right > left) {
                         drawRect(
                             color = SpectrumBlue,
-                            topLeft = Offset(left, centerY - trackHeight / 2f),
-                            size = Size(right - left, trackHeight)
+                            topLeft = Offset(left, centerY - activeTrackHeight / 2f),
+                            size = Size(right - left, activeTrackHeight)
                         )
                     }
 
-                    // Thumb circle
+                    // 2.dp Elevation Shadow below Thumb
+                    drawCircle(
+                        color = Color(0x38000000),
+                        radius = thumbRadius + 1.5.dp.toPx(),
+                        center = Offset(thumbX, centerY + 1.5.dp.toPx())
+                    )
+
+                    // Pure White #FFFFFF 16.dp Thumb
                     drawCircle(
                         color = Color.White,
                         radius = thumbRadius,
@@ -187,14 +214,21 @@ fun RampedSlider(
                 } else {
                     val thumbX = normalizedPos * size.width
 
-                    // Active fill from left to thumb
+                    // Active fill from left to thumb (3.dp)
                     drawRect(
                         color = SpectrumBlue,
-                        topLeft = Offset(0f, centerY - trackHeight / 2f),
-                        size = Size(thumbX, trackHeight)
+                        topLeft = Offset(0f, centerY - activeTrackHeight / 2f),
+                        size = Size(thumbX, activeTrackHeight)
                     )
 
-                    // Thumb circle
+                    // 2.dp Elevation Shadow below Thumb
+                    drawCircle(
+                        color = Color(0x38000000),
+                        radius = thumbRadius + 1.5.dp.toPx(),
+                        center = Offset(thumbX, centerY + 1.5.dp.toPx())
+                    )
+
+                    // Pure White #FFFFFF 16.dp Thumb
                     drawCircle(
                         color = Color.White,
                         radius = thumbRadius,
