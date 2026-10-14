@@ -87,7 +87,14 @@ data class ColorGrading(
 
 @Serializable
 data class DetailAdjustments(
-    val sharpening: Float = 40.0f,
-    val masking: Float = 0.0f,
-    val noiseReduction: Float = 0.0f
+    val sharpening: Float = 0.0f,       // 0 to 150
+    val sharpenRadius: Float = 1.0f,    // 0.5 to 3.0
+    val masking: Float = 0.0f,          // 0 to 100 (edge threshold)
+    val noiseReduction: Float = 0.0f,   // 0 to 100
+    val vignetteAmount: Float = 0.0f,   // -100 to +100
+    val vignetteMidpoint: Float = 50.0f,// 0 to 100
+    val vignetteFeather: Float = 50.0f, // 0 to 100
+    val grainAmount: Float = 0.0f,      // 0 to 100
+    val grainSize: Float = 25.0f,       // 0 to 100
+    val grainRoughness: Float = 50.0f   // 0 to 100
 )
