@@ -212,7 +212,16 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                 inputStream?.close()
                 if (decoded != null) {
                     _bitmap.value = decoded
-                    resetAll()
+                    // XMP / Metadata Round-Trip: restore embedded recipe if photo was exported by CleanLR / Lightroom
+                    val restoredRecipe = context.contentResolver.openInputStream(uri)?.use { inStream ->
+                        com.cleanlr.export.ExportMetadataWriter.extractRecipe(inStream)
+                    }
+                    if (restoredRecipe != null) {
+                        _recipe.value = restoredRecipe
+                        historyManager.commitState(restoredRecipe, "Restore Embedded Recipe")
+                    } else {
+                        resetAll()
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("EditorViewModel", "Failed to load image from URI", e)

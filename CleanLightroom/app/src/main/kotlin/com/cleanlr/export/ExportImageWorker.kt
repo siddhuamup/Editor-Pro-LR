@@ -63,8 +63,8 @@ class ExportImageWorker(
 
             setProgress(workDataOf("progress" to 80))
 
-            // Save to MediaStore
-            val outputUri = saveBitmapToMediaStore(renderedBitmap, quality)
+            // Save to MediaStore with Exif preservation and recipe embedding
+            val outputUri = saveBitmapToMediaStore(renderedBitmap, quality, recipe, sourceUri)
 
             setProgress(workDataOf("progress" to 100))
 
@@ -79,7 +79,12 @@ class ExportImageWorker(
         }
     }
 
-    private fun saveBitmapToMediaStore(bitmap: Bitmap, quality: Int): Uri? {
+    private fun saveBitmapToMediaStore(
+        bitmap: Bitmap,
+        quality: Int,
+        recipe: EditRecipe,
+        sourceUri: Uri
+    ): Uri? {
         val filename = "CleanLR_${System.currentTimeMillis()}.jpg"
         val contentValues = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, filename)
@@ -96,6 +101,21 @@ class ExportImageWorker(
         if (imageUri != null) {
             resolver.openOutputStream(imageUri)?.use { outStream: OutputStream ->
                 bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outStream)
+            }
+
+            // Inject preserved Exif metadata & embedded EditRecipe
+            try {
+                resolver.openFileDescriptor(imageUri, "rw")?.use { pfd ->
+                    val targetExif = androidx.exifinterface.media.ExifInterface(pfd.fileDescriptor)
+                    val sourceExif = resolver.openInputStream(sourceUri)?.use { inStream ->
+                        runCatching { androidx.exifinterface.media.ExifInterface(inStream) }.getOrNull()
+                    }
+                    ExportMetadataWriter.copyExifTags(sourceExif, targetExif)
+                    ExportMetadataWriter.embedRecipe(targetExif, recipe)
+                    targetExif.saveAttributes()
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Exif injection skipped or unsupported on target storage: ${e.message}")
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
