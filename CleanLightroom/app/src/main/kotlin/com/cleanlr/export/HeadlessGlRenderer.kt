@@ -19,6 +19,33 @@ class HeadlessGlRenderer(private val context: Context) {
     private var eglDisplay: EGLDisplay = EGL14.EGL_NO_DISPLAY
     private var eglContext: EGLContext = EGL14.EGL_NO_CONTEXT
     private var eglSurface: EGLSurface = EGL14.EGL_NO_SURFACE
+    private var activePipeline: RenderPipeline? = null
+    var isSessionActive: Boolean = false
+        private set
+
+    /**
+     * Initializes the offscreen EGL Pbuffer context and the shared 9-Stage RenderPipeline.
+     * Can be kept open across multiple tiles or batch photos to avoid repeated shader re-compilation.
+     */
+    fun beginSession() {
+        if (isSessionActive) return
+        initEgl()
+        activePipeline = RenderPipeline(context).apply {
+            initGL()
+        }
+        isSessionActive = true
+    }
+
+    /**
+     * Releases the RenderPipeline and terminates the offscreen EGL context.
+     */
+    fun endSession() {
+        if (!isSessionActive) return
+        activePipeline?.release()
+        activePipeline = null
+        destroyEgl()
+        isSessionActive = false
+    }
 
     /**
      * Renders high-resolution image offscreen using the exact GLES 3.0 shader pipeline.
@@ -27,10 +54,12 @@ class HeadlessGlRenderer(private val context: Context) {
         val width = sourceBitmap.width
         val height = sourceBitmap.height
 
-        initEgl()
+        val wasSessionActive = isSessionActive
+        if (!wasSessionActive) {
+            beginSession()
+        }
 
-        val pipeline = RenderPipeline(context)
-        pipeline.initGL()
+        val pipeline = activePipeline ?: throw IllegalStateException("Active RenderPipeline required")
         pipeline.loadBitmap(sourceBitmap)
 
         // Upload tone curve LUT
@@ -75,11 +104,13 @@ class HeadlessGlRenderer(private val context: Context) {
             .order(ByteOrder.nativeOrder())
         GLES30.glReadPixels(0, 0, width, height, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, pixelBuffer)
 
-        // Cleanup GL resources
-        pipeline.release()
+        // Cleanup temporary render target resources
         GLES30.glDeleteTextures(1, renderTex, 0)
         GLES30.glDeleteFramebuffers(1, fbo, 0)
-        destroyEgl()
+
+        if (!wasSessionActive) {
+            endSession()
+        }
 
         // Convert byte buffer to Bitmap & flip vertical axis (GL bottom-up to Bitmap top-down)
         val outBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
