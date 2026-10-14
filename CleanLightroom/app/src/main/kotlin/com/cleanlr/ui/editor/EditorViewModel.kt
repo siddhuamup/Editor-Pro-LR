@@ -58,6 +58,19 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
     private val _exportStatus = MutableStateFlow<String?>(null)
     val exportStatus: StateFlow<String?> = _exportStatus.asStateFlow()
 
+    // Targeted Adjustment Tool (TAT) State
+    private val _isTatActive = MutableStateFlow(false)
+    val isTatActive: StateFlow<Boolean> = _isTatActive.asStateFlow()
+
+    private val _tatMode = MutableStateFlow(com.cleanlr.engine.TatTargetMode.SATURATION)
+    val tatMode: StateFlow<com.cleanlr.engine.TatTargetMode> = _tatMode.asStateFlow()
+
+    private val _activeTatWeights = MutableStateFlow<com.cleanlr.engine.TatChannelWeights?>(null)
+    val activeTatWeights: StateFlow<com.cleanlr.engine.TatChannelWeights?> = _activeTatWeights.asStateFlow()
+
+    private val _activeTatTargetName = MutableStateFlow<String?>(null)
+    val activeTatTargetName: StateFlow<String?> = _activeTatTargetName.asStateFlow()
+
     val canUndo = historyManager.canUndo
     val canRedo = historyManager.canRedo
 
@@ -196,6 +209,46 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
 
     fun updateHistogram(data: HistogramData) {
         _histogramData.value = data
+    }
+
+    fun toggleTat() {
+        val next = !_isTatActive.value
+        _isTatActive.value = next
+        if (!next) {
+            _activeTatWeights.value = null
+            _activeTatTargetName.value = null
+        }
+    }
+
+    fun setTatMode(mode: com.cleanlr.engine.TatTargetMode) {
+        _tatMode.value = mode
+    }
+
+    fun sampleTatPixel(normX: Float, normY: Float) {
+        val bmp = _bitmap.value ?: return
+        val px = (normX.coerceIn(0f, 1f) * (bmp.width - 1)).toInt()
+        val py = (normY.coerceIn(0f, 1f) * (bmp.height - 1)).toInt()
+        val pixel = bmp.getPixel(px, py)
+
+        val r = android.graphics.Color.red(pixel) / 255.0f
+        val g = android.graphics.Color.green(pixel) / 255.0f
+        val b = android.graphics.Color.blue(pixel) / 255.0f
+
+        val hsl = com.cleanlr.engine.TatEngine.rgbToHsl(r, g, b)
+        val weights = com.cleanlr.engine.TatEngine.computeChannelWeights(hsl[0])
+        _activeTatWeights.value = weights
+        _activeTatTargetName.value = weights.dominantChannelName()
+    }
+
+    fun dragTat(deltaY: Float) {
+        val weights = _activeTatWeights.value ?: return
+        val updatedHsl = com.cleanlr.engine.TatEngine.applyTatDrag(
+            currentHsl = _recipe.value.hsl,
+            weights = weights,
+            delta = -deltaY * 0.4f,
+            mode = _tatMode.value
+        )
+        updateRecipe("TAT ${tatMode.value.label}") { it.copy(hsl = updatedHsl) }
     }
 
     fun exportImage() {

@@ -4,15 +4,27 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.cleanlr.engine.HistogramData
 import com.cleanlr.engine.HistogramExtractor
@@ -110,6 +122,10 @@ fun LoupeCanvas(
     altClippingMode: Int,
     isComparingOriginal: Boolean,
     onHistogramUpdated: (HistogramData) -> Unit,
+    isTatActive: Boolean = false,
+    tatTargetName: String? = null,
+    onTatSample: (normX: Float, normY: Float) -> Unit = { _, _ -> },
+    onTatDrag: (deltaY: Float) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var glView by remember { mutableStateOf<LoupeGLView?>(null) }
@@ -117,6 +133,9 @@ fun LoupeCanvas(
     // Zoom and pan state
     var scale by remember { mutableStateOf(1.0f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+
+    // TAT touch point
+    var tatTouchPos by remember { mutableStateOf<Offset?>(null) }
 
     // Update GLView when recipe or comparison changes
     LaunchedEffect(recipe, altClippingMode, isComparingOriginal) {
@@ -133,24 +152,53 @@ fun LoupeCanvas(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1.0f, 6.0f)
-                    offset = if (scale == 1.0f) Offset.Zero else offset + pan
-                }
-            }
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = {
-                        if (scale > 1.0f) {
-                            scale = 1.0f
-                            offset = Offset.Zero
-                        } else {
-                            scale = 2.5f
-                        }
+            .then(
+                if (isTatActive) {
+                    Modifier.pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { startOffset ->
+                                tatTouchPos = startOffset
+                                val w = size.width.toFloat()
+                                val h = size.height.toFloat()
+                                if (w > 0 && h > 0) {
+                                    onTatSample(startOffset.x / w, startOffset.y / h)
+                                }
+                            },
+                            onDragEnd = {
+                                tatTouchPos = null
+                            },
+                            onDragCancel = {
+                                tatTouchPos = null
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                tatTouchPos = change.position
+                                onTatDrag(dragAmount.y)
+                            }
+                        )
                     }
-                )
-            }
+                } else {
+                    Modifier
+                        .pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                scale = (scale * zoom).coerceIn(1.0f, 6.0f)
+                                offset = if (scale == 1.0f) Offset.Zero else offset + pan
+                            }
+                        }
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onDoubleTap = {
+                                    if (scale > 1.0f) {
+                                        scale = 1.0f
+                                        offset = Offset.Zero
+                                    } else {
+                                        scale = 2.5f
+                                    }
+                                }
+                            )
+                        }
+                }
+            )
     ) {
         AndroidView(
             factory = { ctx ->
@@ -168,5 +216,50 @@ fun LoupeCanvas(
                     translationY = offset.y
                 )
         )
+
+        // TAT Reticle & Target Channel HUD Overlay
+        if (isTatActive) {
+            // Top HUD showing targeted channel
+            Surface(
+                color = Color.Black.copy(alpha = 0.8f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (tatTargetName != null) "🎯 TAT: $tatTargetName (Drag ↑/↓)" else "🎯 TAT: Tap on photo to target color",
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            // Target Crosshair at touched position
+            tatTouchPos?.let { pos ->
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    drawCircle(
+                        color = Color.White,
+                        radius = 18.dp.toPx(),
+                        center = pos,
+                        style = Stroke(width = 2.dp.toPx())
+                    )
+                    drawCircle(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        radius = 20.dp.toPx(),
+                        center = pos,
+                        style = Stroke(width = 1.dp.toPx())
+                    )
+                    // Crosshairs
+                    val arm = 26.dp.toPx()
+                    drawLine(Color.White, Offset(pos.x - arm, pos.y), Offset(pos.x + arm, pos.y), strokeWidth = 1.5.dp.toPx())
+                    drawLine(Color.White, Offset(pos.x, pos.y - arm), Offset(pos.x, pos.y + arm), strokeWidth = 1.5.dp.toPx())
+                }
+            }
+        }
     }
 }

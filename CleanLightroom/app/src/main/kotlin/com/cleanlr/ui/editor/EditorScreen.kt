@@ -43,6 +43,9 @@ fun EditorScreen(
     val isComparingOriginal by viewModel.isComparingOriginal.collectAsState()
     val activeTab by viewModel.activeTab.collectAsState()
     val exportStatus by viewModel.exportStatus.collectAsState()
+    val isTatActive by viewModel.isTatActive.collectAsState()
+    val tatMode by viewModel.tatMode.collectAsState()
+    val activeTatTargetName by viewModel.activeTatTargetName.collectAsState()
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -87,6 +90,15 @@ fun EditorScreen(
                             imageVector = Icons.AutoMirrored.Filled.Redo,
                             contentDescription = "Redo",
                             tint = if (canRedo) SpectrumTextPrimary else SpectrumTextSecondary.copy(alpha = 0.4f)
+                        )
+                    }
+
+                    // Targeted Adjustment Tool (TAT)
+                    IconButton(onClick = { viewModel.toggleTat() }) {
+                        Icon(
+                            imageVector = Icons.Default.Adjust,
+                            contentDescription = "Targeted Adjustment Tool (TAT)",
+                            tint = if (isTatActive) SpectrumBlue else SpectrumTextPrimary
                         )
                     }
 
@@ -150,6 +162,10 @@ fun EditorScreen(
                     altClippingMode = altClippingMode,
                     isComparingOriginal = isComparingOriginal,
                     onHistogramUpdated = { viewModel.updateHistogram(it) },
+                    isTatActive = isTatActive,
+                    tatTargetName = activeTatTargetName,
+                    onTatSample = { x, y -> viewModel.sampleTatPixel(x, y) },
+                    onTatDrag = { dy -> viewModel.dragTat(dy) },
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -371,12 +387,69 @@ fun EditorScreen(
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "COLOR MIXER (8-CHANNEL)",
-                                color = SpectrumTextSecondary,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(horizontal = 12.dp)
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "COLOR MIXER (8-CHANNEL)",
+                                    color = SpectrumTextSecondary,
+                                    fontSize = 11.sp
+                                )
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    // TAT toggle chip
+                                    Surface(
+                                        color = if (isTatActive) SpectrumBlue else SpectrumElevated,
+                                        shape = RoundedCornerShape(4.dp),
+                                        modifier = Modifier
+                                            .clickable { viewModel.toggleTat() }
+                                            .padding(end = 6.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Adjust,
+                                                contentDescription = "TAT",
+                                                tint = if (isTatActive) Color.White else SpectrumTextSecondary,
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text(
+                                                text = "TAT",
+                                                color = if (isTatActive) Color.White else SpectrumTextSecondary,
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    }
+
+                                    // Mode selector pills
+                                    if (isTatActive) {
+                                        com.cleanlr.engine.TatTargetMode.values().forEach { mode ->
+                                            val isSelected = tatMode == mode
+                                            Surface(
+                                                color = if (isSelected) SpectrumBlue else Color.Transparent,
+                                                shape = RoundedCornerShape(3.dp),
+                                                modifier = Modifier
+                                                    .clickable { viewModel.setTatMode(mode) }
+                                                    .padding(horizontal = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = mode.label.take(3),
+                                                    color = if (isSelected) Color.White else SpectrumTextSecondary,
+                                                    fontSize = 10.sp,
+                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             HslMixerPanel(
                                 hsl = recipe.hsl,
                                 onHslChanged = { updated ->
