@@ -85,4 +85,95 @@ class Stage6ColorScienceTest {
         // Boost is (50 / 100) * (1.0 - 0.90) = 0.05 (+5%)
         assertEquals(5.0f, deltaPercent, 0.01f)
     }
+
+    /**
+     * Section 3.3 3-Way Color Grading Weight Functions:
+     * - Shadows Wheel: Y < 0.33
+     * - Midtones Wheel: 0.15 < Y < 0.85
+     * - Highlights Wheel: Y > 0.66
+     * - Blending Slider (0-100, default 50): controls overlap width between zones
+     * - Balance Slider (-100 to +100, default 0): shifts priority between Shadows and Highlights
+     */
+    private fun computeGradingWeights(
+        lum: Float,
+        balancePercent: Float = 0.0f,
+        blendingPercent: Float = 50.0f
+    ): FloatArray {
+        val balShift = (balancePercent / 100.0f).coerceIn(-1.0f, 1.0f) * 0.20f
+        val sThreshold = (0.33f - balShift).coerceIn(0.10f, 0.55f)
+        val hThreshold = (0.66f - balShift).coerceIn(0.45f, 0.90f)
+
+        val blendNorm = (blendingPercent / 100.0f).coerceIn(0.0f, 1.0f)
+        val blendWidth = 0.05f + blendNorm * 0.30f
+
+        fun smoothstep(edge0: Float, edge1: Float, x: Float): Float {
+            val t = ((x - edge0) / (edge1 - edge0)).coerceIn(0.0f, 1.0f)
+            return t * t * (3.0f - 2.0f * t)
+        }
+
+        val wShadow = 1.0f - smoothstep(sThreshold - blendWidth, sThreshold + blendWidth, lum)
+        val wHigh = smoothstep(hThreshold - blendWidth, hThreshold + blendWidth, lum)
+
+        val midStart = (0.15f - blendWidth * 0.5f).coerceIn(0.0f, sThreshold)
+        val midEnd = (0.85f + blendWidth * 0.5f).coerceIn(hThreshold, 1.0f)
+        val wMid = (smoothstep(midStart, sThreshold, lum) * (1.0f - smoothstep(hThreshold, midEnd, lum))).coerceIn(0.0f, 1.0f)
+
+        return floatArrayOf(wShadow, wMid, wHigh)
+    }
+
+    @Test
+    fun testColorGradingZonalRanges() {
+        // 1. Shadows zone (Y < 0.33)
+        val shadowSample = computeGradingWeights(0.10f)
+        assertTrue("Shadow weight should dominate in low luminance", shadowSample[0] > 0.85f)
+        assertEquals("Highlights weight must be 0 in deep shadows", 0.0f, shadowSample[2], 0.001f)
+
+        // 2. Midtones zone (0.15 < Y < 0.85)
+        val midSample = computeGradingWeights(0.50f)
+        assertTrue("Midtones weight should dominate in middle luminance", midSample[1] > 0.80f)
+        assertTrue("Shadows weight must be near zero at Y=0.50", midSample[0] < 0.15f)
+        assertTrue("Highlights weight must be near zero at Y=0.50", midSample[2] < 0.15f)
+
+        // 3. Highlights zone (Y > 0.66)
+        val highSample = computeGradingWeights(0.90f)
+        assertTrue("Highlights weight should dominate in high luminance", highSample[2] > 0.85f)
+        assertEquals("Shadows weight must be 0 in bright highlights", 0.0f, highSample[0], 0.001f)
+    }
+
+    @Test
+    fun testColorGradingBalancePriorityShift() {
+        // At Y = 0.55 (just below standard highlight threshold 0.66):
+        // Standard Balance = 0: Highlights weight is very low (~0.05)
+        val defaultBalance = computeGradingWeights(0.55f, balancePercent = 0.0f)
+
+        // Positive Balance (+80): Shifts priority toward Highlights, pulling threshold down
+        val highPriorityBalance = computeGradingWeights(0.55f, balancePercent = 80.0f)
+        assertTrue(
+            "Positive balance must significantly increase highlights weight at Y=0.55",
+            highPriorityBalance[2] > defaultBalance[2] * 2.0f
+        )
+
+        // Negative Balance (-80): Shifts priority toward Shadows, pulling shadow reach up at Y=0.40
+        val defaultShadow = computeGradingWeights(0.40f, balancePercent = 0.0f)
+        val shadowPriorityBalance = computeGradingWeights(0.40f, balancePercent = -80.0f)
+        assertTrue(
+            "Negative balance must significantly increase shadow weight at Y=0.40",
+            shadowPriorityBalance[0] > defaultShadow[0] * 1.5f
+        )
+    }
+
+    @Test
+    fun testColorGradingBlendingWidthControl() {
+        // At boundary Y = 0.38 (between shadows and midtones):
+        // 1. Tight Blending (0%): Sharp zone boundary, minimal shadow bleed
+        val tightBlend = computeGradingWeights(0.38f, blendingPercent = 0.0f)
+
+        // 2. Wide Blending (100%): Wide overlap, broad color tint bleed
+        val wideBlend = computeGradingWeights(0.38f, blendingPercent = 100.0f)
+
+        assertTrue(
+            "Wide blending must allow higher cross-zone overlap than tight blending",
+            wideBlend[0] > tightBlend[0]
+        )
+    }
 }

@@ -171,23 +171,41 @@ void main() {
     // Convert back from HSL to RGB
     col = hslToRgb(vec3(h, s, l));
 
-    // 4. Color Grading (3-Way Wheels: Shadows, Midtones, Highlights)
-    // Tonal thresholds modulated by Balance slider
-    float bal = uGradeBalance * 0.2;
-    float sThreshold = clamp(0.33 + bal, 0.1, 0.5);
-    float hThreshold = clamp(0.66 + bal, 0.5, 0.9);
+    // 4. Color Grading (Section 3.3: 3-Way Wheels: Shadows, Midtones, Highlights)
+    // - Shadows Wheel: Y < 0.33
+    // - Midtones Wheel: 0.15 < Y < 0.85
+    // - Highlights Wheel: Y > 0.66
+    // - Blending Slider (0-100, default 50): controls overlap width between the three zones
+    // - Balance Slider (-100 to +100, default 0): shifts priority (positive tilts to Highlights, negative to Shadows)
 
-    float wShadow = 1.0 - smoothstep(0.02, sThreshold, lum);
-    float wHigh = smoothstep(hThreshold, 0.98, lum);
-    float wMid = clamp(1.0 - wShadow - wHigh, 0.0, 1.0);
+    float balShift = uGradeBalance * 0.20; // [-1.0..1.0] -> [-0.20..+0.20]
+    float sThreshold = clamp(0.33 - balShift, 0.10, 0.55);
+    float hThreshold = clamp(0.66 - balShift, 0.45, 0.90);
+
+    // Blending controls the transition half-width (0.05 tight -> 0.35 wide bleed)
+    float blendWidth = 0.05 + clamp(uGradeBlending, 0.0, 1.0) * 0.30;
+
+    // Shadows weight: Y < 0.33
+    float wShadow = 1.0 - smoothstep(sThreshold - blendWidth, sThreshold + blendWidth, lum);
+
+    // Highlights weight: Y > 0.66
+    float wHigh = smoothstep(hThreshold - blendWidth, hThreshold + blendWidth, lum);
+
+    // Midtones weight: 0.15 < Y < 0.85
+    float midStart = clamp(0.15 - blendWidth * 0.5, 0.0, sThreshold);
+    float midEnd = clamp(0.85 + blendWidth * 0.5, hThreshold, 1.0);
+    float wMid = smoothstep(midStart, sThreshold, lum) * (1.0 - smoothstep(hThreshold, midEnd, lum));
 
     // Apply color grading tints
     vec3 tintShadow = wheelToRgb(uGradeShadows.x, uGradeShadows.y) * wShadow;
     vec3 tintMid    = wheelToRgb(uGradeMidtones.x, uGradeMidtones.y) * wMid;
     vec3 tintHigh   = wheelToRgb(uGradeHighlights.x, uGradeHighlights.y) * wHigh;
 
-    vec3 gradeTint = (tintShadow + tintMid + tintHigh) * (1.0 + uGradeBlending * 0.5);
-    col = max(col + gradeTint, vec3(0.0));
+    // Apply luminance offsets from the 3 wheels
+    float lumOffset = (uGradeShadows.z * wShadow + uGradeMidtones.z * wMid + uGradeHighlights.z * wHigh) * 0.25;
+
+    vec3 gradeTint = tintShadow + tintMid + tintHigh;
+    col = max(col + gradeTint + vec3(lumOffset), vec3(0.0));
 
     fragColor = vec4(col, src.a);
 }

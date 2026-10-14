@@ -142,12 +142,27 @@ class Stage6ColorScience(private val context: Context) {
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, inputTexture)
         GLES30.glUniform1i(locImageTexture, 0)
 
-        // Color Grading Wheels
-        GLES30.glUniform3f(locGradeShadows, grading.shadows.hue, grading.shadows.saturation, grading.shadows.luminance)
-        GLES30.glUniform3f(locGradeMidtones, grading.midtones.hue, grading.midtones.saturation, grading.midtones.luminance)
-        GLES30.glUniform3f(locGradeHighlights, grading.highlights.hue, grading.highlights.saturation, grading.highlights.luminance)
-        GLES30.glUniform1f(locGradeBlending, grading.blending / 100.0f)
-        GLES30.glUniform1f(locGradeBalance, grading.balance / 100.0f)
+        // Color Grading Wheels (Normalized: hue [0..1], sat [0..1], lum [-1..1], blend [0..1], balance [-1..1])
+        GLES30.glUniform3f(
+            locGradeShadows,
+            (grading.shadows.hue / 360.0f) % 1.0f,
+            grading.shadows.saturation / 100.0f,
+            grading.shadows.luminance / 100.0f
+        )
+        GLES30.glUniform3f(
+            locGradeMidtones,
+            (grading.midtones.hue / 360.0f) % 1.0f,
+            grading.midtones.saturation / 100.0f,
+            grading.midtones.luminance / 100.0f
+        )
+        GLES30.glUniform3f(
+            locGradeHighlights,
+            (grading.highlights.hue / 360.0f) % 1.0f,
+            grading.highlights.saturation / 100.0f,
+            grading.highlights.luminance / 100.0f
+        )
+        GLES30.glUniform1f(locGradeBlending, (grading.blending / 100.0f).coerceIn(0f, 1f))
+        GLES30.glUniform1f(locGradeBalance, (grading.balance / 100.0f).coerceIn(-1f, 1f))
 
         // 8 HSL Channels
         setChannelUniform(locHslRed, hsl.red)
