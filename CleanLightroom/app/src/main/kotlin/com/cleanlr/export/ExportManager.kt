@@ -25,11 +25,13 @@ object ExportManager {
         config: ExportConfig = ExportConfig()
     ): OneTimeWorkRequest {
         val recipeJson = Json.encodeToString(recipe)
+        val configJson = Json.encodeToString(config)
         return OneTimeWorkRequestBuilder<ExportImageWorker>()
             .setInputData(
                 workDataOf(
                     ExportImageWorker.KEY_IMAGE_URI to sourceImageUriString,
                     ExportImageWorker.KEY_RECIPE_JSON to recipeJson,
+                    ExportImageWorker.KEY_CONFIG_JSON to configJson,
                     ExportImageWorker.KEY_QUALITY to config.quality
                 )
             )

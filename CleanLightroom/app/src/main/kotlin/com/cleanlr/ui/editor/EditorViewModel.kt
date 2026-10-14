@@ -401,7 +401,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         updateRecipe("TAT ${tatMode.value.label}") { it.copy(hsl = updatedHsl) }
     }
 
-    fun exportImage() {
+    fun exportImage(config: com.cleanlr.export.ExportConfig = com.cleanlr.export.ExportConfig()) {
         val bmp = _bitmap.value ?: return
         val current = _recipe.value
         _exportStatus.value = "Exporting..."
@@ -409,17 +409,15 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         viewModelScope.launch(Dispatchers.Default) {
             try {
                 val context = getApplication<Application>()
-                val recipeJson = Json.encodeToString(current)
-
                 val uri = _sourceUri.value
                 if (uri != null) {
-                    com.cleanlr.export.ExportManager.enqueueSingle(context, uri, current)
+                    com.cleanlr.export.ExportManager.enqueueSingle(context, uri, current, config)
                     _exportStatus.value = "Export task scheduled (expedited)"
                 } else {
                     // Export directly via Headless Renderer
                     val renderer = com.cleanlr.export.HeadlessGlRenderer(context)
                     val rendered = renderer.renderFullResolution(bmp, current)
-                    saveSampleToMediaStore(rendered)
+                    saveSampleToMediaStore(rendered, config)
                     _exportStatus.value = "Exported to Pictures/CleanLightroom"
                 }
             } catch (e: Exception) {
@@ -429,12 +427,37 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         }
     }
 
-    private fun saveSampleToMediaStore(bitmap: Bitmap) {
+    private fun saveSampleToMediaStore(
+        bitmap: Bitmap,
+        config: com.cleanlr.export.ExportConfig = com.cleanlr.export.ExportConfig()
+    ) {
         val context = getApplication<Application>()
-        val filename = "CleanLR_Export_${System.currentTimeMillis()}.jpg"
+        val extension = when (config.format) {
+            com.cleanlr.export.ExportFormat.JPEG -> "jpg"
+            com.cleanlr.export.ExportFormat.PNG -> "png"
+            com.cleanlr.export.ExportFormat.WEBP -> "webp"
+        }
+        val mimeType = when (config.format) {
+            com.cleanlr.export.ExportFormat.JPEG -> "image/jpeg"
+            com.cleanlr.export.ExportFormat.PNG -> "image/png"
+            com.cleanlr.export.ExportFormat.WEBP -> "image/webp"
+        }
+        val compressFormat = when (config.format) {
+            com.cleanlr.export.ExportFormat.JPEG -> Bitmap.CompressFormat.JPEG
+            com.cleanlr.export.ExportFormat.PNG -> Bitmap.CompressFormat.PNG
+            com.cleanlr.export.ExportFormat.WEBP -> {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                    Bitmap.CompressFormat.WEBP_LOSSY
+                } else {
+                    @Suppress("DEPRECATION")
+                    Bitmap.CompressFormat.WEBP
+                }
+            }
+        }
+        val filename = "CleanLR_Export_${System.currentTimeMillis()}.$extension"
         val values = android.content.ContentValues().apply {
             put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, filename)
-            put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(android.provider.MediaStore.Images.Media.MIME_TYPE, mimeType)
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                 put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/CleanLightroom")
             }
@@ -443,7 +466,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
         if (uri != null) {
             resolver.openOutputStream(uri)?.use {
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it)
+                bitmap.compress(compressFormat, config.quality, it)
             }
         }
     }

@@ -54,6 +54,8 @@ fun EditorScreen(
     val brushSize by viewModel.brushSize.collectAsState()
     val brushFeather by viewModel.brushFeather.collectAsState()
 
+    var showExportConfigSheet by remember { mutableStateOf(false) }
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -170,7 +172,7 @@ fun EditorScreen(
                     }
 
                     // Export
-                    IconButton(onClick = { viewModel.exportImage() }) {
+                    IconButton(onClick = { showExportConfigSheet = true }) {
                         Icon(
                             imageVector = Icons.Default.FileDownload,
                             contentDescription = "Export Image",
@@ -610,6 +612,15 @@ fun EditorScreen(
                     }
                 }
             }
+        }
+
+        if (showExportConfigSheet) {
+            com.cleanlr.ui.export.ExportConfigBottomSheet(
+                onDismiss = { showExportConfigSheet = false },
+                onExportConfirmed = { config ->
+                    viewModel.exportImage(config)
+                }
+            )
         }
     }
 }
