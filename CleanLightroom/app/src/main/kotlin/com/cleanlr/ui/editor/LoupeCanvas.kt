@@ -130,6 +130,9 @@ fun LoupeCanvas(
     tatTargetName: String? = null,
     onTatSample: (normX: Float, normY: Float) -> Unit = { _, _ -> },
     onTatDrag: (deltaY: Float) -> Unit = {},
+    activeTool: ActiveTool? = null,
+    brushSize: Float = 50.0f,
+    brushFeather: Float = 50.0f,
     modifier: Modifier = Modifier
 ) {
     var glView by remember { mutableStateOf<LoupeGLView?>(null) }
@@ -140,6 +143,9 @@ fun LoupeCanvas(
 
     // TAT touch point
     var tatTouchPos by remember { mutableStateOf<Offset?>(null) }
+
+    // Brush cursor touch point
+    var brushTouchPos by remember { mutableStateOf<Offset?>(null) }
 
     // Update GLView when recipe or comparison changes
     LaunchedEffect(recipe, altClippingMode, isComparingOriginal) {
@@ -157,7 +163,21 @@ fun LoupeCanvas(
         modifier = modifier
             .fillMaxSize()
             .then(
-                if (isTatActive) {
+                if (activeTool == ActiveTool.BRUSH) {
+                    Modifier.pointerInput(activeTool) {
+                        detectDragGestures(
+                            onDragStart = { startOffset ->
+                                brushTouchPos = startOffset
+                            },
+                            onDrag = { change, _ ->
+                                change.consume()
+                                brushTouchPos = change.position
+                            },
+                            onDragEnd = { },
+                            onDragCancel = { }
+                        )
+                    }
+                } else if (isTatActive) {
                     Modifier.pointerInput(Unit) {
                         detectDragGestures(
                             onDragStart = { startOffset ->
@@ -275,6 +295,35 @@ fun LoupeCanvas(
                     drawLine(Color.White, Offset(pos.x, pos.y - arm), Offset(pos.x, pos.y + arm), strokeWidth = 1.5.dp.toPx())
                 }
             }
+        }
+
+        // Dual-Ring Brush Cursor Overlay (PDF Page 7)
+        if (activeTool == ActiveTool.BRUSH) {
+            Surface(
+                color = Color.Black.copy(alpha = 0.85f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "🖌️ Brush: Radius ${brushSize.toInt()}dp | Feather ${brushFeather.toInt()}% ([ ] size, Shift+[ ] feather)",
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            DualRingBrushCursor(
+                center = brushTouchPos,
+                brushRadiusDp = brushSize,
+                featherPercent = brushFeather,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }

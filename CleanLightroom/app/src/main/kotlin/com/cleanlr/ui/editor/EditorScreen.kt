@@ -46,6 +46,9 @@ fun EditorScreen(
     val isTatActive by viewModel.isTatActive.collectAsState()
     val tatMode by viewModel.tatMode.collectAsState()
     val activeTatTargetName by viewModel.activeTatTargetName.collectAsState()
+    val activeTool by viewModel.activeTool.collectAsState()
+    val brushSize by viewModel.brushSize.collectAsState()
+    val brushFeather by viewModel.brushFeather.collectAsState()
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -199,6 +202,9 @@ fun EditorScreen(
                     tatTargetName = activeTatTargetName,
                     onTatSample = { x, y -> viewModel.sampleTatPixel(x, y) },
                     onTatDrag = { dy -> viewModel.dragTat(dy) },
+                    activeTool = activeTool,
+                    brushSize = brushSize,
+                    brushFeather = brushFeather,
                     modifier = Modifier.fillMaxSize()
                 )
 
