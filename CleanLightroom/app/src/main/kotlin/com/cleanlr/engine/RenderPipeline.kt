@@ -65,6 +65,9 @@ class RenderPipeline(private val context: Context) {
     private val stage8Details = Stage8Details(context)
     private val stage9ColorManagement = Stage9ColorManagement(context)
 
+    // GPU 256-Bin Histogram Pass (reductionsum.fsh / moments.fsh)
+    val gpuHistogramPass = GpuHistogramPass(context)
+
     // Legacy Fallback Program (pipeline.frag)
     private var legacyProgramId = 0
     private var locLegacyImageTexture = -1
@@ -121,11 +124,22 @@ class RenderPipeline(private val context: Context) {
         stage8Details.initGL()
         stage9ColorManagement.initGL()
 
-        // 2. Initialize fallback monolithic program (pipeline.frag)
+        // 2. Initialize GPU Histogram Pass (reductionsum.fsh)
+        gpuHistogramPass.initGL()
+
+        // 3. Initialize fallback monolithic program (pipeline.frag)
         initLegacyFallback()
 
         isInitialized = true
         Log.i(TAG, "RenderPipeline 9-Stage Orchestrator initialized successfully")
+    }
+
+    /**
+     * Extracts 256-bin histogram directly from the active GPU pipeline buffer in ~1ms.
+     */
+    fun extractHistogram(): HistogramData {
+        val finalTex = pingPong.currentRead?.textureId ?: imageTextureId
+        return gpuHistogramPass.compute(finalTex, vaoId)
     }
 
     private fun setupQuadGeometry() {
@@ -538,6 +552,7 @@ class RenderPipeline(private val context: Context) {
             GLES30.glDeleteProgram(legacyProgramId)
             legacyProgramId = 0
         }
+        gpuHistogramPass.release()
         isInitialized = false
     }
 

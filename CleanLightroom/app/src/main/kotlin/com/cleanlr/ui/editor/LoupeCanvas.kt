@@ -33,12 +33,12 @@ class LoupeGLView(context: Context) : GLSurfaceView(context) {
     }
 
     fun setBitmap(bitmap: Bitmap, onHistogramExtracted: (HistogramData) -> Unit) {
+        renderer.onHistogramUpdated = { histo ->
+            post { onHistogramExtracted(histo) }
+        }
         queueEvent {
             renderer.loadBitmap(bitmap)
             requestRender()
-            // Extract histogram on background thread
-            val histo = HistogramExtractor.extract(bitmap)
-            post { onHistogramExtracted(histo) }
         }
     }
 
@@ -57,6 +57,8 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var currentRecipe = EditRecipe()
     private var altClippingMode = 0
     private var showOriginal = false
+
+    var onHistogramUpdated: ((HistogramData) -> Unit)? = null
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         pipeline = RenderPipeline(context).apply {
@@ -79,6 +81,11 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
         val lutData = SplineInterpolator.generateLut256(currentRecipe.curves)
         pipeline?.updateToneCurve(lutData)
         pipeline?.render(currentRecipe, altClippingMode, showOriginal)
+
+        // Live GPU 256-bin histogram extraction (~1ms)
+        pipeline?.extractHistogram()?.let { histo ->
+            onHistogramUpdated?.invoke(histo)
+        }
     }
 
     fun loadBitmap(bitmap: Bitmap) {
