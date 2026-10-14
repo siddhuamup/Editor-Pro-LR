@@ -2,6 +2,7 @@ package com.cleanlr.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
@@ -20,13 +21,38 @@ import com.cleanlr.engine.HistogramData
 import com.cleanlr.ui.theme.*
 import kotlin.math.max
 
-enum class HistogramZone(val label: String) {
-    BLACKS("Blacks"),
-    SHADOWS("Shadows"),
-    EXPOSURE("Exposure"),
-    HIGHLIGHTS("Highlights"),
-    WHITES("Whites"),
-    NONE("")
+/**
+ * Section 3.1: Interactive Histogram 5 Zones
+ * - Blacks: Bins 0 - 25
+ * - Shadows: Bins 26 - 75
+ * - Exposure: Bins 76 - 180
+ * - Highlights: Bins 181 - 230
+ * - Whites: Bins 231 - 255
+ */
+enum class HistogramZone(val label: String, val startBin: Int, val endBin: Int) {
+    BLACKS("Blacks", 0, 25),
+    SHADOWS("Shadows", 26, 75),
+    EXPOSURE("Exposure", 76, 180),
+    HIGHLIGHTS("Highlights", 181, 230),
+    WHITES("Whites", 231, 255),
+    NONE("", -1, -1);
+
+    companion object {
+        fun fromRatio(ratio: Float): HistogramZone {
+            val bin = (ratio.coerceIn(0f, 1f) * 255f).toInt()
+            return fromBin(bin)
+        }
+
+        fun fromBin(bin: Int): HistogramZone {
+            return when (bin.coerceIn(0, 255)) {
+                in 0..25 -> BLACKS
+                in 26..75 -> SHADOWS
+                in 76..180 -> EXPOSURE
+                in 181..230 -> HIGHLIGHTS
+                else -> WHITES
+            }
+        }
+    }
 }
 
 @Composable
@@ -54,19 +80,13 @@ fun InteractiveHistogram(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)
+                .height(68.dp)
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { offset ->
                             val width = size.width.toFloat()
                             val ratio = (offset.x / width).coerceIn(0f, 1f)
-                            activeZone = when {
-                                ratio < 0.15f -> HistogramZone.BLACKS
-                                ratio < 0.40f -> HistogramZone.SHADOWS
-                                ratio < 0.60f -> HistogramZone.EXPOSURE
-                                ratio < 0.85f -> HistogramZone.HIGHLIGHTS
-                                else -> HistogramZone.WHITES
-                            }
+                            activeZone = HistogramZone.fromRatio(ratio)
                         },
                         onDragEnd = {
                             activeZone = HistogramZone.NONE
@@ -78,11 +98,11 @@ fun InteractiveHistogram(
                             change.consume()
                             val dx = dragAmount.x
                             when (activeZone) {
-                                HistogramZone.BLACKS -> onAdjustBlacks(dx * 0.4f)
-                                HistogramZone.SHADOWS -> onAdjustShadows(dx * 0.4f)
+                                HistogramZone.BLACKS -> onAdjustBlacks(dx * 0.35f)
+                                HistogramZone.SHADOWS -> onAdjustShadows(dx * 0.35f)
                                 HistogramZone.EXPOSURE -> onAdjustExposure(dx * 0.015f)
-                                HistogramZone.HIGHLIGHTS -> onAdjustHighlights(dx * 0.4f)
-                                HistogramZone.WHITES -> onAdjustWhites(dx * 0.4f)
+                                HistogramZone.HIGHLIGHTS -> onAdjustHighlights(dx * 0.35f)
+                                HistogramZone.WHITES -> onAdjustWhites(dx * 0.35f)
                                 HistogramZone.NONE -> {}
                             }
                         }
@@ -93,18 +113,20 @@ fun InteractiveHistogram(
                 val w = size.width
                 val h = size.height
 
-                // Draw zone dividing guides
-                val x1 = w * 0.15f
-                val x2 = w * 0.40f
-                val x3 = w * 0.60f
-                val x4 = w * 0.85f
+                // Exact normative 5-zone boundaries (Bins 0..25, 26..75, 76..180, 181..230, 231..255)
+                val x1 = w * (26f / 256f)   // Blacks / Shadows boundary
+                val x2 = w * (76f / 256f)   // Shadows / Exposure boundary
+                val x3 = w * (181f / 256f)  // Exposure / Highlights boundary
+                val x4 = w * (231f / 256f)  // Highlights / Whites boundary
 
-                drawLine(SpectrumBorder, Offset(x1, 0f), Offset(x1, h), strokeWidth = 1f)
-                drawLine(SpectrumBorder, Offset(x2, 0f), Offset(x2, h), strokeWidth = 1f)
-                drawLine(SpectrumBorder, Offset(x3, 0f), Offset(x3, h), strokeWidth = 1f)
-                drawLine(SpectrumBorder, Offset(x4, 0f), Offset(x4, h), strokeWidth = 1f)
+                // Subtle vertical guide dividers
+                val guideColor = SpectrumBorder.copy(alpha = 0.6f)
+                drawLine(guideColor, Offset(x1, 0f), Offset(x1, h), strokeWidth = 1f)
+                drawLine(guideColor, Offset(x2, 0f), Offset(x2, h), strokeWidth = 1f)
+                drawLine(guideColor, Offset(x3, 0f), Offset(x3, h), strokeWidth = 1f)
+                drawLine(guideColor, Offset(x4, 0f), Offset(x4, h), strokeWidth = 1f)
 
-                // Draw active zone highlight
+                // Active zone highlight overlay (light gray/blue translucent band)
                 val (highlightLeft, highlightWidth) = when (activeZone) {
                     HistogramZone.BLACKS -> Pair(0f, x1)
                     HistogramZone.SHADOWS -> Pair(x1, x2 - x1)
@@ -115,7 +137,7 @@ fun InteractiveHistogram(
                 }
                 if (highlightWidth > 0f) {
                     drawRect(
-                        color = SpectrumBlue.copy(alpha = 0.15f),
+                        color = Color.White.copy(alpha = 0.08f),
                         topLeft = Offset(highlightLeft, 0f),
                         size = Size(highlightWidth, h)
                     )
@@ -129,7 +151,7 @@ fun InteractiveHistogram(
                     path.moveTo(0f, h)
                     for (i in 0..255) {
                         val px = (i / 255f) * w
-                        val py = h - ((bins[i] / maxC) * (h * 0.95f))
+                        val py = h - ((bins[i] / maxC) * (h * 0.92f))
                         if (i == 0) path.moveTo(px, py) else path.lineTo(px, py)
                     }
                     return path
@@ -140,11 +162,11 @@ fun InteractiveHistogram(
                 val pathB = buildCurvePath(histogramData.blueBins)
                 val pathL = buildCurvePath(histogramData.lumaBins)
 
-                // Draw stroke paths
-                drawPath(pathR, HistogramRed.copy(alpha = 0.8f), style = Stroke(width = 1.5f))
-                drawPath(pathG, HistogramGreen.copy(alpha = 0.8f), style = Stroke(width = 1.5f))
-                drawPath(pathB, HistogramBlue.copy(alpha = 0.8f), style = Stroke(width = 1.5f))
-                drawPath(pathL, HistogramLuma.copy(alpha = 0.5f), style = Stroke(width = 1.0f))
+                // Draw waveform stroke paths
+                drawPath(pathR, HistogramRed.copy(alpha = 0.85f), style = Stroke(width = 1.5f))
+                drawPath(pathG, HistogramGreen.copy(alpha = 0.85f), style = Stroke(width = 1.5f))
+                drawPath(pathB, HistogramBlue.copy(alpha = 0.85f), style = Stroke(width = 1.5f))
+                drawPath(pathL, HistogramLuma.copy(alpha = 0.60f), style = Stroke(width = 1.0f))
 
                 // Left Shadow clipping triangle
                 val shadowCrushed = histogramData.lumaBins[0] > 0 || isShadowClippingActive
@@ -163,7 +185,21 @@ fun InteractiveHistogram(
                 )
             }
 
-            // Overlay label when user drags a zone
+            // Clickable clipping indicator regions (top-left and top-right)
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .align(Alignment.TopStart)
+                    .clickable { onToggleShadowClipping() }
+            )
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .align(Alignment.TopEnd)
+                    .clickable { onToggleHighlightClipping() }
+            )
+
+            // Dynamic hover/drag feedback overlay showing the active slider zone
             if (activeZone != HistogramZone.NONE) {
                 Text(
                     text = activeZone.label,
@@ -171,8 +207,8 @@ fun InteractiveHistogram(
                     fontSize = 11.sp,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .background(Color.Black.copy(alpha = 0.6f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .background(Color.Black.copy(alpha = 0.75f))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
         }
