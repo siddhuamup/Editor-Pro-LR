@@ -216,7 +216,7 @@ void main() {
     col = hslToRgb(hsl);
 
     // 7. 3-Way Color Grading
-    float lumaGrad = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    float lumaGrad = dot(col, vec3(0.25, 0.50, 0.25));
     float shadowWeight = 1.0 - smoothstep(0.0, 0.35 + uGradeBalance * 0.15, lumaGrad);
     float highWeight   = smoothstep(0.65 - uGradeBalance * 0.15, 1.0, lumaGrad);
     float midWeight    = 1.0 - shadowWeight - highWeight;
