@@ -48,17 +48,17 @@ uniform vec3 uHslMagenta;
 uniform int uAltClippingMode;  // 0 = Normal, 1 = Alt+Whites, 2 = Alt+Blacks, 3 = Mask
 uniform bool uEnableCurve;
 
-// --- Constants & Matrices ---
+// --- Constants & Matrices (Unified Full Precision Adobe Melissa RGB) ---
 const mat3 M_srgb2melissa = mat3(
-    0.52932379, 0.09842654, 0.01684577,
-    0.33005506, 0.87350873, 0.11769549,
-    0.14064019, 0.02811156, 0.86547399
+    0.52932378745827813, 0.098426540365603984, 0.016845769297481432, // Col 0
+    0.33005506400369466, 0.87350873408018318,  0.11769549320295874,  // Col 1
+    0.14064019169871309, 0.028111562208033621, 0.86547399478709403   // Col 2
 );
 
 const mat3 M_melissa2srgb = mat3(
-     2.03468, -0.22883, -0.00857,
-    -0.72588,  1.23307, -0.16958,
-    -0.30880, -0.00424,  1.17815
+     2.03420482, -0.22895313, -0.00846069, // Col 0
+    -0.72726743,  1.23175691, -0.15334315, // Col 1
+    -0.30693739, -0.00280378,  1.16180384  // Col 2
 );
 
 // Convert non-linear sRGB input to Linear

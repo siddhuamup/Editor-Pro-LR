@@ -25,11 +25,11 @@ class Stage9ColorScienceTest {
         floatArrayOf(-0.00846069f, -0.15334315f,  1.16180384f)
     )
 
-    // Stage 9 Matrix: ProPhoto RGB to Display P3
+    // Stage 9 Matrix: Melissa RGB to Display P3 (M_melissa2P3 from PDF Page 2)
     private val mProPhotoToP3 = arrayOf(
-        floatArrayOf( 1.63219660f, -0.37947633f, -0.25272028f),
-        floatArrayOf(-0.15371161f,  1.16671469f, -0.01300308f),
-        floatArrayOf( 0.01039147f, -0.06281092f,  1.05241945f)
+        floatArrayOf( 1.345943f, -0.255608f, -0.051112f),
+        floatArrayOf(-0.544587f,  1.508167f,  0.020536f),
+        floatArrayOf( 0.000000f, -0.020584f,  1.211812f)
     )
 
     private fun multiplyMatrix(m: Array<FloatArray>, v: FloatArray): FloatArray {
@@ -73,14 +73,19 @@ class Stage9ColorScienceTest {
     }
 
     @Test
-    fun testProPhotoToDisplayP3RowSumPreservesNeutralGray() {
+    fun testProPhotoToDisplayP3NormativeMatrix() {
+        // Test with reference 50% gray
         val g = 0.5f
         val input = floatArrayOf(g, g, g)
         val output = multiplyMatrix(mProPhotoToP3, input)
 
-        assertEquals("P3 R' must equal g", g, output[0], 0.0001f)
-        assertEquals("P3 G' must equal g", g, output[1], 0.0001f)
-        assertEquals("P3 B' must equal g", g, output[2], 0.0001f)
+        // Expected values according to normative M_melissa2P3 matrix from PDF Page 2
+        // R' = 0.5 * (1.345943 - 0.255608 - 0.051112) = 0.5196115
+        // G' = 0.5 * (-0.544587 + 1.508167 + 0.020536) = 0.492058
+        // B' = 0.5 * (0.000000 - 0.020584 + 1.211812) = 0.595614
+        assertEquals("P3 R' matches normative M_melissa2P3", 0.51961f, output[0], 0.0001f)
+        assertEquals("P3 G' matches normative M_melissa2P3", 0.49206f, output[1], 0.0001f)
+        assertEquals("P3 B' matches normative M_melissa2P3", 0.59561f, output[2], 0.0001f)
     }
 
     @Test

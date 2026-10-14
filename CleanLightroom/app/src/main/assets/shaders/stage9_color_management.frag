@@ -17,11 +17,14 @@ const mat3 M_proPhoto2sRGB = mat3(
     vec3(-0.30693739, -0.00280378,  1.16180384)  // Col 2
 );
 
-// Matrix: ProPhoto RGB Linear to Display P3 Linear (row sum = 1.0, preserving neutral gray)
+// Matrix: Melissa RGB (ProPhoto linear) to Display P3 Linear (M_melissa2P3, PDF Page 2)
+// [R G B]_P3_linear = [ 1.345943 -0.255608 -0.051112 ]
+//                     [-0.544587  1.508167  0.020536 ]
+//                     [ 0.000000 -0.020584  1.211812 ] * [R G B]_Melissa
 const mat3 M_proPhoto2DisplayP3 = mat3(
-    vec3( 1.63219660, -0.15371161,  0.01039147), // Col 0
-    vec3(-0.37947633,  1.16671469, -0.06281092), // Col 1
-    vec3(-0.25272028, -0.01300308,  1.05241945)  // Col 2
+    vec3( 1.345943, -0.544587,  0.000000), // Col 0
+    vec3(-0.255608,  1.508167, -0.020584), // Col 1
+    vec3(-0.051112,  0.020536,  1.211812)  // Col 2
 );
 
 // Electro-Optical Transfer Function (lin2srgb.fsh)

@@ -8,6 +8,28 @@ import kotlin.math.sign
 
 object ColorScience {
 
+    // Unified Full-Precision Melissa RGB Matrices (dng_space_ProPhoto_Linear / libLrAndroid.so)
+    // 1. Linear sRGB -> Melissa RGB (Row-major for Kotlin, Column-major in GLSL)
+    val M_SRGB_TO_MELISSA = doubleArrayOf(
+        0.52932378745827813, 0.33005506400369466, 0.14064019169871309, // Row 0
+        0.098426540365603984, 0.87350873408018318, 0.028111562208033621, // Row 1
+        0.016845769297481432, 0.11769549320295874, 0.86547399478709403  // Row 2
+    )
+
+    // 2. Melissa RGB -> Linear sRGB (Inverse matrix)
+    val M_MELISSA_TO_SRGB = doubleArrayOf(
+         2.03420482, -0.72726743, -0.30693739, // Row 0
+        -0.22895313,  1.23175691, -0.00280378, // Row 1
+        -0.00846069, -0.15334315,  1.16180384  // Row 2
+    )
+
+    // 3. Melissa RGB -> Display P3 (D65) (M_melissa2P3, PDF Page 2)
+    val M_MELISSA_TO_P3 = doubleArrayOf(
+         1.345943, -0.255608, -0.051112, // Row 0
+        -0.544587,  1.508167,  0.020536, // Row 1
+         0.000000, -0.020584,  1.211812  // Row 2
+    )
+
     /**
      * Calculates White Balance RGB gains for shader based on Kelvin temperature & Tint.
      * Normalized relative to reference daylight ~5500K.
