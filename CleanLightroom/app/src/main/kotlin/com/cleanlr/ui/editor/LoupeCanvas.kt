@@ -121,6 +121,10 @@ fun LoupeCanvas(
     recipe: EditRecipe,
     altClippingMode: Int,
     isComparingOriginal: Boolean,
+    onComparingOriginalChanged: (Boolean) -> Unit = {},
+    onDoubleTapZoom: () -> Unit = {},
+    onUndo: () -> Unit = {},
+    onRedo: () -> Unit = {},
     onHistogramUpdated: (HistogramData) -> Unit,
     isTatActive: Boolean = false,
     tatTargetName: String? = null,
@@ -178,25 +182,36 @@ fun LoupeCanvas(
                         )
                     }
                 } else {
-                    Modifier
-                        .pointerInput(Unit) {
-                            detectTransformGestures { _, pan, zoom, _ ->
+                    Modifier.pointerInput(Unit) {
+                        detectCanvasTouchGestures(
+                            onLongPressChange = { active ->
+                                onComparingOriginalChanged(active)
+                            },
+                            onDoubleTap = { tapPos ->
+                                onDoubleTapZoom()
+                                if (scale > 1.0f) {
+                                    scale = 1.0f
+                                    offset = Offset.Zero
+                                } else {
+                                    val targetScale = 2.5f
+                                    val centerX = size.width / 2f
+                                    val centerY = size.height / 2f
+                                    offset = Offset((centerX - tapPos.x) * (targetScale - 1f), (centerY - tapPos.y) * (targetScale - 1f))
+                                    scale = targetScale
+                                }
+                            },
+                            onTwoFingerTap = {
+                                onUndo()
+                            },
+                            onThreeFingerTap = {
+                                onRedo()
+                            },
+                            onTransform = { _, pan, zoom ->
                                 scale = (scale * zoom).coerceIn(1.0f, 6.0f)
                                 offset = if (scale == 1.0f) Offset.Zero else offset + pan
                             }
-                        }
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onDoubleTap = {
-                                    if (scale > 1.0f) {
-                                        scale = 1.0f
-                                        offset = Offset.Zero
-                                    } else {
-                                        scale = 2.5f
-                                    }
-                                }
-                            )
-                        }
+                        )
+                    }
                 }
             )
     ) {
