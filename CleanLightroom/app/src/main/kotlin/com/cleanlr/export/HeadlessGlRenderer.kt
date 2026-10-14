@@ -48,9 +48,21 @@ class HeadlessGlRenderer(private val context: Context) {
     }
 
     /**
-     * Renders high-resolution image offscreen using the exact GLES 3.0 shader pipeline.
+     * Renders high-resolution image offscreen.
+     * Automatically splits images exceeding 2048x2048 into tiles with 64px halo margins
+     * via TileProcessor to prevent GPU texture limits and Android OOM.
      */
     fun renderFullResolution(sourceBitmap: Bitmap, recipe: EditRecipe): Bitmap {
+        if (sourceBitmap.width > TileGeometry.TILE_SIZE || sourceBitmap.height > TileGeometry.TILE_SIZE) {
+            return TileProcessor(this).renderTiled(sourceBitmap, recipe)
+        }
+        return renderBitmap(sourceBitmap, recipe)
+    }
+
+    /**
+     * Renders a single bitmap or tile offscreen using the exact GLES 3.0 shader pipeline.
+     */
+    fun renderBitmap(sourceBitmap: Bitmap, recipe: EditRecipe): Bitmap {
         val width = sourceBitmap.width
         val height = sourceBitmap.height
 
