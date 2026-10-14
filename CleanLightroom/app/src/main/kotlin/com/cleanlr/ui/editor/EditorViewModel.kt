@@ -30,7 +30,17 @@ enum class EditorToolTab(val title: String) {
     CURVES("Curves")
 }
 
-class EditorViewModel(application: Application) : AndroidViewModel(application) {
+enum class FlagState { NONE, PICK, REJECT }
+enum class ViewMode { LOUPE, GRID }
+enum class ActiveTool { BRUSH, LINEAR_GRADIENT, RADIAL_GRADIENT }
+enum class MaskOverlayColor(val hexArgb: Long, val label: String) {
+    RED(0x80E02B2BL, "Ruby Red"),
+    GREEN(0x802BE040L, "Emerald Green"),
+    BLUE(0x802B70E0L, "Cobalt Blue"),
+    WHITE(0x80FFFFFFL, "White")
+}
+
+class EditorViewModel(application: Application) : AndroidViewModel(application), com.cleanlr.ui.shortcuts.EditorShortcutsDispatcher {
 
     private val historyManager = HistoryManager(EditRecipe())
 
@@ -70,6 +80,57 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _activeTatTargetName = MutableStateFlow<String?>(null)
     val activeTatTargetName: StateFlow<String?> = _activeTatTargetName.asStateFlow()
+
+    // View & Navigation States (PDF Part A Section 3)
+    private val _isSplitView = MutableStateFlow(false)
+    val isSplitView: StateFlow<Boolean> = _isSplitView.asStateFlow()
+
+    private val _isCleanScreenMode = MutableStateFlow(false)
+    val isCleanScreenMode: StateFlow<Boolean> = _isCleanScreenMode.asStateFlow()
+
+    private val _isFullScreen = MutableStateFlow(false)
+    val isFullScreen: StateFlow<Boolean> = _isFullScreen.asStateFlow()
+
+    private val _isZoom100Percent = MutableStateFlow(false)
+    val isZoom100Percent: StateFlow<Boolean> = _isZoom100Percent.asStateFlow()
+
+    private val _isInfoOverlayVisible = MutableStateFlow(false)
+    val isInfoOverlayVisible: StateFlow<Boolean> = _isInfoOverlayVisible.asStateFlow()
+
+    // Rating & Flags States
+    private val _starRating = MutableStateFlow(0)
+    val starRating: StateFlow<Int> = _starRating.asStateFlow()
+
+    private val _flagState = MutableStateFlow(FlagState.NONE)
+    val flagState: StateFlow<FlagState> = _flagState.asStateFlow()
+
+    // Tools & Modes States
+    private val _viewMode = MutableStateFlow(ViewMode.LOUPE)
+    val viewMode: StateFlow<ViewMode> = _viewMode.asStateFlow()
+
+    private val _isCropActive = MutableStateFlow(false)
+    val isCropActive: StateFlow<Boolean> = _isCropActive.asStateFlow()
+
+    private val _activeTool = MutableStateFlow<ActiveTool?>(null)
+    val activeTool: StateFlow<ActiveTool?> = _activeTool.asStateFlow()
+
+    // Mask Overlay & Color Cycling States
+    private val _isMaskOverlayVisible = MutableStateFlow(true)
+    val isMaskOverlayVisible: StateFlow<Boolean> = _isMaskOverlayVisible.asStateFlow()
+
+    private val _maskOverlayColor = MutableStateFlow(MaskOverlayColor.RED)
+    val maskOverlayColor: StateFlow<MaskOverlayColor> = _maskOverlayColor.asStateFlow()
+
+    // Brush Parameter States
+    private val _brushSize = MutableStateFlow(50.0f)
+    val brushSize: StateFlow<Float> = _brushSize.asStateFlow()
+
+    private val _brushFeather = MutableStateFlow(50.0f)
+    val brushFeather: StateFlow<Float> = _brushFeather.asStateFlow()
+
+    // Clipboard for Edit Settings (Ctrl+C / Ctrl+V)
+    private val _clipboardRecipe = MutableStateFlow<EditRecipe?>(null)
+    val clipboardRecipe: StateFlow<EditRecipe?> = _clipboardRecipe.asStateFlow()
 
     val canUndo = historyManager.canUndo
     val canRedo = historyManager.canRedo
@@ -175,32 +236,112 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun undo() {
+    override fun undo() {
         val prev = historyManager.undo()
         if (prev != null) {
             _recipe.value = prev
         }
     }
 
-    fun redo() {
+    override fun redo() {
         val next = historyManager.redo()
         if (next != null) {
             _recipe.value = next
         }
     }
 
-    fun resetAll() {
+    override fun resetAll() {
         val reset = EditRecipe()
         historyManager.commitState(reset, "Reset All")
         _recipe.value = reset
     }
 
-    fun setAltClippingMode(mode: Int) {
+    override fun setAltClippingMode(mode: Int) {
         _altClippingMode.value = mode
     }
 
-    fun setComparingOriginal(comparing: Boolean) {
+    override fun setComparingOriginal(comparing: Boolean) {
         _isComparingOriginal.value = comparing
+    }
+
+    override fun toggleComparingOriginal() {
+        _isComparingOriginal.value = !_isComparingOriginal.value
+    }
+
+    override fun toggleSplitView() {
+        _isSplitView.value = !_isSplitView.value
+    }
+
+    override fun toggleCleanScreenMode() {
+        _isCleanScreenMode.value = !_isCleanScreenMode.value
+    }
+
+    override fun toggleFullScreen() {
+        _isFullScreen.value = !_isFullScreen.value
+    }
+
+    override fun toggleZoom100Percent() {
+        _isZoom100Percent.value = !_isZoom100Percent.value
+    }
+
+    override fun toggleInfoOverlay() {
+        _isInfoOverlayVisible.value = !_isInfoOverlayVisible.value
+    }
+
+    override fun setStarRating(rating: Int) {
+        _starRating.value = rating.coerceIn(0, 5)
+    }
+
+    fun setFlagState(state: FlagState) {
+        _flagState.value = state
+    }
+
+    override fun pickPhoto() = setFlagState(FlagState.PICK)
+    override fun unflagPhoto() = setFlagState(FlagState.NONE)
+    override fun rejectPhoto() = setFlagState(FlagState.REJECT)
+
+    override fun setViewMode(mode: ViewMode) {
+        _viewMode.value = mode
+    }
+
+    override fun toggleCropActive() {
+        _isCropActive.value = !_isCropActive.value
+    }
+
+    override fun setActiveTool(tool: ActiveTool?) {
+        _activeTool.value = tool
+    }
+
+    override fun selectBrushTool() = setActiveTool(ActiveTool.BRUSH)
+    override fun selectLinearGradientMask() = setActiveTool(ActiveTool.LINEAR_GRADIENT)
+    override fun selectRadialGradientMask() = setActiveTool(ActiveTool.RADIAL_GRADIENT)
+
+    override fun toggleMaskOverlay() {
+        _isMaskOverlayVisible.value = !_isMaskOverlayVisible.value
+    }
+
+    override fun cycleMaskOverlayColor() {
+        val values = MaskOverlayColor.values()
+        val nextIdx = (_maskOverlayColor.value.ordinal + 1) % values.size
+        _maskOverlayColor.value = values[nextIdx]
+    }
+
+    override fun adjustBrushSize(delta: Float) {
+        _brushSize.value = (_brushSize.value + delta).coerceIn(5.0f, 200.0f)
+    }
+
+    override fun adjustBrushFeather(delta: Float) {
+        _brushFeather.value = (_brushFeather.value + delta).coerceIn(0.0f, 100.0f)
+    }
+
+    override fun copyEditSettings() {
+        _clipboardRecipe.value = _recipe.value
+    }
+
+    override fun pasteEditSettings() {
+        val copied = _clipboardRecipe.value ?: return
+        historyManager.commitState(copied, "Paste Settings")
+        _recipe.value = copied
     }
 
     fun setActiveTab(tab: EditorToolTab) {
