@@ -124,6 +124,35 @@ fun EditorScreen(
                         )
                     }
 
+                    // Alt / Option Key Secret Previews Toggle (Section 4.1)
+                    Surface(
+                        color = if (altClippingMode > 0) SpectrumBlue else SpectrumElevated,
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier
+                            .clickable {
+                                val nextMode = when (altClippingMode) {
+                                    0 -> 1 // Mode 1: Whites / Exposure
+                                    1 -> 2 // Mode 2: Blacks / Shadows
+                                    2 -> 3 // Mode 3: Masking
+                                    else -> 0
+                                }
+                                viewModel.setAltClippingMode(nextMode)
+                            }
+                            .padding(horizontal = 4.dp)
+                    ) {
+                        Text(
+                            text = when (altClippingMode) {
+                                1 -> "ALT:HI"
+                                2 -> "ALT:SH"
+                                3 -> "ALT:MSK"
+                                else -> "ALT"
+                            },
+                            color = if (altClippingMode > 0) Color.White else SpectrumTextSecondary,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                        )
+                    }
+
                     // Pick image
                     IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
                         Icon(
@@ -521,9 +550,15 @@ fun EditorScreen(
                                 maxVal = 100f,
                                 defaultValue = 0f,
                                 isBipolar = false,
-                                onValueChangeStart = { viewModel.onSliderTouchStart() },
+                                onValueChangeStart = {
+                                    viewModel.onSliderTouchStart()
+                                    viewModel.setAltClippingMode(3) // Section 4.1 Alt + Sharpening Masking
+                                },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(detail = r.detail.copy(masking = it)) } },
-                                onValueChangeEnd = { viewModel.onSliderTouchEnd("Detail Masking") }
+                                onValueChangeEnd = {
+                                    viewModel.setAltClippingMode(0)
+                                    viewModel.onSliderTouchEnd("Detail Masking")
+                                }
                             )
                             RampedSlider(
                                 label = "Noise Reduction",

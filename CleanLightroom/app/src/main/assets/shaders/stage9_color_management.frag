@@ -76,6 +76,13 @@ void main() {
             fragColor = vec4(1.0, 1.0, 1.0, 1.0); // White canvas
         }
         return;
+    } else if (uAltClippingMode == 3) { // Alt + Sharpen Masking (Section 4.1)
+        // Black and white edge mask preview: edges white, background black
+        float luma = 0.2126 * finalDisplayColor.r + 0.7152 * finalDisplayColor.g + 0.0722 * finalDisplayColor.b;
+        float edge = length(vec2(dFdx(luma), dFdy(luma))) * 15.0;
+        float maskVal = step(0.12, edge);
+        fragColor = vec4(vec3(maskVal), 1.0);
+        return;
     }
 
     fragColor = vec4(finalDisplayColor, 1.0);
