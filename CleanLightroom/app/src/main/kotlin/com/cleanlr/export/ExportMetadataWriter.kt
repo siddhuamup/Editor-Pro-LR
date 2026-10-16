@@ -120,6 +120,12 @@ object ExportMetadataWriter {
             return runCatching { Json.decodeFromString<EditRecipe>(json) }.getOrNull()
         }
 
+        // 3. Adobe Camera Raw XMP packet extraction (from Adobe Lightroom or CleanLightroom)
+        val xmp = exif.getAttribute(ExifInterface.TAG_XMP)
+        if (xmp != null && xmp.contains("crs:")) {
+            return runCatching { com.cleanlr.storage.AcrXmpConverter.fromXmp(xmp) }.getOrNull()
+        }
+
         return null
     }
 
@@ -127,26 +133,6 @@ object ExportMetadataWriter {
      * Builds an authentic Adobe Camera Raw Settings (CRS) XMP packet.
      */
     fun buildXmpPacket(recipe: EditRecipe): String {
-        return """
-            <x:xmpmeta xmlns:x="adobe:ns:meta/">
-              <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-                <rdf:Description rdf:about=""
-                  xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
-                  crs:Exposure2012="${recipe.basic.exposure}"
-                  crs:Contrast2012="${recipe.basic.contrast.toInt()}"
-                  crs:Highlights2012="${recipe.basic.highlights.toInt()}"
-                  crs:Shadows2012="${recipe.basic.shadows.toInt()}"
-                  crs:Whites2012="${recipe.basic.whites.toInt()}"
-                  crs:Blacks2012="${recipe.basic.blacks.toInt()}"
-                  crs:Temperature="${recipe.basic.temperature.toInt()}"
-                  crs:Tint="${recipe.basic.tint.toInt()}"
-                  crs:Clarity2012="${recipe.presence.clarity.toInt()}"
-                  crs:Dehaze="${recipe.presence.dehaze.toInt()}"
-                  crs:Vibrance="${recipe.presence.vibrance.toInt()}"
-                  crs:Saturation="${recipe.presence.saturation.toInt()}">
-                </rdf:Description>
-              </rdf:RDF>
-            </x:xmpmeta>
-        """.trimIndent()
+        return com.cleanlr.storage.AcrXmpConverter.toXmp(recipe)
     }
 }

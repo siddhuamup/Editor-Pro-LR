@@ -21,6 +21,8 @@ class HeadlessGlRenderer(private val context: Context) {
     private var eglSurface: EGLSurface = EGL14.EGL_NO_SURFACE
     private var activePipeline: RenderPipeline? = null
     private var pboReader: AsyncPboReader? = null
+    private var cachedPixelBuffer: ByteBuffer? = null
+    private var cachedFlippedBuffer: ByteBuffer? = null
     var isSessionActive: Boolean = false
         private set
 
@@ -41,16 +43,38 @@ class HeadlessGlRenderer(private val context: Context) {
     }
 
     /**
-     * Releases the RenderPipeline, PBO buffers, and terminates the offscreen EGL context.
+     * Releases the RenderPipeline, PBO buffers, working memory pool, and terminates the offscreen EGL context.
      */
     fun endSession() {
         if (!isSessionActive) return
+        cachedPixelBuffer = null
+        cachedFlippedBuffer = null
         pboReader?.release()
         pboReader = null
         activePipeline?.release()
         activePipeline = null
         destroyEgl()
         isSessionActive = false
+    }
+
+    private fun getWorkingBuffers(requiredBytes: Int): Pair<ByteBuffer, ByteBuffer> {
+        var pBuf = cachedPixelBuffer
+        if (pBuf == null || pBuf.capacity() < requiredBytes) {
+            pBuf = ByteBuffer.allocateDirect(requiredBytes).order(ByteOrder.nativeOrder())
+            cachedPixelBuffer = pBuf
+        } else {
+            pBuf.clear()
+        }
+
+        var fBuf = cachedFlippedBuffer
+        if (fBuf == null || fBuf.capacity() < requiredBytes) {
+            fBuf = ByteBuffer.allocateDirect(requiredBytes).order(ByteOrder.nativeOrder())
+            cachedFlippedBuffer = fBuf
+        } else {
+            fBuf.clear()
+        }
+
+        return Pair(pBuf, fBuf)
     }
 
     /**
@@ -118,8 +142,9 @@ class HeadlessGlRenderer(private val context: Context) {
         GLES30.glFinish()
 
         // Read pixels using Async PBO (zero-stall DMA transfer) with synchronous fallback
-        val pixelBuffer = ByteBuffer.allocateDirect(width * height * 4)
-            .order(ByteOrder.nativeOrder())
+        val requiredBytes = width * height * 4
+        val (pixelBuffer, flippedBuffer) = getWorkingBuffers(requiredBytes)
+
         val pbo = pboReader
         var pboSuccess = false
         if (pbo != null) {
@@ -140,7 +165,6 @@ class HeadlessGlRenderer(private val context: Context) {
 
         // Convert byte buffer to Bitmap & flip vertical axis (GL bottom-up to Bitmap top-down)
         val outBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val flippedBuffer = ByteBuffer.allocateDirect(width * height * 4)
         val rowSize = width * 4
         val row = ByteArray(rowSize)
         for (y in 0 until height) {

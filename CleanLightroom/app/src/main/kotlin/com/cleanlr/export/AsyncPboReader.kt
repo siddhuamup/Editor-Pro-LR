@@ -28,14 +28,15 @@ object PboMemoryBudget {
 /**
  * AsyncPboReader:
  * Implements non-blocking Asynchronous Pixel Buffer Objects (GL_PIXEL_PACK_BUFFER)
- * to avoid GPU pipeline stalls during high-resolution tile readback.
- * (Doc 4 & Task T4 Secret Trap 2).
+ * with OpenGL ES 3.0 Sync Fences (glFenceSync) to eliminate GPU pipeline stalls
+ * during high-resolution tile readback (Doc 4 & Task T4 Secret Trap 2).
  */
 class AsyncPboReader(
     private val maxTileWidth: Int = 2176, // 2048 + 2*64 halo
     private val maxTileHeight: Int = 2176
 ) {
     private val pboIds = IntArray(2)
+    private val syncObjects = LongArray(2) { 0L }
     private val bufferSize = maxTileWidth * maxTileHeight * 4
     private var isInitialized = false
     private var activeIndex = 0
@@ -55,6 +56,7 @@ class AsyncPboReader(
     /**
      * Dispatches an asynchronous DMA readback from the current FBO to the current PBO.
      * With offset = 0 and GL_PIXEL_PACK_BUFFER bound, glReadPixels returns immediately without GPU stall.
+     * Inserts an OpenGL ES 3.0 Fence Sync object to track asynchronous DMA completion.
      */
     fun triggerAsyncRead(width: Int, height: Int) {
         if (!isInitialized) initGL()
@@ -63,15 +65,34 @@ class AsyncPboReader(
         // With PBO bound, the last argument is a byte offset (0), not a client memory pointer!
         GLES30.glReadPixels(0, 0, width, height, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, 0)
         GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0)
+
+        // Clear any previous fence on this ping-pong slot
+        if (syncObjects[activeIndex] != 0L) {
+            GLES30.glDeleteSync(syncObjects[activeIndex])
+            syncObjects[activeIndex] = 0L
+        }
+
+        // Insert fence sync to track DMA transfer completion
+        syncObjects[activeIndex] = GLES30.glFenceSync(GLES30.GL_SYNC_GPU_COMMANDS_COMPLETE, 0)
     }
 
     /**
      * Reads pixels from the current PBO into the target ByteBuffer.
-     * Uses glMapBufferRange for zero-copy DMA access.
+     * Waits for the fence sync object (up to 100ms) to ensure DMA transfer is complete,
+     * then uses glMapBufferRange for zero-copy DMA access without pipeline stall.
      */
     fun readPixelsMapped(width: Int, height: Int, destination: ByteBuffer): Boolean {
         if (!isInitialized) return false
         val currentPbo = pboIds[activeIndex]
+
+        // Wait for fence sync if present
+        val sync = syncObjects[activeIndex]
+        if (sync != 0L) {
+            GLES30.glClientWaitSync(sync, GLES30.GL_SYNC_FLUSH_COMMANDS_BIT, 100_000_000L) // 100ms timeout
+            GLES30.glDeleteSync(sync)
+            syncObjects[activeIndex] = 0L
+        }
+
         GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, currentPbo)
 
         val size = width * height * 4
@@ -100,6 +121,12 @@ class AsyncPboReader(
 
     fun release() {
         if (isInitialized) {
+            for (i in 0..1) {
+                if (syncObjects[i] != 0L) {
+                    GLES30.glDeleteSync(syncObjects[i])
+                    syncObjects[i] = 0L
+                }
+            }
             GLES30.glDeleteBuffers(2, pboIds, 0)
             isInitialized = false
         }
