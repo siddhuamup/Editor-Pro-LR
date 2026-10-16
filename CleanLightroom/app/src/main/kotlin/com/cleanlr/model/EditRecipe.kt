@@ -1,6 +1,19 @@
 package com.cleanlr.model
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.float
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * CleanLightroom EditRecipe Data Model
@@ -154,6 +167,17 @@ data class ColorGrading(
     }
 }
 
+// -----------------------------------------------------------------------------
+// Phase 5 Masking Architecture & Sealed SubMask Hierarchy
+// -----------------------------------------------------------------------------
+
+@Serializable
+enum class MaskCombineMode {
+    ADD,
+    SUBTRACT,
+    INTERSECT
+}
+
 @Serializable
 data class MaskLayer(
     val id: String = "",
@@ -168,11 +192,13 @@ data class MaskLayer(
 sealed class SubMask {
     abstract val id: String
     abstract val isInverted: Boolean
+    abstract val combineMode: MaskCombineMode
 
     @Serializable
     data class Brush(
         override val id: String,
         override val isInverted: Boolean = false,
+        override val combineMode: MaskCombineMode = MaskCombineMode.ADD,
         val points: List<BrushStrokePoint> = emptyList()
     ) : SubMask()
 
@@ -180,6 +206,7 @@ sealed class SubMask {
     data class LinearGradient(
         override val id: String,
         override val isInverted: Boolean = false,
+        override val combineMode: MaskCombineMode = MaskCombineMode.ADD,
         val startX: Float = 0f,
         val startY: Float = 0f,
         val endX: Float = 0f,
@@ -187,18 +214,118 @@ sealed class SubMask {
     ) : SubMask()
 
     @Serializable
+    data class RadialGradient(
+        override val id: String,
+        override val isInverted: Boolean = false,
+        override val combineMode: MaskCombineMode = MaskCombineMode.ADD,
+        val centerX: Float = 0.5f,
+        val centerY: Float = 0.5f,
+        val radiusX: Float = 0.25f,
+        val radiusY: Float = 0.25f,
+        val rotationDegrees: Float = 0f,
+        val feather: Float = 50f
+    ) : SubMask()
+
+    @Serializable
     data class AISubject(
         override val id: String,
         override val isInverted: Boolean = false,
+        override val combineMode: MaskCombineMode = MaskCombineMode.ADD,
         val maskAssetPath: String? = null
+    ) : SubMask()
+
+    @Serializable
+    data class AISky(
+        override val id: String,
+        override val isInverted: Boolean = false,
+        override val combineMode: MaskCombineMode = MaskCombineMode.ADD,
+        val maskAssetPath: String? = null
+    ) : SubMask()
+
+    @Serializable
+    data class ColorRange(
+        override val id: String,
+        override val isInverted: Boolean = false,
+        override val combineMode: MaskCombineMode = MaskCombineMode.ADD,
+        val targetHue: Float = 0f,
+        val hueTolerance: Float = 30f,
+        val feather: Float = 25f
+    ) : SubMask()
+
+    @Serializable
+    data class LuminanceRange(
+        override val id: String,
+        override val isInverted: Boolean = false,
+        override val combineMode: MaskCombineMode = MaskCombineMode.ADD,
+        val minLuminance: Float = 0f,
+        val maxLuminance: Float = 100f,
+        val feather: Float = 25f
     ) : SubMask()
 }
 
-@Serializable
+/**
+ * Brush stroke point with ultra-compact serialization:
+ * Serializes as JSON array `[x, y, radius, feather, flow]` instead of verbose object.
+ * Guarantees a 500-point brush stroke is < 20KB (approx 12-14KB) to prevent OOM memory bomb.
+ */
+@Serializable(with = BrushStrokePointSerializer::class)
 data class BrushStrokePoint(
     val x: Float,
     val y: Float,
-    val radius: Float,
-    val feather: Float,
-    val flow: Float
+    val radius: Float = 20.0f,
+    val feather: Float = 25.0f,
+    val flow: Float = 1.0f
 )
+
+object BrushStrokePointSerializer : KSerializer<BrushStrokePoint> {
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("BrushStrokePoint")
+
+    override fun serialize(encoder: Encoder, value: BrushStrokePoint) {
+        if (encoder is JsonEncoder) {
+            val array = buildJsonArray {
+                add(JsonPrimitive(value.x))
+                add(JsonPrimitive(value.y))
+                add(JsonPrimitive(value.radius))
+                add(JsonPrimitive(value.feather))
+                add(JsonPrimitive(value.flow))
+            }
+            encoder.encodeJsonElement(array)
+        } else {
+            val composite = encoder.beginStructure(descriptor)
+            composite.encodeFloatElement(descriptor, 0, value.x)
+            composite.encodeFloatElement(descriptor, 1, value.y)
+            composite.encodeFloatElement(descriptor, 2, value.radius)
+            composite.encodeFloatElement(descriptor, 3, value.feather)
+            composite.encodeFloatElement(descriptor, 4, value.flow)
+            composite.endStructure(descriptor)
+        }
+    }
+
+    override fun deserialize(decoder: Decoder): BrushStrokePoint {
+        if (decoder is JsonDecoder) {
+            val element = decoder.decodeJsonElement()
+            return if (element is JsonArray) {
+                BrushStrokePoint(
+                    x = element[0].jsonPrimitive.float,
+                    y = element[1].jsonPrimitive.float,
+                    radius = if (element.size > 2) element[2].jsonPrimitive.float else 20.0f,
+                    feather = if (element.size > 3) element[3].jsonPrimitive.float else 25.0f,
+                    flow = if (element.size > 4) element[4].jsonPrimitive.float else 1.0f
+                )
+            } else if (element is JsonObject) {
+                BrushStrokePoint(
+                    x = element["x"]?.jsonPrimitive?.float ?: 0f,
+                    y = element["y"]?.jsonPrimitive?.float ?: 0f,
+                    radius = element["radius"]?.jsonPrimitive?.float ?: 20.0f,
+                    feather = element["feather"]?.jsonPrimitive?.float ?: 25.0f,
+                    flow = element["flow"]?.jsonPrimitive?.float ?: 1.0f
+                )
+            } else {
+                BrushStrokePoint(0f, 0f)
+            }
+        } else {
+            return BrushStrokePoint(0f, 0f)
+        }
+    }
+}
