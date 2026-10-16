@@ -23,12 +23,21 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+import com.cleanlr.preset.Preset
+import com.cleanlr.preset.PresetManager
+import com.cleanlr.storage.DebouncedAutoSaver
+import com.cleanlr.storage.LocalDocumentStore
+import com.cleanlr.version.NamedVersion
+import com.cleanlr.version.VersionManager
+
 enum class EditorToolTab(val title: String) {
     LIGHT("Light"),
     COLOR("Color"),
     EFFECTS("Effects"),
     DETAIL("Detail"),
-    CURVES("Curves")
+    CURVES("Curves"),
+    PRESETS("Presets"),
+    VERSIONS("Versions")
 }
 
 enum class FlagState { NONE, PICK, REJECT }
@@ -44,6 +53,24 @@ enum class MaskOverlayColor(val hexArgb: Long, val label: String) {
 class EditorViewModel(application: Application) : AndroidViewModel(application), com.cleanlr.ui.shortcuts.EditorShortcutsDispatcher {
 
     private val historyManager = HistoryManager(EditRecipe())
+
+    private val versionManager = VersionManager(EditRecipe())
+    val versions: StateFlow<List<NamedVersion>> = versionManager.versions
+
+    private val documentStore = LocalDocumentStore()
+    private val autoSaver = DebouncedAutoSaver(documentStore, viewModelScope, 300L)
+
+    val presetGroups = listOf("All") + PresetManager.getGroups()
+    private val _selectedPresetGroup = MutableStateFlow("All")
+    val selectedPresetGroup: StateFlow<String> = _selectedPresetGroup.asStateFlow()
+
+    private val _activePreset = MutableStateFlow<Preset?>(null)
+    val activePreset: StateFlow<Preset?> = _activePreset.asStateFlow()
+
+    private val _presetAmount = MutableStateFlow(100.0f)
+    val presetAmount: StateFlow<Float> = _presetAmount.asStateFlow()
+
+    private var recipeBeforePreset: EditRecipe? = null
 
     private val _recipe = MutableStateFlow(EditRecipe())
     val recipe: StateFlow<EditRecipe> = _recipe.asStateFlow()
@@ -247,9 +274,73 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     fun updateRecipe(actionName: String? = null, transform: (EditRecipe) -> EditRecipe) {
         val updated = transform(_recipe.value)
         _recipe.value = updated
+        autoSaver.scheduleSave("current_photo", updated)
         if (actionName != null) {
             historyManager.commitState(updated, actionName)
         }
+    }
+
+    fun selectPresetGroup(group: String) {
+        _selectedPresetGroup.value = group
+    }
+
+    fun applyPreset(preset: Preset) {
+        recipeBeforePreset = _recipe.value
+        _activePreset.value = preset
+        _presetAmount.value = 100.0f
+        val updated = PresetManager.applyPresetWithAmount(_recipe.value, preset, 100.0f)
+        _recipe.value = updated
+        historyManager.commitState(updated, "Preset: ${preset.name}")
+        autoSaver.scheduleSave("current_photo", updated)
+    }
+
+    fun adjustPresetAmount(amount: Float) {
+        val base = recipeBeforePreset ?: return
+        val preset = _activePreset.value ?: return
+        _presetAmount.value = amount
+        val updated = PresetManager.applyPresetWithAmount(base, preset, amount)
+        _recipe.value = updated
+        historyManager.updateLive(updated)
+    }
+
+    fun commitPresetAmount() {
+        val preset = _activePreset.value ?: return
+        historyManager.commitState(_recipe.value, "Preset: ${preset.name} (${_presetAmount.value.toInt()}%)")
+        autoSaver.scheduleSave("current_photo", _recipe.value)
+    }
+
+    fun createVersion(name: String) {
+        versionManager.createVersion(name, _recipe.value)
+    }
+
+    fun applyVersion(id: String) {
+        val versionRecipe = versionManager.applyVersion(id)
+        if (versionRecipe != null) {
+            _recipe.value = versionRecipe
+            historyManager.commitState(versionRecipe, "Apply Version")
+            autoSaver.scheduleSave("current_photo", versionRecipe)
+        }
+    }
+
+    fun deleteVersion(id: String) {
+        versionManager.deleteVersion(id)
+    }
+
+    fun autoTone() {
+        val auto = _recipe.value.copy(
+            basic = _recipe.value.basic.copy(
+                exposure = 0.20f,
+                contrast = 18.0f,
+                highlights = -25.0f,
+                shadows = 20.0f,
+                whites = 12.0f,
+                blacks = -8.0f,
+                vibrance = 15.0f
+            )
+        )
+        _recipe.value = auto
+        historyManager.commitState(auto, "Auto Tone")
+        autoSaver.scheduleSave("current_photo", auto)
     }
 
     override fun undo() {

@@ -44,6 +44,7 @@ fun RampedSlider(
     defaultValue: Float = 0.0f,
     formatPattern: String = "%.0f",
     isBipolar: Boolean = true, // Whether 0 is center
+    trackBrush: androidx.compose.ui.graphics.Brush? = null,
     onValueChangeStart: () -> Unit = {},
     onValueChange: (Float) -> Unit,
     onValueChangeEnd: () -> Unit = {}
@@ -167,12 +168,21 @@ fun RampedSlider(
                 // Normative Thumb: 16.dp Diameter (8.dp Radius) Pure White #FFFFFF
                 val thumbRadius = 8.dp.toPx()
 
-                // Inactive Background track (2.dp)
-                drawRect(
-                    color = SpectrumBorder,
-                    topLeft = Offset(0f, centerY - inactiveTrackHeight / 2f),
-                    size = Size(size.width, inactiveTrackHeight)
-                )
+                // Track: use gradient trackBrush if specified, else standard SpectrumBorder
+                if (trackBrush != null) {
+                    val trackHeight = 3.5.dp.toPx()
+                    drawRect(
+                        brush = trackBrush,
+                        topLeft = Offset(0f, centerY - trackHeight / 2f),
+                        size = Size(size.width, trackHeight)
+                    )
+                } else {
+                    drawRect(
+                        color = SpectrumBorder,
+                        topLeft = Offset(0f, centerY - inactiveTrackHeight / 2f),
+                        size = Size(size.width, inactiveTrackHeight)
+                    )
+                }
 
                 if (isBipolar) {
                     val midX = size.width / 2f
@@ -185,12 +195,12 @@ fun RampedSlider(
                         strokeWidth = 2.dp.toPx()
                     )
 
-                    // Active fill from center to thumb (3.dp)
+                    // Active fill from center to thumb (only when not using custom gradient trackBrush)
                     val thumbX = midX + (normalizedPos * (size.width / 2f))
                     val left = minOf(midX, thumbX)
                     val right = maxOf(midX, thumbX)
 
-                    if (right > left) {
+                    if (trackBrush == null && right > left) {
                         drawRect(
                             color = SpectrumBlue,
                             topLeft = Offset(left, centerY - activeTrackHeight / 2f),

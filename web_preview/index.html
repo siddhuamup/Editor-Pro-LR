@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clean Lightroom Web Studio – Professional Photo Editor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header Bar -->
+  <header>
+    <div class="brand">
+      <div class="brand-badge">Lr</div>
+      <div class="brand-title">Lightroom Clean Web</div>
+    </div>
+
+    <div class="header-actions">
+      <button id="btnUndo" title="Undo (Ctrl+Z)" disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
+        </svg>
+        Undo
+      </button>
+
+      <button id="btnRedo" title="Redo (Ctrl+Y)" disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/>
+        </svg>
+        Redo
+      </button>
+
+      <button id="btnCompare" title="Hold \ for Before/After">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9.01 14H2v2h7.01v3L13 15l-3.99-4v3zm5.98-1v-3H22V8h-7.01V5L11 9l3.99 4z"/>
+        </svg>
+        Before/After (\)
+      </button>
+
+      <button id="btnAltClipping" title="Toggle Alt Clipping Mode">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+        </svg>
+        Alt Clip
+      </button>
+
+      <button id="btnResetAll" title="Reset all sliders">Reset All</button>
+
+      <label for="imageUpload" style="cursor: pointer;">
+        <button type="button" onclick="document.getElementById('imageUpload').click()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+          </svg>
+          Open Image
+        </button>
+      </label>
+      <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+
+      <button id="btnExport" class="primary-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+        </svg>
+        Export Photo
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <div class="main-container">
+    <!-- Loupe Canvas Area -->
+    <div class="viewport-panel" id="viewportPanel">
+      <canvas id="glCanvas"></canvas>
+
+      <div class="canvas-overlay-hud">
+        <div id="hudBefore" class="hud-pill">BEFORE (ORIGINAL)</div>
+        <div id="hudAltClip" class="hud-pill">ALT CLIPPING PREVIEW</div>
+      </div>
+
+      <div class="canvas-controls-hud">
+        <button id="btnFit" class="hud-btn">Fit View</button>
+        <button id="btn100" class="hud-btn">100% (1:1)</button>
+        <span id="zoomLevelText" style="font-size: 11px; align-self: center; color: #a0a0a0; padding: 0 4px;">100%</span>
+      </div>
+    </div>
+
+    <!-- Right Adjustment Controls Sidebar -->
+    <div class="sidebar-panel">
+      <!-- 5-Zone Interactive RGB Histogram -->
+      <div class="histogram-container">
+        <div class="histogram-header">
+          <span>RGB Waveform Histogram</span>
+          <span style="font-size: 10px; color: #6e6e6e;">Drag Zones to Adjust</span>
+        </div>
+
+        <div class="histogram-box" id="histogramBox">
+          <canvas id="histogramCanvas"></canvas>
+
+          <!-- Shadow clipping flag (blue) -->
+          <div class="clipping-triangle shadows" id="clipShadows" title="Shadows Crushed (Tap for Alt-Blacks)">
+            <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21z"/></svg>
+          </div>
+
+          <!-- Highlight clipping flag (red) -->
+          <div class="clipping-triangle highlights" id="clipHighlights" title="Highlights Blown (Tap for Alt-Whites)">
+            <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21z"/></svg>
+          </div>
+
+          <div class="histogram-zone-tag" id="zoneTag">EXPOSURE</div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" data-tab="tabLight">Light</button>
+        <button class="tab-btn" data-tab="tabColor">Color</button>
+        <button class="tab-btn" data-tab="tabEffects">Effects</button>
+        <button class="tab-btn" data-tab="tabDetail">Detail</button>
+        <button class="tab-btn" data-tab="tabCurves">Curves</button>
+      </div>
+
+      <!-- Scrollable Adjustments Panels -->
+      <div class="panels-scroll">
+        <!-- 1. LIGHT PANEL -->
+        <div class="tool-section active" id="tabLight">
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="exposure">Exposure</span>
+              <span class="slider-value" id="valExposure">0.00 EV</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderExposure" min="-5" max="5" step="0.05" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="contrast">Contrast</span>
+              <span class="slider-value" id="valContrast">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderContrast" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="highlights">Highlights</span>
+              <span class="slider-value" id="valHighlights">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderHighlights" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="shadows">Shadows</span>
+              <span class="slider-value" id="valShadows">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderShadows" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="whites">Whites (Alt Preview)</span>
+              <span class="slider-value" id="valWhites">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderWhites" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="blacks">Blacks (Alt Preview)</span>
+              <span class="slider-value" id="valBlacks">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderBlacks" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. COLOR PANEL -->
+        <div class="tool-section" id="tabColor">
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="temp">Temp</span>
+              <span class="slider-value" id="valTemp">5500 K</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderTemp" min="2000" max="10000" step="50" value="5500">
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="tint">Tint</span>
+              <span class="slider-value" id="valTint">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderTint" min="-150" max="150" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="vibrance">Vibrance (Skin Protect)</span>
+              <span class="slider-value" id="valVibrance">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderVibrance" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="saturation">Saturation</span>
+              <span class="slider-value" id="valSaturation">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderSaturation" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div style="margin: 14px 0 8px; font-size: 11px; font-weight: 600; color: #a0a0a0; text-transform: uppercase;">8-Channel Color Mixer</div>
+          <div class="hsl-swatches">
+            <button class="swatch-btn active" data-color="0" style="background: #E53935;" title="Red"></button>
+            <button class="swatch-btn" data-color="1" style="background: #FB8C00;" title="Orange (Skin)"></button>
+            <button class="swatch-btn" data-color="2" style="background: #FDD835;" title="Yellow"></button>
+            <button class="swatch-btn" data-color="3" style="background: #43A047;" title="Green"></button>
+            <button class="swatch-btn" data-color="4" style="background: #00ACC1;" title="Aqua"></button>
+            <button class="swatch-btn" data-color="5" style="background: #1E88E5;" title="Blue"></button>
+            <button class="swatch-btn" data-color="6" style="background: #8E24AA;" title="Purple"></button>
+            <button class="swatch-btn" data-color="7" style="background: #D81B60;" title="Magenta"></button>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" id="lblHslChannel">Red Hue</span>
+              <span class="slider-value" id="valHslHue">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderHslHue" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Saturation</span>
+              <span class="slider-value" id="valHslSat">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderHslSat" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Luminance</span>
+              <span class="slider-value" id="valHslLum">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderHslLum" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <!-- 3-Way Color Grading Wheels -->
+          <div style="margin: 16px 0 8px; font-size: 11px; font-weight: 600; color: #a0a0a0; text-transform: uppercase;">3-Way Color Grading</div>
+          <div class="wheels-row">
+            <button class="wheel-tab-btn active" data-wheel="shadows">Shadows</button>
+            <button class="wheel-tab-btn" data-wheel="midtones">Midtones</button>
+            <button class="wheel-tab-btn" data-wheel="highlights">Highlights</button>
+          </div>
+
+          <div class="color-wheel-box">
+            <canvas id="wheelCanvas" width="160" height="160"></canvas>
+            <span style="font-size: 10px; color: #777; margin-top: 6px;">Drag puck for tint, double click to reset</span>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Wheel Luminance</span>
+              <span class="slider-value" id="valWheelLum">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderWheelLum" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. EFFECTS PANEL -->
+        <div class="tool-section" id="tabEffects">
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="texture">Texture</span>
+              <span class="slider-value" id="valTexture">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderTexture" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="clarity">Clarity</span>
+              <span class="slider-value" id="valClarity">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderClarity" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="dehaze">Dehaze</span>
+              <span class="slider-value" id="valDehaze">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderDehaze" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. DETAIL PANEL -->
+        <div class="tool-section" id="tabDetail">
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Sharpening</span>
+              <span class="slider-value" id="valSharpening">40</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderSharpening" min="0" max="150" step="1" value="40">
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Masking (Hold Alt)</span>
+              <span class="slider-value" id="valMasking">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderMasking" min="0" max="100" step="1" value="0">
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Noise Reduction</span>
+              <span class="slider-value" id="valNoiseReduction">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderNoiseReduction" min="0" max="100" step="1" value="0">
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. CURVES PANEL -->
+        <div class="tool-section" id="tabCurves">
+          <div class="curve-box" id="curveBox">
+            <canvas id="curveCanvas" width="340" height="200"></canvas>
+          </div>
+          <div style="font-size: 10px; color: #777; margin-bottom: 12px; text-align: center;">Click to add control point, double-click point to remove</div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Highlights</span>
+              <span class="slider-value" id="valParamHighlights">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderParamHighlights" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Lights</span>
+              <span class="slider-value" id="valParamLights">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderParamLights" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Darks</span>
+              <span class="slider-value" id="valParamDarks">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderParamDarks" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Shadows</span>
+              <span class="slider-value" id="valParamShadows">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderParamShadows" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Presets Footer Bar -->
+      <div class="presets-section">
+        <div class="presets-label">Quick Presets</div>
+        <div class="presets-list">
+          <button class="preset-chip" data-preset="golden">Golden Hour</button>
+          <button class="preset-chip" data-preset="vivid">Vivid Landscape</button>
+          <button class="preset-chip" data-preset="cinematic">Cinematic Moody</button>
+          <button class="preset-chip" data-preset="hdr">HDR Drama</button>
+          <button class="preset-chip" data-preset="bw">B&W High Contrast</button>
+          <button class="preset-chip" data-preset="natural">Natural Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

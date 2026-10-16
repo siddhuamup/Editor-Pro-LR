@@ -27,6 +27,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.view.HapticFeedbackConstants
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.graphics.Brush
 import com.cleanlr.ui.components.*
 import com.cleanlr.ui.theme.*
 import kotlinx.coroutines.launch
@@ -37,6 +40,7 @@ fun EditorScreen(
     viewModel: EditorViewModel,
     modifier: Modifier = Modifier
 ) {
+    val view = LocalView.current
     val coroutineScope = rememberCoroutineScope()
     val toolScrollState = rememberScrollState()
 
@@ -56,7 +60,13 @@ fun EditorScreen(
     val brushSize by viewModel.brushSize.collectAsState()
     val brushFeather by viewModel.brushFeather.collectAsState()
 
+    val versions by viewModel.versions.collectAsState()
+    val activePreset by viewModel.activePreset.collectAsState()
+    val presetAmount by viewModel.presetAmount.collectAsState()
+    val selectedPresetGroup by viewModel.selectedPresetGroup.collectAsState()
+
     var showExportConfigSheet by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -327,25 +337,101 @@ fun EditorScreen(
                 isHighlightClippingActive = altClippingMode == 1
             )
 
-            // Category Tool Tabs Bar
+            // Category Tool Tabs Bar — Adobe Lightroom Mobile Signature Style
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(SpectrumSurface)
                     .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                contentPadding = PaddingValues(horizontal = 14.dp)
             ) {
+                // Adobe Signature "Auto" One-Touch Button
+                item {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                viewModel.autoTone()
+                            }
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoFixHigh,
+                            contentDescription = "Auto Tone",
+                            tint = SpectrumTextPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Auto",
+                            color = SpectrumTextPrimary,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
                 items(EditorToolTab.values()) { tab ->
                     val isSelected = tab == activeTab
-                    Box(
+                    val tabIcon = when (tab) {
+                        EditorToolTab.LIGHT -> Icons.Default.Brightness6
+                        EditorToolTab.COLOR -> Icons.Default.Palette
+                        EditorToolTab.EFFECTS -> Icons.Default.AutoAwesome
+                        EditorToolTab.DETAIL -> Icons.Default.Tune
+                        EditorToolTab.CURVES -> Icons.Default.Timeline
+                        EditorToolTab.PRESETS -> Icons.Default.Style
+                        EditorToolTab.VERSIONS -> Icons.Default.HistoryEdu
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
-                            .clickable { viewModel.setActiveTab(tab) }
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                viewModel.setActiveTab(tab)
+                            }
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
                     ) {
+                        Icon(
+                            imageVector = tabIcon,
+                            contentDescription = tab.title,
+                            tint = if (isSelected) SpectrumBlue else SpectrumTextSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = tab.title,
                             color = if (isSelected) SpectrumBlue else SpectrumTextSecondary,
-                            fontSize = 13.sp
+                            fontSize = 10.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                        )
+                    }
+                }
+
+                // Reset Action Button
+                item {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                showResetDialog = true
+                            }
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.RestartAlt,
+                            contentDescription = "Reset All",
+                            tint = SpectrumTextSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Reset",
+                            color = SpectrumTextSecondary,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
@@ -438,6 +524,13 @@ fun EditorScreen(
                         }
 
                         EditorToolTab.COLOR -> {
+                            val tempTrackBrush = remember {
+                                Brush.horizontalGradient(listOf(Color(0xFF4A90E2), Color(0xFFFFA726)))
+                            }
+                            val tintTrackBrush = remember {
+                                Brush.horizontalGradient(listOf(Color(0xFF66BB6A), Color(0xFFEC407A)))
+                            }
+
                             RampedSlider(
                                 label = "Temperature",
                                 value = recipe.basic.temperature,
@@ -446,6 +539,7 @@ fun EditorScreen(
                                 defaultValue = 5500f,
                                 isBipolar = false,
                                 formatPattern = "%.0f K",
+                                trackBrush = tempTrackBrush,
                                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(temperature = it)) } },
                                 onValueChangeEnd = { viewModel.onSliderTouchEnd("White Balance Temp") }
@@ -455,6 +549,9 @@ fun EditorScreen(
                                 value = recipe.basic.tint,
                                 minVal = -150f,
                                 maxVal = 150f,
+                                defaultValue = 0f,
+                                isBipolar = true,
+                                trackBrush = tintTrackBrush,
                                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(tint = it)) } },
                                 onValueChangeEnd = { viewModel.onSliderTouchEnd("Tint") }
@@ -644,9 +741,70 @@ fun EditorScreen(
                                 }
                             )
                         }
+
+                        EditorToolTab.PRESETS -> {
+                            PresetsPanel(
+                                groups = viewModel.presetGroups,
+                                selectedGroup = selectedPresetGroup,
+                                onSelectGroup = { viewModel.selectPresetGroup(it) },
+                                presets = com.cleanlr.preset.PresetManager.STARTER_PACK,
+                                activePreset = activePreset,
+                                presetAmount = presetAmount,
+                                onSelectPreset = { viewModel.applyPreset(it) },
+                                onAmountChange = { viewModel.adjustPresetAmount(it) },
+                                onAmountChangeEnd = { viewModel.commitPresetAmount() }
+                            )
+                        }
+
+                        EditorToolTab.VERSIONS -> {
+                            VersionsPanel(
+                                versions = versions,
+                                onCreateVersion = { viewModel.createVersion(it) },
+                                onApplyVersion = { viewModel.applyVersion(it) },
+                                onDeleteVersion = { viewModel.deleteVersion(it) }
+                            )
+                        }
                     }
                 }
             }
+        }
+
+        if (showResetDialog) {
+            AlertDialog(
+                onDismissRequest = { showResetDialog = false },
+                title = {
+                    Text(
+                        text = "Reset All Adjustments?",
+                        color = SpectrumTextPrimary,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        text = "This will revert all light, color, effects, and detail settings back to original.",
+                        color = SpectrumTextSecondary,
+                        fontSize = 13.sp
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.resetAll()
+                            showResetDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE02B2B))
+                    ) {
+                        Text("Reset", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showResetDialog = false }) {
+                        Text("Cancel", color = SpectrumTextSecondary)
+                    }
+                },
+                containerColor = SpectrumSurface
+            )
         }
 
         if (showExportConfigSheet) {
