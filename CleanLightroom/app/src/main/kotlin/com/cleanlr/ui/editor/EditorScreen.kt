@@ -64,14 +64,39 @@ fun EditorScreen(
     val activePreset by viewModel.activePreset.collectAsState()
     val presetAmount by viewModel.presetAmount.collectAsState()
     val selectedPresetGroup by viewModel.selectedPresetGroup.collectAsState()
+    val isMaskOverlayVisible by viewModel.isMaskOverlayVisible.collectAsState()
+    val activeMaskLayerIndex by viewModel.activeMaskLayerIndex.collectAsState()
 
     var showExportConfigSheet by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
+
+    val activeBatchProgress by viewModel.activeBatchProgress.collectAsState()
+    val isBatchExportDialogVisible by viewModel.isBatchExportDialogVisible.collectAsState()
+
+    var pendingBatchConfig by remember { mutableStateOf<com.cleanlr.export.ExportConfig?>(null) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { viewModel.loadFromUri(it) }
+    }
+
+    val batchPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val config = pendingBatchConfig ?: com.cleanlr.export.ExportConfig()
+            val currentRecipe = viewModel.recipe.value
+            val items = uris.mapIndexed { idx, uri ->
+                com.cleanlr.export.BatchExportItem(
+                    id = "batch_item_${System.currentTimeMillis()}_${idx + 1}",
+                    sourceUriString = uri.toString(),
+                    recipe = currentRecipe,
+                    config = config
+                )
+            }
+            viewModel.startBatchExport(items)
+        }
     }
 
     Scaffold(
@@ -383,6 +408,7 @@ fun EditorScreen(
                         EditorToolTab.CURVES -> Icons.Default.Timeline
                         EditorToolTab.PRESETS -> Icons.Default.Style
                         EditorToolTab.VERSIONS -> Icons.Default.HistoryEdu
+                        EditorToolTab.MASKS -> Icons.Default.Layers
                     }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -764,6 +790,20 @@ fun EditorScreen(
                                 onDeleteVersion = { viewModel.deleteVersion(it) }
                             )
                         }
+
+                        EditorToolTab.MASKS -> {
+                            MaskingPanel(
+                                layers = recipe.masks,
+                                activeLayerIndex = activeMaskLayerIndex,
+                                onSelectLayer = { viewModel.selectMaskLayer(it) },
+                                onAddLayer = { subMask -> viewModel.addMaskLayer(subMask) },
+                                onAddSubMaskToActive = { subMask -> viewModel.addSubMaskToActive(subMask) },
+                                onUpdateLayerAdjustments = { layer -> viewModel.updateMaskLayer(layer) },
+                                onDeleteActiveLayer = { viewModel.deleteActiveMaskLayer() },
+                                isOverlayVisible = isMaskOverlayVisible,
+                                onToggleOverlay = { viewModel.toggleMaskOverlay() }
+                            )
+                        }
                     }
                 }
             }
@@ -812,7 +852,19 @@ fun EditorScreen(
                 onDismiss = { showExportConfigSheet = false },
                 onExportConfirmed = { config ->
                     viewModel.exportImage(config)
+                },
+                onBatchExportRequested = { config ->
+                    pendingBatchConfig = config
+                    batchPickerLauncher.launch("image/*")
                 }
+            )
+        }
+
+        if (isBatchExportDialogVisible && activeBatchProgress != null) {
+            com.cleanlr.ui.export.BatchExportProgressDialog(
+                progress = activeBatchProgress!!,
+                onCancel = { viewModel.cancelActiveBatch() },
+                onDismiss = { viewModel.dismissBatchExportDialog() }
             )
         }
     }

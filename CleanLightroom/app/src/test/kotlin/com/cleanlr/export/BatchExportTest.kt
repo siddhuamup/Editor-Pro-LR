@@ -231,4 +231,31 @@ class BatchExportTest {
         assertEquals(85, webpItem.config.quality)
         assertEquals(1080, webpItem.config.maxDimension)
     }
+
+    @Test
+    fun `test startBatch launches asynchronous flow and reports real-time state snapshots`() = runBlocking {
+        val manager = BatchExportManager()
+        val items = createBatch(5)
+        val processor = BatchItemProcessor { item, onItemProgress, _ ->
+            onItemProgress(100)
+            "output_${item.id}"
+        }
+
+        val batchId = manager.startBatch(items, processor, scope = this)
+        val flow = manager.observeProgress(batchId)
+
+        // Wait until finished
+        var attempts = 0
+        while (flow.value?.isFinished != true && attempts < 50) {
+            kotlinx.coroutines.delay(20)
+            attempts++
+        }
+
+        val finalSnapshot = manager.getProgress(batchId)
+        assertNotNull(finalSnapshot)
+        assertTrue(finalSnapshot!!.isFinished)
+        assertEquals(5, finalSnapshot.totalCount)
+        assertEquals(5, finalSnapshot.completedCount)
+        assertEquals("Export complete (5/5)", finalSnapshot.statusText)
+    }
 }

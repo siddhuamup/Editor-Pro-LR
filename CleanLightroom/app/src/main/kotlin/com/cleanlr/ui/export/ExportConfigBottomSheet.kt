@@ -35,6 +35,7 @@ import com.cleanlr.ui.theme.*
 fun ExportConfigBottomSheet(
     onDismiss: () -> Unit,
     onExportConfirmed: (ExportConfig) -> Unit,
+    onBatchExportRequested: ((ExportConfig) -> Unit)? = null,
     initialConfig: ExportConfig = ExportConfig()
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -366,52 +367,86 @@ fun ExportConfigBottomSheet(
             }
 
             // 6. Action Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = SpectrumTextSecondary
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, SpectrumBorder),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Cancel", fontSize = 14.sp)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (onBatchExportRequested != null) {
+                    OutlinedButton(
+                        onClick = {
+                            val finalConfig = ExportConfig(
+                                format = format,
+                                quality = quality.toInt().coerceIn(1, 100),
+                                maxDimension = if (isLongEdge2048) 2048 else null,
+                                includeExif = includeExif && format == ExportFormat.JPEG,
+                                autoShare = autoShare
+                            )
+                            onBatchExportRequested(finalConfig)
+                            onDismiss()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = SpectrumBlue
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SpectrumBlue.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Export Multiple Photos (Batch)...", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
 
-                Button(
-                    onClick = {
-                        val finalConfig = ExportConfig(
-                            format = format,
-                            quality = quality.toInt().coerceIn(1, 100),
-                            maxDimension = if (isLongEdge2048) 2048 else null,
-                            includeExif = includeExif && format == ExportFormat.JPEG,
-                            autoShare = autoShare
-                        )
-                        onExportConfirmed(finalConfig)
-                        onDismiss()
-                    },
-                    modifier = Modifier
-                        .weight(1.5f)
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = SpectrumBlue,
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(8.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.FileDownload,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Export Photo", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = SpectrumTextSecondary
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SpectrumBorder),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Cancel", fontSize = 14.sp)
+                    }
+
+                    Button(
+                        onClick = {
+                            val finalConfig = ExportConfig(
+                                format = format,
+                                quality = quality.toInt().coerceIn(1, 100),
+                                maxDimension = if (isLongEdge2048) 2048 else null,
+                                includeExif = includeExif && format == ExportFormat.JPEG,
+                                autoShare = autoShare
+                            )
+                            onExportConfirmed(finalConfig)
+                            onDismiss()
+                        },
+                        modifier = Modifier
+                            .weight(1.5f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SpectrumBlue,
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Export Photo", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

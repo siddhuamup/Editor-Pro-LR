@@ -21,6 +21,13 @@ object AcrXmpConverter {
         val d = recipe.detail
         val h = recipe.hsl
         val cg = recipe.colorGrading
+        val p = recipe.presence
+
+        val texture = if (e.texture != 0f) e.texture else p.texture
+        val clarity = if (e.clarity != 0f) e.clarity else p.clarity
+        val dehaze = if (e.dehaze != 0f) e.dehaze else p.dehaze
+        val vibrance = if (b.vibrance != 0f) b.vibrance else p.vibrance
+        val saturation = if (b.saturation != 0f) b.saturation else p.saturation
 
         return """
             <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0-c000 1.000000, 0000/00/00-00:00:00">
@@ -38,11 +45,11 @@ object AcrXmpConverter {
                   crs:Shadows2012="${b.shadows.toInt()}"
                   crs:Whites2012="${b.whites.toInt()}"
                   crs:Blacks2012="${b.blacks.toInt()}"
-                  crs:Texture="${e.texture.toInt()}"
-                  crs:Clarity2012="${e.clarity.toInt()}"
-                  crs:Dehaze="${e.dehaze.toInt()}"
-                  crs:Vibrance="${b.vibrance.toInt()}"
-                  crs:Saturation="${b.saturation.toInt()}"
+                  crs:Texture="${texture.toInt()}"
+                  crs:Clarity2012="${clarity.toInt()}"
+                  crs:Dehaze="${dehaze.toInt()}"
+                  crs:Vibrance="${vibrance.toInt()}"
+                  crs:Saturation="${saturation.toInt()}"
                   crs:PostCropVignetteAmount="${e.vignetteAmount.toInt()}"
                   crs:PostCropVignetteMidpoint="${e.vignetteMidpoint.toInt()}"
                   crs:PostCropVignetteFeather="${e.vignetteFeather.toInt()}"
@@ -222,7 +229,14 @@ object AcrXmpConverter {
             effects = parsedEffects,
             detail = parsedDetail,
             hsl = parsedHsl,
-            colorGrading = parsedColorGrading
+            colorGrading = parsedColorGrading,
+            presence = PresenceAdjustments(
+                texture = parsedEffects.texture,
+                clarity = parsedEffects.clarity,
+                dehaze = parsedEffects.dehaze,
+                vibrance = parsedBasic.vibrance,
+                saturation = parsedBasic.saturation
+            )
         )
     }
 }

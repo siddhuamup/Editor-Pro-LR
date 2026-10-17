@@ -75,7 +75,7 @@ class ExportMetadataRoundTripTest {
 
         assertTrue("XMP must contain x:xmpmeta header", xmp.contains("<x:xmpmeta"))
         assertTrue("XMP must contain Camera Raw Settings namespace", xmp.contains("xmlns:crs=\"http://ns.adobe.com/camera-raw-settings/1.0/\""))
-        assertTrue("XMP must contain crs:Exposure2012 attribute", xmp.contains("crs:Exposure2012=\"2.0\""))
+        assertTrue("XMP must contain crs:Exposure2012 attribute", xmp.contains("crs:Exposure2012=\"2.00\""))
         assertTrue("XMP must contain crs:Temperature attribute", xmp.contains("crs:Temperature=\"5800\""))
         assertTrue("XMP must contain crs:Clarity2012 attribute", xmp.contains("crs:Clarity2012=\"25\""))
     }

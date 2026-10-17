@@ -22,6 +22,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.cleanlr.export.BatchExportItem
+import com.cleanlr.export.BatchExportManager
+import com.cleanlr.export.BatchExportProgress
 
 import com.cleanlr.preset.Preset
 import com.cleanlr.preset.PresetManager
@@ -37,7 +40,8 @@ enum class EditorToolTab(val title: String) {
     DETAIL("Detail"),
     CURVES("Curves"),
     PRESETS("Presets"),
-    VERSIONS("Versions")
+    VERSIONS("Versions"),
+    MASKS("Masks")
 }
 
 enum class FlagState { NONE, PICK, REJECT }
@@ -101,6 +105,14 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     private val _lastExportedFormat = MutableStateFlow<com.cleanlr.export.ExportFormat>(com.cleanlr.export.ExportFormat.JPEG)
     val lastExportedFormat: StateFlow<com.cleanlr.export.ExportFormat> = _lastExportedFormat.asStateFlow()
+
+    private val _activeBatchProgress = MutableStateFlow<BatchExportProgress?>(null)
+    val activeBatchProgress: StateFlow<BatchExportProgress?> = _activeBatchProgress.asStateFlow()
+
+    private val _isBatchExportDialogVisible = MutableStateFlow(false)
+    val isBatchExportDialogVisible: StateFlow<Boolean> = _isBatchExportDialogVisible.asStateFlow()
+
+    private var currentBatchId: String? = null
 
     // Targeted Adjustment Tool (TAT) State
     private val _isTatActive = MutableStateFlow(false)
@@ -544,5 +556,86 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     fun clearExportStatus() {
         _exportStatus.value = null
+    }
+
+    fun startBatchExport(items: List<BatchExportItem>) {
+        if (items.isEmpty()) return
+        val manager = BatchExportManager.instance
+        val batchId = java.util.UUID.randomUUID().toString()
+        currentBatchId = batchId
+        _isBatchExportDialogVisible.value = true
+
+        val context = getApplication<Application>()
+        val processor = com.cleanlr.export.DefaultBatchItemProcessor(context)
+
+        viewModelScope.launch(Dispatchers.Default) {
+            manager.executeBatch(
+                batchId = batchId,
+                items = items,
+                processor = processor,
+                onProgressUpdate = { progress ->
+                    _activeBatchProgress.value = progress
+                }
+            )
+        }
+    }
+
+    fun cancelActiveBatch() {
+        val id = currentBatchId ?: return
+        BatchExportManager.instance.cancelBatch(id)
+    }
+
+    fun dismissBatchExportDialog() {
+        _isBatchExportDialogVisible.value = false
+        _activeBatchProgress.value = null
+        currentBatchId = null
+    }
+
+    private val _activeMaskLayerIndex = MutableStateFlow(0)
+    val activeMaskLayerIndex: StateFlow<Int> = _activeMaskLayerIndex.asStateFlow()
+
+    fun selectMaskLayer(index: Int) {
+        _activeMaskLayerIndex.value = index
+    }
+
+    fun addMaskLayer(subMask: SubMask) {
+        val currentLayers = _recipe.value.masks
+        val newLayer = MaskLayer(
+            id = java.util.UUID.randomUUID().toString(),
+            name = "Mask ${currentLayers.size + 1}",
+            subMasks = listOf(subMask)
+        )
+        val updated = currentLayers + newLayer
+        updateRecipe("Add Mask") { it.copy(masks = updated) }
+        _activeMaskLayerIndex.value = updated.size - 1
+    }
+
+    fun addSubMaskToActive(subMask: SubMask) {
+        val currentLayers = _recipe.value.masks.toMutableList()
+        val idx = _activeMaskLayerIndex.value
+        if (idx in currentLayers.indices) {
+            val layer = currentLayers[idx]
+            currentLayers[idx] = layer.copy(subMasks = layer.subMasks + subMask)
+            updateRecipe("Add Component to Mask") { it.copy(masks = currentLayers) }
+        }
+    }
+
+    fun updateMaskLayer(layer: MaskLayer) {
+        val currentLayers = _recipe.value.masks.toMutableList()
+        val idx = _activeMaskLayerIndex.value
+        if (idx in currentLayers.indices) {
+            currentLayers[idx] = layer
+            updateRecipe("Update Mask Adjustments") { it.copy(masks = currentLayers) }
+        }
+    }
+
+    fun deleteActiveMaskLayer() {
+        val currentLayers = _recipe.value.masks.toMutableList()
+        val idx = _activeMaskLayerIndex.value
+        if (idx in currentLayers.indices) {
+            currentLayers.removeAt(idx)
+            updateRecipe("Delete Mask") { it.copy(masks = currentLayers) }
+            _activeMaskLayerIndex.value = (idx - 1).coerceAtLeast(0)
+        }
     }
 }
