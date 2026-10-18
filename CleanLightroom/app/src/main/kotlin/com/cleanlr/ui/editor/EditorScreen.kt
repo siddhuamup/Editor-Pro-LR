@@ -67,6 +67,19 @@ fun EditorScreen(
     val isMaskOverlayVisible by viewModel.isMaskOverlayVisible.collectAsState()
     val activeMaskLayerIndex by viewModel.activeMaskLayerIndex.collectAsState()
 
+    // Darkroom Ergonomics & Surface Hierarchy States (Tips 1–35)
+    val canvasBackground by viewModel.canvasBackground.collectAsState()
+    val isCanvasMattingActive by viewModel.isCanvasMattingActive.collectAsState()
+    val canvasMattingWidthDp by viewModel.canvasMattingWidthDp.collectAsState()
+    val isCleanScreenMode by viewModel.isCleanScreenMode.collectAsState()
+    val panelSnapState by viewModel.panelSnapState.collectAsState()
+    val isSliderDragging by viewModel.isSliderDragging.collectAsState()
+    val bypassedTabs by viewModel.bypassedTabs.collectAsState()
+    val isColorWbExpanded by viewModel.isColorWbExpanded.collectAsState()
+    val isColorVibranceExpanded by viewModel.isColorVibranceExpanded.collectAsState()
+    val isColorMixerExpanded by viewModel.isColorMixerExpanded.collectAsState()
+    val isColorGradingExpanded by viewModel.isColorGradingExpanded.collectAsState()
+
     var showExportConfigSheet by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
 
@@ -101,43 +114,56 @@ fun EditorScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = SpectrumCanvas,
+        containerColor = canvasBackground.color,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Lightroom Clean",
-                        color = SpectrumTextPrimary,
-                        fontSize = 16.sp
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SpectrumSurface
-                ),
-                actions = {
-                    // Undo
-                    IconButton(
-                        onClick = { viewModel.undo() },
-                        enabled = canUndo
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Undo,
-                            contentDescription = "Undo",
-                            tint = if (canUndo) SpectrumTextPrimary else SpectrumTextSecondary.copy(alpha = 0.4f)
+            if (!isCleanScreenMode) {
+                // Tip 10: Compact 48.dp TopAppBar height
+                TopAppBar(
+                    modifier = Modifier.height(48.dp),
+                    title = {
+                        Text(
+                            text = "Lightroom Clean",
+                            color = SpectrumTextPrimary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = SpectrumSurface
+                    ),
+                    actions = {
+                        // Tip 1: Canvas Background Switcher (Pure Black, Dark Gray, Middle Gray, White)
+                        IconButton(onClick = { viewModel.cycleCanvasBackground() }) {
+                            Icon(
+                                imageVector = Icons.Default.Contrast,
+                                contentDescription = "Canvas Background (${canvasBackground.label})",
+                                tint = SpectrumIconNormal
+                            )
+                        }
 
-                    // Redo
-                    IconButton(
-                        onClick = { viewModel.redo() },
-                        enabled = canRedo
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Redo,
-                            contentDescription = "Redo",
-                            tint = if (canRedo) SpectrumTextPrimary else SpectrumTextSecondary.copy(alpha = 0.4f)
-                        )
-                    }
+                        // Undo
+                        IconButton(
+                            onClick = { viewModel.undo() },
+                            enabled = canUndo
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Undo,
+                                contentDescription = "Undo",
+                                tint = if (canUndo) SpectrumIconNormal else SpectrumIconDisabled
+                            )
+                        }
+
+                        // Redo
+                        IconButton(
+                            onClick = { viewModel.redo() },
+                            enabled = canRedo
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Redo,
+                                contentDescription = "Redo",
+                                tint = if (canRedo) SpectrumIconNormal else SpectrumIconDisabled
+                            )
+                        }
 
                     // Targeted Adjustment Tool (TAT)
                     IconButton(onClick = { viewModel.toggleTat() }) {
@@ -225,11 +251,22 @@ fun EditorScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Loupe Canvas (Preview Area)
+            // Loupe Canvas (Preview Area) with Canvas Background & 1.dp Inner Border (Tips 1, 2, 4)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1.0f)
+                    .background(canvasBackground.color)
+                    .then(
+                        if (isCanvasMattingActive) {
+                            Modifier
+                                .padding(canvasMattingWidthDp.dp)
+                                .border(1.dp, Color(0xFF505050))
+                        } else {
+                            Modifier
+                        }
+                    )
+                    .border(1.dp, SpectrumInnerBorder)
             ) {
                 LoupeCanvas(
                     bitmap = bitmap,
@@ -248,6 +285,8 @@ fun EditorScreen(
                     activeTool = activeTool,
                     brushSize = brushSize,
                     brushFeather = brushFeather,
+                    onSingleTap = { viewModel.toggleCleanScreenMode() },
+                    onTwoFingerLongPress = { viewModel.toggleCanvasMatting() },
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -269,21 +308,21 @@ fun EditorScreen(
                     }
                 }
 
-                // Export Toast with Native Share Action
+                // Tip 35: Floating Pill Dark Toast (#2C2C2C, #3E3E3E border, 12.dp radius)
                 exportStatus?.let { status ->
                     val lastExportedUri by viewModel.lastExportedUri.collectAsState()
                     val context = androidx.compose.ui.platform.LocalContext.current
                     Surface(
-                        color = SpectrumElevated,
-                        shape = RoundedCornerShape(8.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, SpectrumBorder),
+                        color = SpectrumToastSurface,
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SpectrumToastBorder),
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 16.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
                         ) {
                             Text(
                                 text = status,
@@ -297,7 +336,7 @@ fun EditorScreen(
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
+                                        .clip(RoundedCornerShape(6.dp))
                                         .background(SpectrumBlue)
                                         .clickable { viewModel.shareLastExport(context) }
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -322,162 +361,250 @@ fun EditorScreen(
                 }
             }
 
-            // Interactive Live Histogram with 5 drag zones
-            InteractiveHistogram(
-                histogramData = histogramData,
-                onAdjustBlacks = { delta ->
-                    viewModel.updateRecipe { it.copy(basic = it.basic.copy(blacks = (it.basic.blacks + delta).coerceIn(-100f, 100f))) }
-                },
-                onAdjustShadows = { delta ->
-                    viewModel.updateRecipe { it.copy(basic = it.basic.copy(shadows = (it.basic.shadows + delta).coerceIn(-100f, 100f))) }
-                },
-                onAdjustExposure = { delta ->
-                    viewModel.updateRecipe { it.copy(basic = it.basic.copy(exposure = (it.basic.exposure + delta).coerceIn(-5f, 5f))) }
-                },
-                onAdjustHighlights = { delta ->
-                    viewModel.updateRecipe { it.copy(basic = it.basic.copy(highlights = (it.basic.highlights + delta).coerceIn(-100f, 100f))) }
-                },
-                onAdjustWhites = { delta ->
-                    viewModel.updateRecipe { it.copy(basic = it.basic.copy(whites = (it.basic.whites + delta).coerceIn(-100f, 100f))) }
-                },
-                onToggleShadowClipping = {
-                    viewModel.setAltClippingMode(if (altClippingMode == 2) 0 else 2)
-                },
-                onToggleHighlightClipping = {
-                    viewModel.setAltClippingMode(if (altClippingMode == 1) 0 else 1)
-                },
-                onJumpToBlacks = {
-                    viewModel.setActiveTab(EditorToolTab.LIGHT)
-                    coroutineScope.launch {
-                        toolScrollState.animateScrollTo(toolScrollState.maxValue)
-                    }
-                },
-                onJumpToWhites = {
-                    viewModel.setActiveTab(EditorToolTab.LIGHT)
-                    coroutineScope.launch {
-                        toolScrollState.animateScrollTo((toolScrollState.maxValue * 0.75f).toInt())
-                    }
-                },
-                isShadowClippingActive = altClippingMode == 2,
-                isHighlightClippingActive = altClippingMode == 1
-            )
+            if (!isCleanScreenMode) {
+                // Interactive Live Histogram with 5 drag zones
+                InteractiveHistogram(
+                    histogramData = histogramData,
+                    onAdjustBlacks = { delta ->
+                        viewModel.updateRecipe { it.copy(basic = it.basic.copy(blacks = (it.basic.blacks + delta).coerceIn(-100f, 100f))) }
+                    },
+                    onAdjustShadows = { delta ->
+                        viewModel.updateRecipe { it.copy(basic = it.basic.copy(shadows = (it.basic.shadows + delta).coerceIn(-100f, 100f))) }
+                    },
+                    onAdjustExposure = { delta ->
+                        viewModel.updateRecipe { it.copy(basic = it.basic.copy(exposure = (it.basic.exposure + delta).coerceIn(-5f, 5f))) }
+                    },
+                    onAdjustHighlights = { delta ->
+                        viewModel.updateRecipe { it.copy(basic = it.basic.copy(highlights = (it.basic.highlights + delta).coerceIn(-100f, 100f))) }
+                    },
+                    onAdjustWhites = { delta ->
+                        viewModel.updateRecipe { it.copy(basic = it.basic.copy(whites = (it.basic.whites + delta).coerceIn(-100f, 100f))) }
+                    },
+                    onToggleShadowClipping = {
+                        viewModel.setAltClippingMode(if (altClippingMode == 2) 0 else 2)
+                    },
+                    onToggleHighlightClipping = {
+                        viewModel.setAltClippingMode(if (altClippingMode == 1) 0 else 1)
+                    },
+                    onJumpToBlacks = {
+                        viewModel.setActiveTab(EditorToolTab.LIGHT)
+                        coroutineScope.launch {
+                            toolScrollState.animateScrollTo(toolScrollState.maxValue)
+                        }
+                    },
+                    onJumpToWhites = {
+                        viewModel.setActiveTab(EditorToolTab.LIGHT)
+                        coroutineScope.launch {
+                            toolScrollState.animateScrollTo((toolScrollState.maxValue * 0.75f).toInt())
+                        }
+                    },
+                    isShadowClippingActive = altClippingMode == 2,
+                    isHighlightClippingActive = altClippingMode == 1
+                )
 
-            // Category Tool Tabs Bar — Adobe Lightroom Mobile Signature Style
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(SpectrumSurface)
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                contentPadding = PaddingValues(horizontal = 14.dp)
-            ) {
-                // Adobe Signature "Auto" One-Touch Button
-                item {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clickable {
-                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                viewModel.autoTone()
-                            }
-                            .padding(horizontal = 6.dp, vertical = 4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoFixHigh,
-                            contentDescription = "Auto Tone",
-                            tint = SpectrumTextPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Auto",
-                            color = SpectrumTextPrimary,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-
-                items(EditorToolTab.values()) { tab ->
-                    val isSelected = tab == activeTab
-                    val tabIcon = when (tab) {
-                        EditorToolTab.LIGHT -> Icons.Default.Brightness6
-                        EditorToolTab.COLOR -> Icons.Default.Palette
-                        EditorToolTab.EFFECTS -> Icons.Default.AutoAwesome
-                        EditorToolTab.DETAIL -> Icons.Default.Tune
-                        EditorToolTab.CURVES -> Icons.Default.Timeline
-                        EditorToolTab.PRESETS -> Icons.Default.Style
-                        EditorToolTab.VERSIONS -> Icons.Default.HistoryEdu
-                        EditorToolTab.MASKS -> Icons.Default.Layers
-                    }
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clickable {
-                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                viewModel.setActiveTab(tab)
-                            }
-                            .padding(horizontal = 6.dp, vertical = 4.dp)
-                    ) {
-                        Icon(
-                            imageVector = tabIcon,
-                            contentDescription = tab.title,
-                            tint = if (isSelected) SpectrumBlue else SpectrumTextSecondary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = tab.title,
-                            color = if (isSelected) SpectrumBlue else SpectrumTextSecondary,
-                            fontSize = 10.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                        )
-                    }
-                }
-
-                // Reset Action Button
-                item {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clickable {
-                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                showResetDialog = true
-                            }
-                            .padding(horizontal = 6.dp, vertical = 4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.RestartAlt,
-                            contentDescription = "Reset All",
-                            tint = SpectrumTextSecondary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Reset",
-                            color = SpectrumTextSecondary,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-
-            HorizontalDivider(color = SpectrumBorder, thickness = 1.dp)
-
-            // Active Panel Controls (Scrollable)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(240.dp)
-                    .background(SpectrumSurface)
-            ) {
-                Column(
+                // Tip 5: 8.dp Subtle Top Shadow between Canvas & Tool Panel
+                Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(toolScrollState)
-                        .padding(bottom = 16.dp)
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, Color(0x66000000))
+                            )
+                        )
+                )
+
+                // Category Tool Tabs Bar — Adobe Lightroom Mobile Signature Style
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(SpectrumSurface)
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp)
                 ) {
+                    // Adobe Signature "Auto" One-Touch Button
+                    item {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clickable {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    viewModel.autoTone()
+                                }
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AutoFixHigh,
+                                contentDescription = "Auto Tone",
+                                tint = SpectrumIconNormal,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Auto",
+                                color = SpectrumTextPrimary,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
+                    }
+
+                    items(EditorToolTab.values()) { tab ->
+                        val isSelected = tab == activeTab
+                        val isModified = viewModel.isTabModified(tab)
+                        val isBypassed = bypassedTabs.contains(tab)
+                        val tabIcon = when (tab) {
+                            EditorToolTab.LIGHT -> Icons.Default.Brightness6
+                            EditorToolTab.COLOR -> Icons.Default.Palette
+                            EditorToolTab.EFFECTS -> Icons.Default.AutoAwesome
+                            EditorToolTab.DETAIL -> Icons.Default.Tune
+                            EditorToolTab.CURVES -> Icons.Default.Timeline
+                            EditorToolTab.PRESETS -> Icons.Default.Style
+                            EditorToolTab.VERSIONS -> Icons.Default.HistoryEdu
+                            EditorToolTab.MASKS -> Icons.Default.Layers
+                        }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .pointerInput(tab) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                            viewModel.setActiveTab(tab)
+                                        },
+                                        onLongPress = {
+                                            // Tip 25: Long-press to reset tab
+                                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                            viewModel.resetTab(tab)
+                                        },
+                                        onDoubleTap = {
+                                            // Tip 26: Double-tap to bypass tab
+                                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                                            viewModel.toggleBypassTab(tab)
+                                        }
+                                    )
+                                }
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = tabIcon,
+                                contentDescription = tab.title,
+                                tint = if (isSelected) SpectrumBlue else if (isBypassed) SpectrumIconDisabled else SpectrumIconNormal,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = tab.title,
+                                color = if (isSelected) SpectrumBlue else if (isBypassed) SpectrumIconDisabled else SpectrumTextSecondary,
+                                fontSize = 10.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                            // Tips 23 & 24: Active Modification Indicator Dot
+                            if (isModified) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(4.dp)
+                                        .clip(androidx.compose.foundation.shape.CircleShape)
+                                        .background(if (isBypassed) Color.Gray else SpectrumActiveDot)
+                                )
+                            } else {
+                                Spacer(modifier = Modifier.height(6.dp))
+                            }
+                        }
+                    }
+
+                    // Reset Action Button
+                    item {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clickable {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    showResetDialog = true
+                                }
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.RestartAlt,
+                                contentDescription = "Reset All",
+                                tint = SpectrumIconNormal,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Reset",
+                                color = SpectrumTextSecondary,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = SpectrumBorder, thickness = 1.dp)
+
+                // Tip 6: 3-Snap Panel Height Animation
+                val animatedPanelHeight by androidx.compose.animation.core.animateDpAsState(
+                    targetValue = when (panelSnapState) {
+                        PanelSnapState.COLLAPSED -> 0.dp
+                        PanelSnapState.COMPACT -> 210.dp
+                        PanelSnapState.EXPANDED -> 380.dp
+                    },
+                    animationSpec = androidx.compose.animation.core.spring(
+                        dampingRatio = 0.8f,
+                        stiffness = 400f
+                    )
+                )
+
+                // Tips 8 & 9: 150ms opacity transition on slider drag
+                val animatedPanelAlpha by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = if (isSliderDragging) 0.15f else 1.0f,
+                    animationSpec = if (isSliderDragging) {
+                        androidx.compose.animation.core.tween(150)
+                    } else {
+                        androidx.compose.animation.core.tween(200, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                    }
+                )
+
+                if (animatedPanelHeight > 0.dp) {
+                    // Tip 7: Pill Drag Handle (32.dp x 4.dp, #484848, corner radius 2.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(SpectrumSurface)
+                            .clickable { viewModel.cyclePanelSnapState() }
+                            .padding(top = 4.dp, bottom = 2.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(width = 32.dp, height = 4.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(SpectrumPillHandle)
+                        )
+                    }
+
+                    // Active Panel Controls (Scrollable) with 12.dp fading edge (Tip 22)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(animatedPanelHeight)
+                            .background(SpectrumSurface)
+                            .graphicsLayer {
+                                alpha = animatedPanelAlpha
+                                compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
+                            }
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(toolScrollState)
+                                .padding(bottom = 16.dp)
+                        ) {
                     when (activeTab) {
                         EditorToolTab.LIGHT -> {
                             RampedSlider(
@@ -557,63 +684,206 @@ fun EditorScreen(
                                 Brush.horizontalGradient(listOf(Color(0xFF66BB6A), Color(0xFFEC407A)))
                             }
 
-                            RampedSlider(
-                                label = "Temperature",
-                                value = recipe.basic.temperature,
-                                minVal = 2000f,
-                                maxVal = 10000f,
-                                defaultValue = 5500f,
-                                isBipolar = false,
-                                formatPattern = "%.0f K",
-                                trackBrush = tempTrackBrush,
-                                onValueChangeStart = { viewModel.onSliderTouchStart() },
-                                onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(temperature = it)) } },
-                                onValueChangeEnd = { viewModel.onSliderTouchEnd("White Balance Temp") }
-                            )
-                            RampedSlider(
-                                label = "Tint",
-                                value = recipe.basic.tint,
-                                minVal = -150f,
-                                maxVal = 150f,
-                                defaultValue = 0f,
-                                isBipolar = true,
-                                trackBrush = tintTrackBrush,
-                                onValueChangeStart = { viewModel.onSliderTouchStart() },
-                                onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(tint = it)) } },
-                                onValueChangeEnd = { viewModel.onSliderTouchEnd("Tint") }
-                            )
-                            RampedSlider(
-                                label = "Vibrance",
-                                value = recipe.presence.vibrance,
-                                minVal = -100f,
-                                maxVal = 100f,
-                                onValueChangeStart = { viewModel.onSliderTouchStart() },
-                                onValueChange = { viewModel.updateRecipe { r -> r.copy(presence = r.presence.copy(vibrance = it)) } },
-                                onValueChangeEnd = { viewModel.onSliderTouchEnd("Vibrance") }
-                            )
-                            RampedSlider(
-                                label = "Saturation",
-                                value = recipe.presence.saturation,
-                                minVal = -100f,
-                                maxVal = 100f,
-                                onValueChangeStart = { viewModel.onSliderTouchStart() },
-                                onValueChange = { viewModel.updateRecipe { r -> r.copy(presence = r.presence.copy(saturation = it)) } },
-                                onValueChangeEnd = { viewModel.onSliderTouchEnd("Saturation") }
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
+                            // Tip 33 & 34: Accordion 1 — WHITE BALANCE
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 12.dp),
+                                    .clickable { viewModel.toggleColorSection("WB") }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "COLOR MIXER (8-CHANNEL)",
-                                    color = SpectrumTextSecondary,
-                                    fontSize = 11.sp
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (isColorWbExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        contentDescription = "Expand WB",
+                                        tint = SpectrumTextSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "WHITE BALANCE",
+                                        color = SpectrumGroupHeader,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.2.sp
+                                    )
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Visibility,
+                                        contentDescription = "Bypass WB",
+                                        tint = SpectrumIconNormal,
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clickable { view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK) }
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.RestartAlt,
+                                        contentDescription = "Reset WB",
+                                        tint = SpectrumIconNormal,
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clickable {
+                                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                                viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(temp = 0f, tint = 0f)) }
+                                            }
+                                    )
+                                }
+                            }
+
+                            if (isColorWbExpanded) {
+                                RampedSlider(
+                                    label = "Temperature",
+                                    value = recipe.basic.temperature,
+                                    minVal = 2000f,
+                                    maxVal = 10000f,
+                                    defaultValue = 5500f,
+                                    isBipolar = false,
+                                    formatPattern = "%.0f K",
+                                    trackBrush = tempTrackBrush,
+                                    onValueChangeStart = {
+                                        viewModel.onSliderTouchStart()
+                                        viewModel.setSliderDragging(true)
+                                    },
+                                    onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(temperature = it)) } },
+                                    onValueChangeEnd = {
+                                        viewModel.setSliderDragging(false)
+                                        viewModel.onSliderTouchEnd("White Balance Temp")
+                                    }
                                 )
+                                RampedSlider(
+                                    label = "Tint",
+                                    value = recipe.basic.tint,
+                                    minVal = -150f,
+                                    maxVal = 150f,
+                                    defaultValue = 0f,
+                                    isBipolar = true,
+                                    trackBrush = tintTrackBrush,
+                                    onValueChangeStart = {
+                                        viewModel.onSliderTouchStart()
+                                        viewModel.setSliderDragging(true)
+                                    },
+                                    onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(tint = it)) } },
+                                    onValueChangeEnd = {
+                                        viewModel.setSliderDragging(false)
+                                        viewModel.onSliderTouchEnd("Tint")
+                                    }
+                                )
+                            }
+
+                            HorizontalDivider(color = SpectrumGroupDivider, thickness = 1.dp, modifier = Modifier.padding(vertical = 6.dp))
+
+                            // Tip 33 & 34: Accordion 2 — VIBRANCE & SATURATION
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.toggleColorSection("VIBRANCE") }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (isColorVibranceExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        contentDescription = "Expand Vibrance",
+                                        tint = SpectrumTextSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "VIBRANCE & SATURATION",
+                                        color = SpectrumGroupHeader,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.2.sp
+                                    )
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Visibility,
+                                        contentDescription = "Bypass Vibrance",
+                                        tint = SpectrumIconNormal,
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clickable { view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK) }
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.RestartAlt,
+                                        contentDescription = "Reset Vibrance",
+                                        tint = SpectrumIconNormal,
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clickable {
+                                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                                viewModel.updateRecipe { r -> r.copy(presence = r.presence.copy(vibrance = 0f, saturation = 0f)) }
+                                            }
+                                    )
+                                }
+                            }
+
+                            if (isColorVibranceExpanded) {
+                                RampedSlider(
+                                    label = "Vibrance",
+                                    value = recipe.presence.vibrance,
+                                    minVal = -100f,
+                                    maxVal = 100f,
+                                    onValueChangeStart = {
+                                        viewModel.onSliderTouchStart()
+                                        viewModel.setSliderDragging(true)
+                                    },
+                                    onValueChange = { viewModel.updateRecipe { r -> r.copy(presence = r.presence.copy(vibrance = it)) } },
+                                    onValueChangeEnd = {
+                                        viewModel.setSliderDragging(false)
+                                        viewModel.onSliderTouchEnd("Vibrance")
+                                    }
+                                )
+                                RampedSlider(
+                                    label = "Saturation",
+                                    value = recipe.presence.saturation,
+                                    minVal = -100f,
+                                    maxVal = 100f,
+                                    onValueChangeStart = {
+                                        viewModel.onSliderTouchStart()
+                                        viewModel.setSliderDragging(true)
+                                    },
+                                    onValueChange = { viewModel.updateRecipe { r -> r.copy(presence = r.presence.copy(saturation = it)) } },
+                                    onValueChangeEnd = {
+                                        viewModel.setSliderDragging(false)
+                                        viewModel.onSliderTouchEnd("Saturation")
+                                    }
+                                )
+                            }
+
+                            HorizontalDivider(color = SpectrumGroupDivider, thickness = 1.dp, modifier = Modifier.padding(vertical = 6.dp))
+
+                            // Tip 33 & 34: Accordion 3 — COLOR MIXER (8-CHANNEL)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.toggleColorSection("MIXER") }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (isColorMixerExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        contentDescription = "Expand Mixer",
+                                        tint = SpectrumTextSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "COLOR MIXER (8-CHANNEL)",
+                                        color = SpectrumGroupHeader,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.2.sp
+                                    )
+                                }
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     // TAT toggle chip
@@ -663,28 +933,79 @@ fun EditorScreen(
                                             }
                                         }
                                     }
+
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.RestartAlt,
+                                        contentDescription = "Reset Mixer",
+                                        tint = SpectrumIconNormal,
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clickable {
+                                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                                viewModel.updateRecipe { it.copy(hsl = com.cleanlr.model.HslAdjustments()) }
+                                            }
+                                    )
                                 }
                             }
-                            HslMixerPanel(
-                                hsl = recipe.hsl,
-                                onHslChanged = { updated ->
-                                    viewModel.updateRecipe("Color Mixer") { it.copy(hsl = updated) }
-                                }
-                            )
 
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "COLOR GRADING (3-WAY WHEELS)",
-                                color = SpectrumTextSecondary,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(horizontal = 12.dp)
-                            )
-                            ColorGradingWheelWidget(
-                                colorGrading = recipe.colorGrading,
-                                onColorGradingChanged = { updated ->
-                                    viewModel.updateRecipe("Color Grading") { it.copy(colorGrading = updated) }
+                            if (isColorMixerExpanded) {
+                                HslMixerPanel(
+                                    hsl = recipe.hsl,
+                                    onHslChanged = { updated ->
+                                        viewModel.updateRecipe("Color Mixer") { it.copy(hsl = updated) }
+                                    }
+                                )
+                            }
+
+                            HorizontalDivider(color = SpectrumGroupDivider, thickness = 1.dp, modifier = Modifier.padding(vertical = 6.dp))
+
+                            // Tip 33 & 34: Accordion 4 — COLOR GRADING (3-WAY WHEELS)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.toggleColorSection("GRADING") }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (isColorGradingExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        contentDescription = "Expand Grading",
+                                        tint = SpectrumTextSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "COLOR GRADING (3-WAY WHEELS)",
+                                        color = SpectrumGroupHeader,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.2.sp
+                                    )
                                 }
-                            )
+                                Icon(
+                                    imageVector = Icons.Default.RestartAlt,
+                                    contentDescription = "Reset Grading",
+                                    tint = SpectrumIconNormal,
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .clickable {
+                                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                            viewModel.updateRecipe { it.copy(colorGrading = com.cleanlr.model.ColorGrading()) }
+                                        }
+                                )
+                            }
+
+                            if (isColorGradingExpanded) {
+                                ColorGradingWheelWidget(
+                                    colorGrading = recipe.colorGrading,
+                                    onColorGradingChanged = { updated ->
+                                        viewModel.updateRecipe("Color Grading") { it.copy(colorGrading = updated) }
+                                    }
+                                )
+                            }
                         }
 
                         EditorToolTab.EFFECTS -> {
@@ -808,6 +1129,8 @@ fun EditorScreen(
                 }
             }
         }
+    }
+}
 
         if (showResetDialog) {
             AlertDialog(

@@ -60,3 +60,63 @@ val HistogramRed = Color(0xFFE24A4A)
 val HistogramGreen = Color(0xFF4AE26B)
 val HistogramBlue = Color(0xFF4A90E2)
 val HistogramLuma = Color(0x88CCCCCC)
+
+// =============================================================================
+// Pro Darkroom Ergonomics & Surface Tokens (Tips 1–35)
+// =============================================================================
+
+// Tip 1: Canvas Background Options
+val CanvasPureBlack = Color(0xFF000000)
+val CanvasDarkGray = Color(0xFF121212)
+val CanvasMiddleGray = Color(0xFF808080)
+val CanvasWhite = Color(0xFFFFFFFF)
+
+enum class CanvasBackground(val label: String, val color: Color) {
+    DARK_GRAY("Dark Gray", CanvasDarkGray),
+    PURE_BLACK("Pure Black", CanvasPureBlack),
+    MIDDLE_GRAY("Middle Gray", CanvasMiddleGray),
+    WHITE("White", CanvasWhite)
+}
+
+// Tip 4: 1.dp subtle inner border so night photos don't bleed into canvas
+val SpectrumInnerBorder = Color(0xFF262626)
+
+// Tip 7: Pill Drag Handle
+val SpectrumPillHandle = Color(0xFF484848)
+
+// Tip 12: OLED anti-burn-in icon color (92% white)
+val SpectrumIconNormal = Color(0xFFEBEBEB)
+
+// Tip 14: Solid disabled token (prevents transparency layering artifacts)
+val SpectrumIconDisabled = Color(0xFF4A4A4A)
+
+// Tip 15 & 16: Panel Cards & Elevated Dialog rims
+val SpectrumCardBorder = Color(0xFF2E2E2E)
+val SpectrumTopHighlight = Color(0xFF3E3E3E)
+
+// Tip 17: SDR Nit Lock white (100-200 nits equivalent) during HDR editing
+val SdrNitLockedWhite = Color(0xFFB0B0B0)
+
+// Tip 23: Active modification indicator dot
+val SpectrumActiveDot = Color(0xFF1473E6)
+
+// Tip 29 & 30: Typography & Value states
+val SpectrumSliderLabel = Color(0xFFB0B0B0)
+val SpectrumSliderDefault = Color(0xFF8E8E8E)
+val SpectrumSliderModified = Color(0xFF38A9FF)
+
+// Tip 31 & 32: Group Header & Divider
+val SpectrumGroupHeader = Color(0xFF7A7A7A)
+val SpectrumGroupDivider = Color(0xFF2A2A2A)
+
+// Tip 35: Floating Pill Dark Tooltips & Toasts
+val SpectrumToastSurface = Color(0xFF2C2C2C)
+val SpectrumToastBorder = Color(0xFF3E3E3E)
+
+// Tip 6: 3-Snap Bottom Sheet State
+enum class PanelSnapState(val heightDp: Int) {
+    COLLAPSED(0),
+    COMPACT(210),
+    EXPANDED(380)
+}
+

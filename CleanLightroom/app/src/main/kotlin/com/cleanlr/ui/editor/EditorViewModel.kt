@@ -127,12 +127,42 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val _activeTatTargetName = MutableStateFlow<String?>(null)
     val activeTatTargetName: StateFlow<String?> = _activeTatTargetName.asStateFlow()
 
-    // View & Navigation States (PDF Part A Section 3)
+    // View & Navigation States (PDF Part A Section 3 & Tips 1-35)
     private val _isSplitView = MutableStateFlow(false)
     val isSplitView: StateFlow<Boolean> = _isSplitView.asStateFlow()
 
     private val _isCleanScreenMode = MutableStateFlow(false)
     val isCleanScreenMode: StateFlow<Boolean> = _isCleanScreenMode.asStateFlow()
+
+    private val _canvasBackground = MutableStateFlow(com.cleanlr.ui.theme.CanvasBackground.DARK_GRAY)
+    val canvasBackground: StateFlow<com.cleanlr.ui.theme.CanvasBackground> = _canvasBackground.asStateFlow()
+
+    private val _isCanvasMattingActive = MutableStateFlow(false)
+    val isCanvasMattingActive: StateFlow<Boolean> = _isCanvasMattingActive.asStateFlow()
+
+    private val _canvasMattingWidthDp = MutableStateFlow(16)
+    val canvasMattingWidthDp: StateFlow<Int> = _canvasMattingWidthDp.asStateFlow()
+
+    private val _panelSnapState = MutableStateFlow(com.cleanlr.ui.theme.PanelSnapState.COMPACT)
+    val panelSnapState: StateFlow<com.cleanlr.ui.theme.PanelSnapState> = _panelSnapState.asStateFlow()
+
+    private val _isSliderDragging = MutableStateFlow(false)
+    val isSliderDragging: StateFlow<Boolean> = _isSliderDragging.asStateFlow()
+
+    private val _bypassedTabs = MutableStateFlow<Set<EditorToolTab>>(emptySet())
+    val bypassedTabs: StateFlow<Set<EditorToolTab>> = _bypassedTabs.asStateFlow()
+
+    private val _isColorWbExpanded = MutableStateFlow(true)
+    val isColorWbExpanded: StateFlow<Boolean> = _isColorWbExpanded.asStateFlow()
+
+    private val _isColorVibranceExpanded = MutableStateFlow(true)
+    val isColorVibranceExpanded: StateFlow<Boolean> = _isColorVibranceExpanded.asStateFlow()
+
+    private val _isColorMixerExpanded = MutableStateFlow(false)
+    val isColorMixerExpanded: StateFlow<Boolean> = _isColorMixerExpanded.asStateFlow()
+
+    private val _isColorGradingExpanded = MutableStateFlow(false)
+    val isColorGradingExpanded: StateFlow<Boolean> = _isColorGradingExpanded.asStateFlow()
 
     private val _isFullScreen = MutableStateFlow(false)
     val isFullScreen: StateFlow<Boolean> = _isFullScreen.asStateFlow()
@@ -276,10 +306,12 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     }
 
     fun onSliderTouchStart() {
+        _isSliderDragging.value = true
         historyManager.onTouchDown(_recipe.value)
     }
 
     fun onSliderTouchEnd(actionName: String) {
+        _isSliderDragging.value = false
         historyManager.onTouchUp(_recipe.value, actionName)
     }
 
@@ -636,6 +668,155 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
             currentLayers.removeAt(idx)
             updateRecipe("Delete Mask") { it.copy(masks = currentLayers) }
             _activeMaskLayerIndex.value = (idx - 1).coerceAtLeast(0)
+        }
+    }
+
+    // =========================================================================
+    // Tips 1–35 Darkroom Ergonomics & Surface Controls
+    // =========================================================================
+
+    // Tip 1: Canvas Background Control
+    fun setCanvasBackground(bg: com.cleanlr.ui.theme.CanvasBackground) {
+        _canvasBackground.value = bg
+    }
+
+    fun cycleCanvasBackground() {
+        val values = com.cleanlr.ui.theme.CanvasBackground.values()
+        val nextIdx = (_canvasBackground.value.ordinal + 1) % values.size
+        _canvasBackground.value = values[nextIdx]
+    }
+
+    // Tip 2: Canvas Matting
+    fun toggleCanvasMatting() {
+        _isCanvasMattingActive.value = !_isCanvasMattingActive.value
+    }
+
+    fun setCanvasMatting(active: Boolean) {
+        _isCanvasMattingActive.value = active
+    }
+
+    // Tip 6: 3-Snap Bottom Sheet
+    fun setPanelSnapState(state: com.cleanlr.ui.theme.PanelSnapState) {
+        _panelSnapState.value = state
+    }
+
+    fun cyclePanelSnapState() {
+        _panelSnapState.value = when (_panelSnapState.value) {
+            com.cleanlr.ui.theme.PanelSnapState.COLLAPSED -> com.cleanlr.ui.theme.PanelSnapState.COMPACT
+            com.cleanlr.ui.theme.PanelSnapState.COMPACT -> com.cleanlr.ui.theme.PanelSnapState.EXPANDED
+            com.cleanlr.ui.theme.PanelSnapState.EXPANDED -> com.cleanlr.ui.theme.PanelSnapState.COMPACT
+        }
+    }
+
+    // Tips 8 & 9: Slider Dragging Dimming
+    fun setSliderDragging(dragging: Boolean) {
+        _isSliderDragging.value = dragging
+    }
+
+    fun setCleanScreenMode(active: Boolean) {
+        _isCleanScreenMode.value = active
+    }
+
+    // Tips 23 & 24: Active Modification Indicator Check
+    fun isTabModified(tab: EditorToolTab): Boolean {
+        val r = _recipe.value
+        return when (tab) {
+            EditorToolTab.LIGHT -> {
+                r.basic.exposure != 0f || r.basic.contrast != 0f ||
+                r.basic.highlights != 0f || r.basic.shadows != 0f ||
+                r.basic.whites != 0f || r.basic.blacks != 0f
+            }
+            EditorToolTab.COLOR -> {
+                r.basic.temperature != 5500f || r.basic.tint != 0f ||
+                r.basic.vibrance != 0f || r.basic.saturation != 0f ||
+                r.hsl != com.cleanlr.model.HslAdjustments() ||
+                r.colorGrading != com.cleanlr.model.ColorGrading()
+            }
+            EditorToolTab.EFFECTS -> {
+                r.effects.texture != 0f || r.effects.clarity != 0f || r.effects.dehaze != 0f ||
+                r.effects.vignetteAmount != 0f || r.effects.grainAmount != 0f
+            }
+            EditorToolTab.DETAIL -> {
+                r.detail.sharpening != 40f && r.detail.sharpening != 0f ||
+                r.detail.luminanceNoise != 0f || r.detail.colorNoise != 25f
+            }
+            EditorToolTab.CURVES -> {
+                r.curves != com.cleanlr.model.ToneCurves()
+            }
+            EditorToolTab.PRESETS -> {
+                _activePreset.value != null
+            }
+            EditorToolTab.VERSIONS -> {
+                versions.value.size > 1
+            }
+            EditorToolTab.MASKS -> {
+                r.masks.isNotEmpty()
+            }
+        }
+    }
+
+    // Tip 25: Reset Single Tab on Long-Press
+    fun resetTab(tab: EditorToolTab) {
+        when (tab) {
+            EditorToolTab.LIGHT -> {
+                updateRecipe("Reset Light") {
+                    it.copy(basic = it.basic.copy(
+                        exposure = 0f, contrast = 0f, highlights = 0f,
+                        shadows = 0f, whites = 0f, blacks = 0f
+                    ))
+                }
+            }
+            EditorToolTab.COLOR -> {
+                updateRecipe("Reset Color") {
+                    it.copy(
+                        basic = it.basic.copy(temperature = 5500f, tint = 0f, vibrance = 0f, saturation = 0f),
+                        hsl = com.cleanlr.model.HslAdjustments(),
+                        colorGrading = com.cleanlr.model.ColorGrading()
+                    )
+                }
+            }
+            EditorToolTab.EFFECTS -> {
+                updateRecipe("Reset Effects") {
+                    it.copy(effects = com.cleanlr.model.EffectsAdjustments())
+                }
+            }
+            EditorToolTab.DETAIL -> {
+                updateRecipe("Reset Detail") {
+                    it.copy(detail = com.cleanlr.model.DetailAdjustments())
+                }
+            }
+            EditorToolTab.CURVES -> {
+                updateRecipe("Reset Curves") {
+                    it.copy(curves = com.cleanlr.model.ToneCurves())
+                }
+            }
+            EditorToolTab.PRESETS -> {
+                _activePreset.value = null
+            }
+            EditorToolTab.VERSIONS -> {}
+            EditorToolTab.MASKS -> {
+                updateRecipe("Reset Masks") { it.copy(masks = emptyList()) }
+            }
+        }
+    }
+
+    // Tip 26: Temporary Bypass on Double-Tap
+    fun toggleBypassTab(tab: EditorToolTab) {
+        val current = _bypassedTabs.value
+        _bypassedTabs.value = if (current.contains(tab)) {
+            current - tab
+        } else {
+            current + tab
+        }
+    }
+
+    // Tips 33 & 34: Color Accordion Section Toggles
+    fun toggleColorSection(section: String) {
+        when (section) {
+            "WB" -> _isColorWbExpanded.value = !_isColorWbExpanded.value
+            "VIBRANCE" -> _isColorVibranceExpanded.value = !_isColorVibranceExpanded.value
+            "MIXER" -> _isColorMixerExpanded.value = !_isColorMixerExpanded.value
+            "GRADING" -> _isColorGradingExpanded.value = !_isColorGradingExpanded.value
         }
     }
 }

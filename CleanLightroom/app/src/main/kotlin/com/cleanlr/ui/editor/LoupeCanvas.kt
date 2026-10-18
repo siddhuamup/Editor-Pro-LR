@@ -133,6 +133,8 @@ fun LoupeCanvas(
     activeTool: ActiveTool? = null,
     brushSize: Float = 50.0f,
     brushFeather: Float = 50.0f,
+    onSingleTap: () -> Unit = {},
+    onTwoFingerLongPress: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var glView by remember { mutableStateOf<LoupeGLView?>(null) }
@@ -229,7 +231,9 @@ fun LoupeCanvas(
                             onTransform = { _, pan, zoom ->
                                 scale = (scale * zoom).coerceIn(1.0f, 6.0f)
                                 offset = if (scale == 1.0f) Offset.Zero else offset + pan
-                            }
+                            },
+                            onSingleTap = onSingleTap,
+                            onTwoFingerLongPress = onTwoFingerLongPress
                         )
                     }
                 }

@@ -71,12 +71,13 @@ fun RampedSlider(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Parameter Name Font: 12.sp, Weight: Regular (400)
+            // Parameter Name Font: 12.sp, Weight: Regular (400), #B0B0B0, LetterSpacing 0.2.sp (Tip 29)
             Text(
                 text = label,
-                color = SpectrumTextSecondary,
+                color = com.cleanlr.ui.theme.SpectrumSliderLabel,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Normal,
+                letterSpacing = 0.2.sp,
                 modifier = Modifier.pointerInput(Unit) {
                     detectTapGestures(
                         onDoubleTap = {
@@ -89,18 +90,32 @@ fun RampedSlider(
                 }
             )
 
-            // Value Label Font: 13.sp, Weight: Medium (500)
-            val displayValue = if (formatPattern.contains("f")) {
+            // Value Label Font: 13.sp, Weight: SemiBold, Tabular Figures (Tips 27, 28, 29, 30)
+            val rawFormatted = if (formatPattern.contains("f")) {
                 val prefix = if (isBipolar && value > 0.001f) "+" else ""
                 prefix + String.format(Locale.US, formatPattern, value)
             } else {
-                value.toInt().toString()
+                val prefix = if (isBipolar && value > 0.001f) "+" else ""
+                prefix + value.toInt().toString()
             }
+            // Tip 28: True mathematical minus (− U+2212)
+            val displayValue = rawFormatted.replace("-", "\u2212")
+
+            val isModified = abs(value - defaultValue) > 0.001f
+            val valueColor = if (isModified) {
+                com.cleanlr.ui.theme.SpectrumSliderModified
+            } else {
+                com.cleanlr.ui.theme.SpectrumSliderDefault
+            }
+
             Text(
                 text = displayValue,
-                color = if (abs(value - defaultValue) > 0.001f) SpectrumBlue else SpectrumTextPrimary,
+                color = valueColor,
                 fontSize = 13.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.SemiBold,
+                style = androidx.compose.ui.text.TextStyle(
+                    fontFeatureSettings = "tnum"
+                )
             )
         }
 

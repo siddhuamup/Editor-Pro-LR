@@ -4,7 +4,9 @@ import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.core.view.WindowCompat
 import com.cleanlr.ui.editor.EditorScreen
 import com.cleanlr.ui.editor.EditorViewModel
 import com.cleanlr.ui.shortcuts.KeyboardShortcutsHandler
@@ -16,7 +18,12 @@ class MainActivity : ComponentActivity() {
     private lateinit var shortcutsHandler: KeyboardShortcutsHandler
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
         shortcutsHandler = KeyboardShortcutsHandler(viewModel)
 
         setContent {

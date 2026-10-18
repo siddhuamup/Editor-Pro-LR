@@ -24,7 +24,9 @@ class CanvasGestureStateMachine(
     private val onDoubleTap: (Offset) -> Unit,
     private val onTwoFingerTap: () -> Unit,
     private val onThreeFingerTap: () -> Unit,
-    private val onTransform: (centroid: Offset, pan: Offset, zoom: Float) -> Unit
+    private val onTransform: (centroid: Offset, pan: Offset, zoom: Float) -> Unit,
+    private val onSingleTap: () -> Unit = {},
+    private val onTwoFingerLongPress: () -> Unit = {}
 ) {
     var isLongPressActive = false
         private set
@@ -47,7 +49,12 @@ class CanvasGestureStateMachine(
         } else {
             lastTapTime = timeMs
             lastTapPosition = pos
+            onSingleTap()
         }
+    }
+
+    fun triggerTwoFingerLongPress() {
+        onTwoFingerLongPress()
     }
 
     fun setLongPress(active: Boolean) {
@@ -81,14 +88,18 @@ suspend fun PointerInputScope.detectCanvasTouchGestures(
     onDoubleTap: (Offset) -> Unit,
     onTwoFingerTap: () -> Unit,
     onThreeFingerTap: () -> Unit,
-    onTransform: (centroid: Offset, pan: Offset, zoom: Float) -> Unit
+    onTransform: (centroid: Offset, pan: Offset, zoom: Float) -> Unit,
+    onSingleTap: () -> Unit = {},
+    onTwoFingerLongPress: () -> Unit = {}
 ) = coroutineScope {
     val stateMachine = CanvasGestureStateMachine(
         onLongPressChange = onLongPressChange,
         onDoubleTap = onDoubleTap,
         onTwoFingerTap = onTwoFingerTap,
         onThreeFingerTap = onThreeFingerTap,
-        onTransform = onTransform
+        onTransform = onTransform,
+        onSingleTap = onSingleTap,
+        onTwoFingerLongPress = onTwoFingerLongPress
     )
 
     awaitEachGesture {
@@ -99,12 +110,16 @@ suspend fun PointerInputScope.detectCanvasTouchGestures(
         var hasMovedSignificantly = false
         var isLongPressTriggered = false
 
-        // Launch long press timer job
+        // Launch long press timer job (350ms threshold)
         val longPressJob = launch {
-            delay(350L) // 350ms threshold for Before/After compare
-            if (!hasMovedSignificantly && maxPointersSeen == 1) {
-                isLongPressTriggered = true
-                stateMachine.setLongPress(true)
+            delay(350L)
+            if (!hasMovedSignificantly) {
+                if (maxPointersSeen == 1) {
+                    isLongPressTriggered = true
+                    stateMachine.setLongPress(true)
+                } else if (maxPointersSeen == 2) {
+                    stateMachine.triggerTwoFingerLongPress()
+                }
             }
         }
 
