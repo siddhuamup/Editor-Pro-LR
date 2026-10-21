@@ -176,4 +176,33 @@ object SplineInterpolator {
         }
         return result
     }
+
+    /**
+     * Tip 162: Generates a 256x1 RGBA 4-channel LUT texture buffer.
+     * Evaluates Composite + individual RGB curves chained:
+     * - Red: RedCurve(Composite(x))
+     * - Green: GreenCurve(Composite(x))
+     * - Blue: BlueCurve(Composite(x))
+     * - Alpha: 255
+     */
+    fun generateRgbaLut256(curves: ToneCurves): ByteArray {
+        val compositeSpline = evaluateSpline(curves.composite)
+        val redSpline = evaluateSpline(curves.red)
+        val greenSpline = evaluateSpline(curves.green)
+        val blueSpline = evaluateSpline(curves.blue)
+
+        val result = ByteArray(256 * 4)
+        for (i in 0..255) {
+            val compVal = compositeSpline[i].toInt().coerceIn(0, 255)
+            val rVal = redSpline[compVal].toInt().coerceIn(0, 255)
+            val gVal = greenSpline[compVal].toInt().coerceIn(0, 255)
+            val bVal = blueSpline[compVal].toInt().coerceIn(0, 255)
+
+            result[i * 4 + 0] = rVal.toByte()
+            result[i * 4 + 1] = gVal.toByte()
+            result[i * 4 + 2] = bVal.toByte()
+            result[i * 4 + 3] = 255.toByte()
+        }
+        return result
+    }
 }

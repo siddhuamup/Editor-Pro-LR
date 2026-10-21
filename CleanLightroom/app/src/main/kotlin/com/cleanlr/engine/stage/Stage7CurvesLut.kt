@@ -82,11 +82,11 @@ class Stage7CurvesLut(private val context: Context) {
         defaultParametricLutTexId = pCurveTex[0]
         init1dLutTexture(defaultParametricLutTexId)
 
-        // 2. 256x1 1D Identity Point Curve LUT
+        // 2. Tip 162: 256x1 RGBA 4-Channel Point Curve LUT (R=Red, G=Green, B=Blue)
         val ptCurveTex = IntArray(1)
         GLES30.glGenTextures(1, ptCurveTex, 0)
         defaultPointLutTexId = ptCurveTex[0]
-        init1dLutTexture(defaultPointLutTexId)
+        initRgba1dLutTexture(defaultPointLutTexId)
 
         // 3. 2x2x2 Identity 3D LUT Texture (RGB Cube corners)
         val lut3dTex = IntArray(1)
@@ -145,6 +145,31 @@ class Stage7CurvesLut(private val context: Context) {
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0)
     }
 
+    /**
+     * Tip 162: 256x1 RGBA 1D LUT Texture initialization for 4-channel Point Curves
+     */
+    private fun initRgba1dLutTexture(textureId: Int) {
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureId)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE)
+
+        val identity = ByteArray(256 * 4) { idx ->
+            val channel = idx % 4
+            if (channel == 3) 255.toByte() else (idx / 4).toByte()
+        }
+        val buf = ByteBuffer.allocateDirect(identity.size).apply {
+            put(identity)
+            position(0)
+        }
+        GLES30.glTexImage2D(
+            GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA8, 256, 1, 0,
+            GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, buf
+        )
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0)
+    }
+
     private fun update1dLutTexture(textureId: Int, lutData: ByteArray) {
         if (textureId == 0 || lutData.size < 256) return
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureId)
@@ -160,10 +185,20 @@ class Stage7CurvesLut(private val context: Context) {
     }
 
     /**
-     * Updates the Point Curve LUT texture.
+     * Tip 162: Updates the Point Curve RGBA 4-channel LUT texture (256 * 4 bytes).
      */
     fun updatePointCurveData(lutData: ByteArray) {
-        update1dLutTexture(defaultPointLutTexId, lutData)
+        if (defaultPointLutTexId == 0 || lutData.size < 256 * 4) return
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, defaultPointLutTexId)
+        val buf = ByteBuffer.allocateDirect(256 * 4).apply {
+            put(lutData, 0, 256 * 4)
+            position(0)
+        }
+        GLES30.glTexSubImage2D(
+            GLES30.GL_TEXTURE_2D, 0, 0, 0, 256, 1,
+            GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, buf
+        )
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0)
     }
 
     /**
@@ -180,15 +215,22 @@ class Stage7CurvesLut(private val context: Context) {
                abs(curves.parametricShadows) > EPSILON
     }
 
-    fun isPointCurveActive(curves: ToneCurves): Boolean {
-        if (curves.pointCurve.size > 2) return true
-        if (curves.pointCurve.size == 2) {
-            val p0 = curves.pointCurve[0]
-            val p1 = curves.pointCurve[1]
+    private fun isCurveListActive(points: List<CurvePoint>): Boolean {
+        if (points.size > 2) return true
+        if (points.size == 2) {
+            val p0 = points[0]
+            val p1 = points[1]
             return abs(p0.x - 0f) > EPSILON || abs(p0.y - 0f) > EPSILON ||
                    abs(p1.x - 255f) > EPSILON || abs(p1.y - 255f) > EPSILON
         }
         return false
+    }
+
+    fun isPointCurveActive(curves: ToneCurves): Boolean {
+        return isCurveListActive(curves.composite) ||
+               isCurveListActive(curves.red) ||
+               isCurveListActive(curves.green) ||
+               isCurveListActive(curves.blue)
     }
 
     fun shouldSkip(
@@ -236,8 +278,8 @@ class Stage7CurvesLut(private val context: Context) {
             customPointCurveTexId
         } else {
             if (hasPoint) {
-                val ptLut = SplineInterpolator.generatePointCurveLut256(curves.pointCurve)
-                updatePointCurveData(ptLut)
+                val rgbaLut = SplineInterpolator.generateRgbaLut256(curves)
+                updatePointCurveData(rgbaLut)
             }
             defaultPointLutTexId
         }
@@ -296,10 +338,116 @@ class Stage7CurvesLut(private val context: Context) {
             GLES30.glDeleteTextures(1, intArrayOf(default3dLutTexId), 0)
             default3dLutTexId = 0
         }
+        film3dLutCache.values.forEach { id ->
+            if (id != 0) GLES30.glDeleteTextures(1, intArrayOf(id), 0)
+        }
+        film3dLutCache.clear()
+
         if (programId != 0) {
             GLES30.glDeleteProgram(programId)
             programId = 0
         }
         isInitialized = false
     }
+
+    private val film3dLutCache = mutableMapOf<Film3dLut, Int>()
+
+    /**
+     * Tip 202: Retrieves or procedurally generates film emulation 3D LUT textures.
+     */
+    fun getFilm3dLutTexture(lut: Film3dLut): Int {
+        if (lut == Film3dLut.NONE) return 0
+        return film3dLutCache.getOrPut(lut) {
+            generateProceduralFilm3dLut(lut)
+        }
+    }
+
+    private fun generateProceduralFilm3dLut(lut: Film3dLut): Int {
+        val size = 16
+        val tex = IntArray(1)
+        GLES30.glGenTextures(1, tex, 0)
+        val texId = tex[0]
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_3D, texId)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_3D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_3D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_3D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_3D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_3D, GLES30.GL_TEXTURE_WRAP_R, GLES30.GL_CLAMP_TO_EDGE)
+
+        val totalBytes = size * size * size * 4
+        val data = ByteArray(totalBytes)
+        var ptr = 0
+
+        for (b in 0 until size) {
+            val normB = b.toFloat() / (size - 1)
+            for (g in 0 until size) {
+                val normG = g.toFloat() / (size - 1)
+                for (r in 0 until size) {
+                    val normR = r.toFloat() / (size - 1)
+
+                    var outR = normR
+                    var outG = normG
+                    var outB = normB
+
+                    when (lut) {
+                        Film3dLut.PORTRA_400 -> {
+                            // Kodak Portra 400: Warm skin tones, pastel highlights
+                            outR = (normR * 1.08f + 0.02f).coerceIn(0f, 1f)
+                            outG = (normG * 1.02f + 0.01f).coerceIn(0f, 1f)
+                            outB = (normB * 0.92f).coerceIn(0f, 1f)
+                        }
+                        Film3dLut.FUJI_VELVIA -> {
+                            // Fuji Velvia: High saturation, vivid greens and deep blues
+                            val luma = normR * 0.299f + normG * 0.587f + normB * 0.114f
+                            outR = (luma + (normR - luma) * 1.35f).coerceIn(0f, 1f)
+                            outG = (luma + (normG - luma) * 1.45f * 1.05f).coerceIn(0f, 1f)
+                            outB = (luma + (normB - luma) * 1.40f * 1.08f).coerceIn(0f, 1f)
+                        }
+                        Film3dLut.CINEON_LOG -> {
+                            // Cineon Log: Lifted blacks, compressed dynamic range
+                            outR = (0.12f + normR * 0.78f).coerceIn(0f, 1f)
+                            outG = (0.12f + normG * 0.78f).coerceIn(0f, 1f)
+                            outB = (0.12f + normB * 0.78f).coerceIn(0f, 1f)
+                        }
+                        Film3dLut.BLEACH_BYPASS -> {
+                            // Bleach Bypass: High contrast, silver desaturation
+                            val luma = normR * 0.299f + normG * 0.587f + normB * 0.114f
+                            val contrastedLuma = if (luma < 0.5f) 2f * luma * luma else 1f - 2f * (1f - luma) * (1f - luma)
+                            outR = (contrastedLuma * 0.65f + normR * 0.35f).coerceIn(0f, 1f)
+                            outG = (contrastedLuma * 0.65f + normG * 0.35f).coerceIn(0f, 1f)
+                            outB = (contrastedLuma * 0.65f + normB * 0.35f).coerceIn(0f, 1f)
+                        }
+                        Film3dLut.NONE -> {}
+                    }
+
+                    data[ptr++] = (outR * 255f).toInt().toByte()
+                    data[ptr++] = (outG * 255f).toInt().toByte()
+                    data[ptr++] = (outB * 255f).toInt().toByte()
+                    data[ptr++] = 255.toByte()
+                }
+            }
+        }
+
+        val buf = ByteBuffer.allocateDirect(data.size).order(ByteOrder.nativeOrder()).apply {
+            put(data)
+            position(0)
+        }
+        GLES30.glTexImage3D(
+            GLES30.GL_TEXTURE_3D, 0, GLES30.GL_RGBA8, size, size, size, 0,
+            GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, buf
+        )
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_3D, 0)
+        return texId
+    }
+}
+
+/**
+ * Tip 202: Built-in Film Emulation 3D LUT Presets
+ */
+enum class Film3dLut(val label: String) {
+    NONE("None"),
+    PORTRA_400("Kodak Portra 400"),
+    FUJI_VELVIA("Fuji Velvia 50"),
+    CINEON_LOG("Cineon Log"),
+    BLEACH_BYPASS("Bleach Bypass")
 }

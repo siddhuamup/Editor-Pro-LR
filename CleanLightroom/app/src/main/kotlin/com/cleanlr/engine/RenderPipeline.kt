@@ -74,6 +74,8 @@ class RenderPipeline(private val context: Context) {
     }
 
     var useNineStagePipeline: Boolean = true
+    var activeFilm3dLut: com.cleanlr.engine.stage.Film3dLut = com.cleanlr.engine.stage.Film3dLut.NONE
+    var film3dLutIntensity: Float = 1.0f
 
     // OpenGL Geometry & Textures (Tip 82: Dual VAO for Y-flip safety across arbitrary stage bypasses)
     private var vaoUploadId = 0
@@ -368,6 +370,14 @@ class RenderPipeline(private val context: Context) {
     }
 
     /**
+     * Tips 201 & 202: Sets active 3D Film LUT and intensity (0.0 to 1.0)
+     */
+    fun setFilm3dLut(lut: com.cleanlr.engine.stage.Film3dLut, intensity: Float = 1.0f) {
+        activeFilm3dLut = lut
+        film3dLutIntensity = intensity.coerceIn(0f, 1f)
+    }
+
+    /**
      * Tips 92–95: High-performance OpenGL Split View (Before/After Wipe) via glScissor
      */
     private fun renderSplit(
@@ -490,12 +500,14 @@ class RenderPipeline(private val context: Context) {
             // -----------------------------------------------------------------
             // STAGE 7: Curves & Creative 3D LUTs (Monotone Cubic Splines)
             // (Section 2.1 Order of Operations: Step 8 Tone Curves)
+            // Tips 162 & 202: 4-Channel Point Curve & Procedural 3D LUTs
             // -----------------------------------------------------------------
+            val lut3dTex = stage7CurvesLut.getFilm3dLutTexture(activeFilm3dLut)
             stage7CurvesLut.process(
                 curves = activeRecipe.curves,
-                customPointCurveTexId = lutTextureId,
-                custom3dLutTexId = 0,
-                lut3dIntensity = 0.0f,
+                customPointCurveTexId = 0, // Uses internal RGBA 4-channel texture with Composite+R/G/B
+                custom3dLutTexId = lut3dTex,
+                lut3dIntensity = if (activeFilm3dLut != com.cleanlr.engine.stage.Film3dLut.NONE) film3dLutIntensity else 0.0f,
                 pingPong = pingPong,
                 vaoId = vaoFboId
             )
