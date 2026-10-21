@@ -1,9 +1,24 @@
 package com.cleanlr.ui.editor
 
+import android.content.res.Configuration
 import android.net.Uri
+import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -22,17 +37,57 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.view.HapticFeedbackConstants
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.graphics.Brush
 import com.cleanlr.ui.components.*
 import com.cleanlr.ui.theme.*
 import kotlinx.coroutines.launch
+
+// Tip 22: 12.dp fading edge on scrollable panels using CompositingStrategy.Offscreen
+fun Modifier.fadingEdge(
+    scrollState: ScrollState,
+    topEdgeHeight: Dp = 12.dp,
+    bottomEdgeHeight: Dp = 12.dp
+): Modifier = this
+    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+    .drawWithContent {
+        drawContent()
+        val topFadingPx = topEdgeHeight.toPx()
+        val bottomFadingPx = bottomEdgeHeight.toPx()
+
+        if (scrollState.value > 0) {
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, Color.Black),
+                    startY = 0f,
+                    endY = topFadingPx
+                ),
+                blendMode = BlendMode.DstIn
+            )
+        }
+
+        if (scrollState.value < scrollState.maxValue) {
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.Black, Color.Transparent),
+                    startY = size.height - bottomFadingPx,
+                    endY = size.height
+                ),
+                blendMode = BlendMode.DstIn
+            )
+        }
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,6 +135,18 @@ fun EditorScreen(
     val isColorMixerExpanded by viewModel.isColorMixerExpanded.collectAsState()
     val isColorGradingExpanded by viewModel.isColorGradingExpanded.collectAsState()
 
+    // Tips 81–125 (Loupe, Navigation, Overlays & History)
+    val isSplitView by viewModel.isSplitView.collectAsState()
+    val splitPosition by viewModel.splitPosition.collectAsState()
+    val isSplitHorizontal by viewModel.isSplitHorizontal.collectAsState()
+    val isInfoOverlayVisible by viewModel.isInfoOverlayVisible.collectAsState()
+    val photoExif by viewModel.photoExif.collectAsState()
+    val showGrid by viewModel.showGrid.collectAsState()
+    val aspectRatioGuide by viewModel.aspectRatioGuide.collectAsState()
+    val isZoomLocked by viewModel.isZoomLocked.collectAsState()
+
+    var showHistoryMenu by remember { mutableStateOf(false) }
+    var showViewOptionsMenu by remember { mutableStateOf(false) }
     var showExportConfigSheet by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
 
@@ -141,16 +208,65 @@ fun EditorScreen(
                             )
                         }
 
-                        // Undo
-                        IconButton(
-                            onClick = { viewModel.undo() },
-                            enabled = canUndo
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Undo,
-                                contentDescription = "Undo",
-                                tint = if (canUndo) SpectrumIconNormal else SpectrumIconDisabled
-                            )
+                        // Tip 122: Undo with long-press history dropdown
+                        Box {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .pointerInput(canUndo) {
+                                        detectTapGestures(
+                                            onTap = { if (canUndo) viewModel.undo() },
+                                            onLongPress = {
+                                                if (canUndo) {
+                                                    view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                                    showHistoryMenu = true
+                                                }
+                                            }
+                                        )
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Undo,
+                                    contentDescription = "Undo (Tap) / History (Long-Press)",
+                                    tint = if (canUndo) SpectrumIconNormal else SpectrumIconDisabled
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = showHistoryMenu,
+                                onDismissRequest = { showHistoryMenu = false },
+                                modifier = Modifier
+                                    .background(SpectrumElevated)
+                                    .border(1.dp, SpectrumInnerBorder, RoundedCornerShape(8.dp))
+                            ) {
+                                val historySteps = viewModel.getHistorySteps()
+                                Text(
+                                    text = "Edit History (${historySteps.size} steps)",
+                                    color = SpectrumTextSecondary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                )
+                                HorizontalDivider(color = SpectrumInnerBorder)
+                                historySteps.forEachIndexed { index, stepName ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "${index + 1}. $stepName",
+                                                color = if (index == historySteps.lastIndex) SpectrumBlue else SpectrumTextPrimary,
+                                                fontSize = 13.sp,
+                                                fontWeight = if (index == historySteps.lastIndex) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.restoreToHistoryStep(index)
+                                            showHistoryMenu = false
+                                        }
+                                    )
+                                }
+                            }
                         }
 
                         // Redo
@@ -165,87 +281,216 @@ fun EditorScreen(
                             )
                         }
 
-                    // Targeted Adjustment Tool (TAT)
-                    IconButton(onClick = { viewModel.toggleTat() }) {
-                        Icon(
-                            imageVector = Icons.Default.Adjust,
-                            contentDescription = "Targeted Adjustment Tool (TAT)",
-                            tint = if (isTatActive) SpectrumBlue else SpectrumTextPrimary
-                        )
-                    }
+                        // Targeted Adjustment Tool (TAT)
+                        IconButton(onClick = { viewModel.toggleTat() }) {
+                            Icon(
+                                imageVector = Icons.Default.Adjust,
+                                contentDescription = "Targeted Adjustment Tool (TAT)",
+                                tint = if (isTatActive) SpectrumBlue else SpectrumTextPrimary
+                            )
+                        }
 
-                    // Press & hold Before/After compare
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onPress = {
-                                        viewModel.setComparingOriginal(true)
-                                        tryAwaitRelease()
-                                        viewModel.setComparingOriginal(false)
+                        // Tip 121: Dual Behavior Compare (Tap = Toggle Split View; Press & Hold = Temporary Before)
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                            viewModel.toggleSplitView()
+                                        },
+                                        onPress = {
+                                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                            viewModel.setComparingOriginal(true)
+                                            tryAwaitRelease()
+                                            viewModel.setComparingOriginal(false)
+                                        }
+                                    )
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.CompareArrows,
+                                contentDescription = "Compare (Tap: Split / Hold: Before)",
+                                tint = if (isComparingOriginal || isSplitView) SpectrumBlue else SpectrumTextPrimary
+                            )
+                        }
+
+                        // Alt / Option Key Secret Previews Toggle (Section 4.1)
+                        Surface(
+                            color = if (altClippingMode > 0) SpectrumBlue else SpectrumElevated,
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier
+                                .clickable {
+                                    val nextMode = when (altClippingMode) {
+                                        0 -> 1 // Mode 1: Whites / Exposure
+                                        1 -> 2 // Mode 2: Blacks / Shadows
+                                        2 -> 3 // Mode 3: Masking
+                                        else -> 0
+                                    }
+                                    viewModel.setAltClippingMode(nextMode)
+                                }
+                                .padding(horizontal = 4.dp)
+                        ) {
+                            Text(
+                                text = when (altClippingMode) {
+                                    1 -> "ALT:HI"
+                                    2 -> "ALT:SH"
+                                    3 -> "ALT:MSK"
+                                    else -> "ALT"
+                                },
+                                color = if (altClippingMode > 0) Color.White else SpectrumTextSecondary,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                            )
+                        }
+
+                        // View Options & Guides Dropdown (Tips 98, 100, 118, 119)
+                        Box {
+                            IconButton(onClick = { showViewOptionsMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Tune,
+                                    contentDescription = "View Options & Guides",
+                                    tint = if (isInfoOverlayVisible || showGrid || aspectRatioGuide != null || isZoomLocked) SpectrumBlue else SpectrumTextPrimary
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = showViewOptionsMenu,
+                                onDismissRequest = { showViewOptionsMenu = false },
+                                modifier = Modifier
+                                    .background(SpectrumElevated)
+                                    .border(1.dp, SpectrumInnerBorder, RoundedCornerShape(8.dp))
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.Info,
+                                                contentDescription = null,
+                                                tint = if (isInfoOverlayVisible) SpectrumBlue else SpectrumTextSecondary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = if (isInfoOverlayVisible) "Hide Info HUD (I)" else "Show Info HUD (I)",
+                                                color = SpectrumTextPrimary,
+                                                fontSize = 13.sp
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        viewModel.toggleInfoOverlay()
+                                        showViewOptionsMenu = false
                                     }
                                 )
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.CompareArrows,
-                            contentDescription = "Compare Before/After",
-                            tint = if (isComparingOriginal) SpectrumBlue else SpectrumTextPrimary
-                        )
-                    }
-
-                    // Alt / Option Key Secret Previews Toggle (Section 4.1)
-                    Surface(
-                        color = if (altClippingMode > 0) SpectrumBlue else SpectrumElevated,
-                        shape = RoundedCornerShape(4.dp),
-                        modifier = Modifier
-                            .clickable {
-                                val nextMode = when (altClippingMode) {
-                                    0 -> 1 // Mode 1: Whites / Exposure
-                                    1 -> 2 // Mode 2: Blacks / Shadows
-                                    2 -> 3 // Mode 3: Masking
-                                    else -> 0
-                                }
-                                viewModel.setAltClippingMode(nextMode)
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.GridOn,
+                                                contentDescription = null,
+                                                tint = if (showGrid) SpectrumBlue else SpectrumTextSecondary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = if (showGrid) "Hide 3x3 Grid" else "Show 3x3 Grid",
+                                                color = SpectrumTextPrimary,
+                                                fontSize = 13.sp
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        viewModel.toggleGrid()
+                                        showViewOptionsMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.AspectRatio,
+                                                contentDescription = null,
+                                                tint = if (aspectRatioGuide != null) SpectrumBlue else SpectrumTextSecondary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "Guide: ${aspectRatioGuide ?: "None"} (Tap to Cycle)",
+                                                color = SpectrumTextPrimary,
+                                                fontSize = 13.sp
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        viewModel.cycleAspectRatioGuide()
+                                        showViewOptionsMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = if (isZoomLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                                                contentDescription = null,
+                                                tint = if (isZoomLocked) SpectrumBlue else SpectrumTextSecondary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = if (isZoomLocked) "Zoom Locked (Preserved)" else "Lock Zoom & Pan",
+                                                color = SpectrumTextPrimary,
+                                                fontSize = 13.sp
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        viewModel.toggleZoomLock()
+                                        showViewOptionsMenu = false
+                                    }
+                                )
                             }
-                            .padding(horizontal = 4.dp)
-                    ) {
-                        Text(
-                            text = when (altClippingMode) {
-                                1 -> "ALT:HI"
-                                2 -> "ALT:SH"
-                                3 -> "ALT:MSK"
-                                else -> "ALT"
-                            },
-                            color = if (altClippingMode > 0) Color.White else SpectrumTextSecondary,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
-                        )
-                    }
+                        }
 
-                    // Pick image
-                    IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
-                        Icon(
-                            imageVector = Icons.Default.AddPhotoAlternate,
-                            contentDescription = "Open Photo",
-                            tint = SpectrumTextPrimary
-                        )
-                    }
+                        // Pick image
+                        IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
+                            Icon(
+                                imageVector = Icons.Default.AddPhotoAlternate,
+                                contentDescription = "Open Photo",
+                                tint = SpectrumTextPrimary
+                            )
+                        }
 
-                    // Export
-                    IconButton(onClick = { showExportConfigSheet = true }) {
-                        Icon(
-                            imageVector = Icons.Default.FileDownload,
-                            contentDescription = "Export Image",
-                            tint = SpectrumBlue
-                        )
-                    }
+                        // Tip 120: Export (Tap: Settings Sheet; Long-Press: Instant Quick Export & Share)
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onTap = { showExportConfigSheet = true },
+                                        onLongPress = {
+                                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                            viewModel.exportImage(com.cleanlr.export.ExportConfig(autoShare = true))
+                                        }
+                                    )
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FileDownload,
+                                contentDescription = "Export Image (Tap) / Quick Share (Long-Press)",
+                                tint = SpectrumBlue
+                            )
+                        }
                 }
             )
         }
-    ) { innerPadding ->
+    }
+) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -282,31 +527,24 @@ fun EditorScreen(
                     tatTargetName = activeTatTargetName,
                     onTatSample = { x, y -> viewModel.sampleTatPixel(x, y) },
                     onTatDrag = { dy -> viewModel.dragTat(dy) },
+                    onTatDismiss = { viewModel.toggleTat() },
                     activeTool = activeTool,
+                    onToolDismiss = { viewModel.setActiveTool(null) },
                     brushSize = brushSize,
                     brushFeather = brushFeather,
                     onSingleTap = { viewModel.toggleCleanScreenMode() },
                     onTwoFingerLongPress = { viewModel.toggleCanvasMatting() },
+                    isSplitView = isSplitView,
+                    splitPosition = splitPosition,
+                    onSplitPositionChanged = { viewModel.setSplitPosition(it) },
+                    isSplitHorizontal = isSplitHorizontal,
+                    onToggleSplitOrientation = { viewModel.toggleSplitOrientation() },
+                    isInfoOverlayVisible = isInfoOverlayVisible,
+                    photoExif = photoExif,
+                    showGrid = showGrid,
+                    aspectRatioGuide = aspectRatioGuide,
                     modifier = Modifier.fillMaxSize()
                 )
-
-                // Before banner overlay
-                if (isComparingOriginal) {
-                    Surface(
-                        color = Color.Black.copy(alpha = 0.7f),
-                        shape = RoundedCornerShape(4.dp),
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 12.dp)
-                    ) {
-                        Text(
-                            text = "BEFORE (ORIGINAL)",
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                }
 
                 // Tip 35: Floating Pill Dark Toast (#2C2C2C, #3E3E3E border, 12.dp radius)
                 exportStatus?.let { status ->
@@ -607,12 +845,34 @@ fun EditorScreen(
                         ) {
                     when (activeTab) {
                         EditorToolTab.LIGHT -> {
+                            // Tip 52: Exposure track — subtle luminance gradient + EV stop marks
+                            val exposureTrackBrush = remember {
+                                Brush.horizontalGradient(listOf(Color(0xFF1A1A1A), Color(0xFFE0E0E0)))
+                            }
+                            // Tip 53: Contrast track — high-contrast dark-to-light bands
+                            val contrastTrackBrush = remember {
+                                Brush.horizontalGradient(listOf(
+                                    Color(0xFF555555), Color(0xFF1A1A1A), Color(0xFF555555), Color(0xFFE0E0E0), Color(0xFF555555)
+                                ))
+                            }
+                            // Tip 54: Highlights/Whites — matte grey to bright white
+                            val highlightsTrackBrush = remember {
+                                Brush.horizontalGradient(listOf(Color(0xFF606060), Color(0xFFFFFFFF)))
+                            }
+                            // Tip 55: Shadows/Blacks — deep blue-black to light grey
+                            val shadowsTrackBrush = remember {
+                                Brush.horizontalGradient(listOf(Color(0xFF0A1118), Color(0xFF909090)))
+                            }
+
                             RampedSlider(
                                 label = "Exposure",
                                 value = recipe.basic.exposure,
                                 minVal = -5.0f,
                                 maxVal = 5.0f,
-                                formatPattern = "%.2f EV",
+                                formatPattern = "%.2f",
+                                unitSuffix = "EV",
+                                trackBrush = exposureTrackBrush,
+                                showEvStops = true,  // Tip 70
                                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(exposure = it)) } },
                                 onValueChangeEnd = { viewModel.onSliderTouchEnd("Exposure") }
@@ -622,6 +882,7 @@ fun EditorScreen(
                                 value = recipe.basic.contrast,
                                 minVal = -100f,
                                 maxVal = 100f,
+                                trackBrush = contrastTrackBrush,
                                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(contrast = it)) } },
                                 onValueChangeEnd = { viewModel.onSliderTouchEnd("Contrast") }
@@ -631,6 +892,7 @@ fun EditorScreen(
                                 value = recipe.basic.highlights,
                                 minVal = -100f,
                                 maxVal = 100f,
+                                trackBrush = highlightsTrackBrush,
                                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(highlights = it)) } },
                                 onValueChangeEnd = { viewModel.onSliderTouchEnd("Highlights") }
@@ -640,6 +902,7 @@ fun EditorScreen(
                                 value = recipe.basic.shadows,
                                 minVal = -100f,
                                 maxVal = 100f,
+                                trackBrush = shadowsTrackBrush,
                                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(shadows = it)) } },
                                 onValueChangeEnd = { viewModel.onSliderTouchEnd("Shadows") }
@@ -649,9 +912,11 @@ fun EditorScreen(
                                 value = recipe.basic.whites,
                                 minVal = -100f,
                                 maxVal = 100f,
+                                trackBrush = highlightsTrackBrush,  // Tip 54: Same gradient as Highlights
                                 onValueChangeStart = {
                                     viewModel.onSliderTouchStart()
-                                    viewModel.setAltClippingMode(1) // Alt clipping preview while dragging whites
+                                    // Tip 72-74: Clipping mode controlled externally
+                                    viewModel.setAltClippingMode(1)
                                 },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(whites = it)) } },
                                 onValueChangeEnd = {
@@ -664,9 +929,10 @@ fun EditorScreen(
                                 value = recipe.basic.blacks,
                                 minVal = -100f,
                                 maxVal = 100f,
+                                trackBrush = shadowsTrackBrush,  // Tip 55: Same gradient as Shadows
                                 onValueChangeStart = {
                                     viewModel.onSliderTouchStart()
-                                    viewModel.setAltClippingMode(2) // Alt clipping preview while dragging blacks
+                                    viewModel.setAltClippingMode(2)
                                 },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(blacks = it)) } },
                                 onValueChangeEnd = {
@@ -677,11 +943,33 @@ fun EditorScreen(
                         }
 
                         EditorToolTab.COLOR -> {
+                            // Tip 56: Temperature — 3-stop: 2000K cool blue → 5500K neutral → 10000K amber
                             val tempTrackBrush = remember {
-                                Brush.horizontalGradient(listOf(Color(0xFF4A90E2), Color(0xFFFFA726)))
+                                Brush.horizontalGradient(listOf(
+                                    Color(0xFF2B70E0),  // 2000K cool blue
+                                    Color(0xFFE8E8E8),  // 5500K neutral
+                                    Color(0xFFFF9800)   // 10000K amber
+                                ))
                             }
+                            // Tip 57: Tint — 3-stop: green → neutral → magenta
                             val tintTrackBrush = remember {
-                                Brush.horizontalGradient(listOf(Color(0xFF66BB6A), Color(0xFFEC407A)))
+                                Brush.horizontalGradient(listOf(
+                                    Color(0xFF2EBD59),  // -150 green
+                                    Color(0xFFE8E8E8),  // 0 neutral
+                                    Color(0xFFE040FB)   // +150 magenta
+                                ))
+                            }
+                            // Tip 58: Vibrance/Saturation — monochrome grey to rainbow
+                            val vibranceSatTrackBrush = remember {
+                                Brush.horizontalGradient(listOf(
+                                    Color(0xFF757575),  // monochrome grey
+                                    Color(0xFFE53935),  // red
+                                    Color(0xFFFF9800),  // orange
+                                    Color(0xFFFFEB3B),  // yellow
+                                    Color(0xFF4CAF50),  // green
+                                    Color(0xFF2196F3),  // blue
+                                    Color(0xFF9C27B0)   // violet
+                                ))
                             }
 
                             // Tip 33 & 34: Accordion 1 — WHITE BALANCE
@@ -727,7 +1015,7 @@ fun EditorScreen(
                                             .size(16.dp)
                                             .clickable {
                                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                                viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(temp = 0f, tint = 0f)) }
+                                                viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(temperature = 5500f, tint = 0f)) }
                                             }
                                     )
                                 }
@@ -741,8 +1029,10 @@ fun EditorScreen(
                                     maxVal = 10000f,
                                     defaultValue = 5500f,
                                     isBipolar = false,
-                                    formatPattern = "%.0f K",
+                                    formatPattern = "%.0f",
+                                    unitSuffix = "K",
                                     trackBrush = tempTrackBrush,
+                                    useMiredScale = true,  // Tip 78-79: Mired scale for natural midpoint at 5500K
                                     onValueChangeStart = {
                                         viewModel.onSliderTouchStart()
                                         viewModel.setSliderDragging(true)
@@ -830,6 +1120,7 @@ fun EditorScreen(
                                     value = recipe.presence.vibrance,
                                     minVal = -100f,
                                     maxVal = 100f,
+                                    trackBrush = vibranceSatTrackBrush,  // Tip 58: Monochrome to rainbow
                                     onValueChangeStart = {
                                         viewModel.onSliderTouchStart()
                                         viewModel.setSliderDragging(true)
@@ -845,6 +1136,7 @@ fun EditorScreen(
                                     value = recipe.presence.saturation,
                                     minVal = -100f,
                                     maxVal = 100f,
+                                    trackBrush = vibranceSatTrackBrush,  // Tip 58: Same rainbow spectrum
                                     onValueChangeStart = {
                                         viewModel.onSliderTouchStart()
                                         viewModel.setSliderDragging(true)
@@ -1009,6 +1301,23 @@ fun EditorScreen(
                         }
 
                         EditorToolTab.EFFECTS -> {
+                            // Tip 59: Dehaze track — hazy white-blue to deep blue
+                            val dehazeTrackBrush = remember {
+                                Brush.horizontalGradient(listOf(
+                                    Color(0xFFB0BEC5),  // hazy/foggy
+                                    Color(0xFF0D47A1)   // deep blue sky
+                                ))
+                            }
+
+                            // Tip 60: Vignette track — dark vignette (#000000) -> neutral (#404040) -> white vignette (#FFFFFF)
+                            val vignetteTrackBrush = remember {
+                                Brush.horizontalGradient(listOf(
+                                    Color(0xFF000000),
+                                    Color(0xFF404040),
+                                    Color(0xFFFFFFFF)
+                                ))
+                            }
+
                             RampedSlider(
                                 label = "Clarity",
                                 value = recipe.presence.clarity,
@@ -1032,9 +1341,29 @@ fun EditorScreen(
                                 value = recipe.presence.dehaze,
                                 minVal = -100f,
                                 maxVal = 100f,
+                                trackBrush = dehazeTrackBrush,  // Tip 59: Hazy to deep blue
                                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(presence = r.presence.copy(dehaze = it)) } },
                                 onValueChangeEnd = { viewModel.onSliderTouchEnd("Dehaze") }
+                            )
+                            RampedSlider(
+                                label = "Vignette",
+                                value = recipe.effects.vignetteAmount,
+                                minVal = -100f,
+                                maxVal = 100f,
+                                defaultValue = 0f,
+                                isBipolar = true,
+                                trackBrush = vignetteTrackBrush,  // Tip 60: Dark to white vignette
+                                onValueChangeStart = { viewModel.onSliderTouchStart() },
+                                onValueChange = {
+                                    viewModel.updateRecipe { r ->
+                                        r.copy(
+                                            effects = r.effects.copy(vignetteAmount = it),
+                                            detail = r.detail.copy(vignetteAmount = it)
+                                        )
+                                    }
+                                },
+                                onValueChangeEnd = { viewModel.onSliderTouchEnd("Vignette") }
                             )
                         }
 
@@ -1130,9 +1459,8 @@ fun EditorScreen(
             }
         }
     }
-}
 
-        if (showResetDialog) {
+    if (showResetDialog) {
             AlertDialog(
                 onDismissRequest = { showResetDialog = false },
                 title = {
@@ -1191,4 +1519,5 @@ fun EditorScreen(
             )
         }
     }
+}
 }

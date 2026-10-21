@@ -61,12 +61,25 @@ class Stage9ColorManagement(private val context: Context) {
         viewportWidth: Int,
         viewportHeight: Int,
         vaoId: Int,
-        altClippingMode: Int = 0
+        altClippingMode: Int = 0,
+        imageWidth: Int = 0,
+        imageHeight: Int = 0
     ) {
         if (!isInitialized || inputTextureId <= 0) return
 
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, targetFbo)
-        GLES30.glViewport(0, 0, viewportWidth, viewportHeight)
+
+        // Tip 81: Calculate aspect-ratio Fit-Center viewport to prevent photo distortion
+        if (imageWidth > 0 && imageHeight > 0 && viewportWidth > 0 && viewportHeight > 0) {
+            val scale = minOf(viewportWidth.toFloat() / imageWidth, viewportHeight.toFloat() / imageHeight)
+            val fitW = (imageWidth * scale).toInt()
+            val fitH = (imageHeight * scale).toInt()
+            val offX = (viewportWidth - fitW) / 2
+            val offY = (viewportHeight - fitH) / 2
+            GLES30.glViewport(offX, offY, fitW, fitH)
+        } else {
+            GLES30.glViewport(0, 0, viewportWidth, viewportHeight)
+        }
 
         GLES30.glUseProgram(programId)
 

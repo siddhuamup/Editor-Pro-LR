@@ -34,12 +34,22 @@ class RenderPipeline(private val context: Context) {
     companion object {
         private const val TAG = "RenderPipeline"
 
-        private val QUAD_VERTICES = floatArrayOf(
+        // Tip 82: UPLOAD_FLIP_VERTICES for initial Android Bitmap upload (Stage 1)
+        private val UPLOAD_FLIP_VERTICES = floatArrayOf(
             // x, y, u, v
             -1.0f, -1.0f, 0.0f, 1.0f,
              1.0f, -1.0f, 1.0f, 1.0f,
             -1.0f,  1.0f, 0.0f, 0.0f,
              1.0f,  1.0f, 1.0f, 0.0f
+        )
+
+        // Tip 82: STANDARD_FBO_VERTICES for intermediate FBO-to-FBO passes & Stage 9 screen render
+        private val STANDARD_FBO_VERTICES = floatArrayOf(
+            // x, y, u, v
+            -1.0f, -1.0f, 0.0f, 0.0f,
+             1.0f, -1.0f, 1.0f, 0.0f,
+            -1.0f,  1.0f, 0.0f, 1.0f,
+             1.0f,  1.0f, 1.0f, 1.0f
         )
 
         /**
@@ -65,9 +75,12 @@ class RenderPipeline(private val context: Context) {
 
     var useNineStagePipeline: Boolean = true
 
-    // OpenGL Geometry & Textures
-    private var vaoId = 0
-    private var vboId = 0
+    // OpenGL Geometry & Textures (Tip 82: Dual VAO for Y-flip safety across arbitrary stage bypasses)
+    private var vaoUploadId = 0
+    private var vboUploadId = 0
+    private var vaoFboId = 0
+    private var vboFboId = 0
+    val vaoId: Int get() = vaoFboId
     private var imageTextureId = 0
     private var lutTextureId = 0
 
@@ -159,40 +172,62 @@ class RenderPipeline(private val context: Context) {
      */
     fun extractHistogram(): HistogramData {
         val finalTex = pingPong.currentRead?.textureId ?: imageTextureId
-        return gpuHistogramPass.compute(finalTex, vaoId)
+        return gpuHistogramPass.compute(finalTex, vaoFboId)
+    }
+
+    /**
+     * Tip 107: Nearest-Neighbor Pixel Grid at 400%+ Zoom
+     */
+    fun setZoomFilter(isNearest: Boolean) {
+        if (imageTextureId != 0) {
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, imageTextureId)
+            val filter = if (isNearest) GLES30.GL_NEAREST else GLES30.GL_LINEAR
+            GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, filter)
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0)
+        }
     }
 
     private fun setupQuadGeometry() {
-        val vao = IntArray(1)
-        GLES30.glGenVertexArrays(1, vao, 0)
-        vaoId = vao[0]
-        GLES30.glBindVertexArray(vaoId)
+        // Tip 82: Dual VAO allocation (Upload Flip vs Standard FBO)
+        val vaos = IntArray(2)
+        val vbos = IntArray(2)
+        GLES30.glGenVertexArrays(2, vaos, 0)
+        GLES30.glGenBuffers(2, vbos, 0)
 
-        val vbo = IntArray(1)
-        GLES30.glGenBuffers(1, vbo, 0)
-        vboId = vbo[0]
-        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vboId)
+        vaoUploadId = vaos[0]
+        vboUploadId = vbos[0]
+        vaoFboId = vaos[1]
+        vboFboId = vbos[1]
 
-        val buffer: FloatBuffer = ByteBuffer.allocateDirect(QUAD_VERTICES.size * 4)
+        // 1. Setup Upload VAO (Stage 1 Bitmap upload flip)
+        GLES30.glBindVertexArray(vaoUploadId)
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vboUploadId)
+        val uploadBuffer: FloatBuffer = ByteBuffer.allocateDirect(UPLOAD_FLIP_VERTICES.size * 4)
             .order(ByteOrder.nativeOrder())
             .asFloatBuffer()
             .apply {
-                put(QUAD_VERTICES)
+                put(UPLOAD_FLIP_VERTICES)
                 position(0)
             }
-
-        GLES30.glBufferData(
-            GLES30.GL_ARRAY_BUFFER,
-            QUAD_VERTICES.size * 4,
-            buffer,
-            GLES30.GL_STATIC_DRAW
-        )
-
-        // Attribute 0: Position (vec2)
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, UPLOAD_FLIP_VERTICES.size * 4, uploadBuffer, GLES30.GL_STATIC_DRAW)
         GLES30.glEnableVertexAttribArray(0)
         GLES30.glVertexAttribPointer(0, 2, GLES30.GL_FLOAT, false, 4 * 4, 0)
+        GLES30.glEnableVertexAttribArray(1)
+        GLES30.glVertexAttribPointer(1, 2, GLES30.GL_FLOAT, false, 4 * 4, 2 * 4)
 
-        // Attribute 1: TexCoord (vec2)
+        // 2. Setup Standard FBO VAO (for intermediate passes & Stage 9)
+        GLES30.glBindVertexArray(vaoFboId)
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vboFboId)
+        val fboBuffer: FloatBuffer = ByteBuffer.allocateDirect(STANDARD_FBO_VERTICES.size * 4)
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer()
+            .apply {
+                put(STANDARD_FBO_VERTICES)
+                position(0)
+            }
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, STANDARD_FBO_VERTICES.size * 4, fboBuffer, GLES30.GL_STATIC_DRAW)
+        GLES30.glEnableVertexAttribArray(0)
+        GLES30.glVertexAttribPointer(0, 2, GLES30.GL_FLOAT, false, 4 * 4, 0)
         GLES30.glEnableVertexAttribArray(1)
         GLES30.glVertexAttribPointer(1, 2, GLES30.GL_FLOAT, false, 4 * 4, 2 * 4)
 
@@ -317,15 +352,62 @@ class RenderPipeline(private val context: Context) {
     fun render(
         recipe: EditRecipe,
         altClippingMode: Int = 0,
-        showOriginal: Boolean = false
+        showOriginal: Boolean = false,
+        splitPosition: Float? = null,
+        isSplitHorizontal: Boolean = false
     ) {
         if (!isInitialized || imageTextureId == 0) return
 
-        if (useNineStagePipeline) {
+        if (splitPosition != null && splitPosition in 0.01f..0.99f) {
+            renderSplit(recipe, altClippingMode, splitPosition, isSplitHorizontal)
+        } else if (useNineStagePipeline) {
             renderNineStage(recipe, altClippingMode, showOriginal)
         } else {
             renderLegacy(recipe, altClippingMode, showOriginal)
         }
+    }
+
+    /**
+     * Tips 92–95: High-performance OpenGL Split View (Before/After Wipe) via glScissor
+     */
+    private fun renderSplit(
+        recipe: EditRecipe,
+        altClippingMode: Int,
+        splitPosition: Float,
+        isSplitHorizontal: Boolean
+    ) {
+        val currentViewport = IntArray(4)
+        GLES30.glGetIntegerv(GLES30.GL_VIEWPORT, currentViewport, 0)
+        val vpWidth = if (currentViewport[2] > 0) currentViewport[2] else imageWidth
+        val vpHeight = if (currentViewport[3] > 0) currentViewport[3] else imageHeight
+
+        GLES30.glEnable(GLES30.GL_SCISSOR_TEST)
+
+        if (!isSplitHorizontal) {
+            // Tip 93: Vertical Split: Left = Before (original), Right = After (edited)
+            val splitPx = (vpWidth * splitPosition).toInt().coerceIn(1, vpWidth - 1)
+
+            // Pass 1: Before (original) on left
+            GLES30.glScissor(0, 0, splitPx, vpHeight)
+            renderNineStage(recipe, altClippingMode, showOriginal = true)
+
+            // Pass 2: After (edited) on right
+            GLES30.glScissor(splitPx, 0, vpWidth - splitPx, vpHeight)
+            renderNineStage(recipe, altClippingMode, showOriginal = false)
+        } else {
+            // Tip 95: Horizontal Split: Top = Before, Bottom = After
+            val splitPy = (vpHeight * (1f - splitPosition)).toInt().coerceIn(1, vpHeight - 1)
+
+            // Pass 1: After on bottom
+            GLES30.glScissor(0, 0, vpWidth, splitPy)
+            renderNineStage(recipe, altClippingMode, showOriginal = false)
+
+            // Pass 2: Before on top
+            GLES30.glScissor(0, splitPy, vpWidth, vpHeight - splitPy)
+            renderNineStage(recipe, altClippingMode, showOriginal = true)
+        }
+
+        GLES30.glDisable(GLES30.GL_SCISSOR_TEST)
     }
 
     /**
@@ -353,11 +435,12 @@ class RenderPipeline(private val context: Context) {
 
         // ---------------------------------------------------------------------
         // STAGE 1: Ingestion & Linearization (srgb2lin.fsh & ProPhoto Matrix)
+        // Tip 82: Uses vaoUploadId to handle Android Bitmap vertical orientation
         // ---------------------------------------------------------------------
         stage1Linearize.process(
             inputTextureId = imageTextureId,
             pingPong = pingPong,
-            vaoId = vaoId,
+            vaoId = vaoUploadId,
             isLinearInput = false,
             enableUndoCurve = false
         )
@@ -365,12 +448,13 @@ class RenderPipeline(private val context: Context) {
         if (!showOriginal) {
             // -----------------------------------------------------------------
             // STAGE 2: Camera Calibration & White Balance (CAT Kelvin/Tint)
+            // Tip 82: Uses vaoFboId for standard FBO-to-FBO coordinate mapping
             // -----------------------------------------------------------------
             stage2WhiteBalance.process(
                 temperature = activeRecipe.basic.temperature,
                 tint = activeRecipe.basic.tint,
                 pingPong = pingPong,
-                vaoId = vaoId
+                vaoId = vaoFboId
             )
 
             // -----------------------------------------------------------------
@@ -384,7 +468,7 @@ class RenderPipeline(private val context: Context) {
                 whites = activeRecipe.basic.whites,
                 blacks = activeRecipe.basic.blacks,
                 pingPong = pingPong,
-                vaoId = vaoId
+                vaoId = vaoFboId
             )
 
             // -----------------------------------------------------------------
@@ -395,7 +479,7 @@ class RenderPipeline(private val context: Context) {
                 texture = activeRecipe.presence.texture,
                 dehaze = activeRecipe.presence.dehaze,
                 pingPong = pingPong,
-                vaoId = vaoId
+                vaoId = vaoFboId
             )
 
             // -----------------------------------------------------------------
@@ -413,7 +497,7 @@ class RenderPipeline(private val context: Context) {
                 custom3dLutTexId = 0,
                 lut3dIntensity = 0.0f,
                 pingPong = pingPong,
-                vaoId = vaoId
+                vaoId = vaoFboId
             )
 
             // -----------------------------------------------------------------
@@ -426,7 +510,7 @@ class RenderPipeline(private val context: Context) {
                 vibrance = activeRecipe.presence.vibrance,
                 saturation = activeRecipe.presence.saturation,
                 pingPong = pingPong,
-                vaoId = vaoId
+                vaoId = vaoFboId
             )
 
             // -----------------------------------------------------------------
@@ -436,7 +520,7 @@ class RenderPipeline(private val context: Context) {
             stage8Details.process(
                 detail = activeRecipe.detail,
                 pingPong = pingPong,
-                vaoId = vaoId
+                vaoId = vaoFboId
             )
         }
 
@@ -444,6 +528,7 @@ class RenderPipeline(private val context: Context) {
         // STAGE 9: Color Management & Output Display (lin2srgb.fsh EOTF & Blit)
         // (Section 2.1 Order of Operations: Step 12 Output Conversion)
         // Blits the high-dynamic range ProPhoto Linear buffer to the screen/target
+        // Tip 81: Passes imageWidth & imageHeight for aspect-ratio fit-center viewport
         // ---------------------------------------------------------------------
         val finalInputTexture = pingPong.currentRead?.textureId ?: imageTextureId
         stage9ColorManagement.renderToScreen(
@@ -452,8 +537,10 @@ class RenderPipeline(private val context: Context) {
             targetGamut = Stage9ColorManagement.GAMUT_SRGB,
             viewportWidth = viewportWidth,
             viewportHeight = viewportHeight,
-            vaoId = vaoId,
-            altClippingMode = if (showOriginal) 0 else altClippingMode
+            vaoId = vaoFboId,
+            altClippingMode = if (showOriginal) 0 else altClippingMode,
+            imageWidth = imageWidth,
+            imageHeight = imageHeight
         )
     }
 
@@ -557,13 +644,21 @@ class RenderPipeline(private val context: Context) {
 
         pingPong.release()
 
-        if (vaoId != 0) {
-            GLES30.glDeleteVertexArrays(1, intArrayOf(vaoId), 0)
-            vaoId = 0
+        if (vaoUploadId != 0) {
+            GLES30.glDeleteVertexArrays(1, intArrayOf(vaoUploadId), 0)
+            vaoUploadId = 0
         }
-        if (vboId != 0) {
-            GLES30.glDeleteBuffers(1, intArrayOf(vboId), 0)
-            vboId = 0
+        if (vboUploadId != 0) {
+            GLES30.glDeleteBuffers(1, intArrayOf(vboUploadId), 0)
+            vboUploadId = 0
+        }
+        if (vaoFboId != 0) {
+            GLES30.glDeleteVertexArrays(1, intArrayOf(vaoFboId), 0)
+            vaoFboId = 0
+        }
+        if (vboFboId != 0) {
+            GLES30.glDeleteBuffers(1, intArrayOf(vboFboId), 0)
+            vboFboId = 0
         }
         if (imageTextureId != 0) {
             GLES30.glDeleteTextures(1, intArrayOf(imageTextureId), 0)

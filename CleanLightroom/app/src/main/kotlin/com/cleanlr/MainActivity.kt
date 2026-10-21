@@ -26,11 +26,35 @@ class MainActivity : ComponentActivity() {
         }
         shortcutsHandler = KeyboardShortcutsHandler(viewModel)
 
+        handleIncomingIntent(intent)
+
         setContent {
             CleanLightroomTheme {
                 EditorScreen(viewModel = viewModel)
             }
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        handleIncomingIntent(intent)
+    }
+
+    private fun handleIncomingIntent(intent: android.content.Intent?) {
+        if (intent == null) return
+        val uri: android.net.Uri? = when (intent.action) {
+            android.content.Intent.ACTION_VIEW -> intent.data
+            android.content.Intent.ACTION_SEND -> {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM, android.net.Uri::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM)
+                }
+            }
+            else -> null
+        }
+        uri?.let { viewModel.loadFromUri(it) }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

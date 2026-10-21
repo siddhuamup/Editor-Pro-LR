@@ -139,6 +139,22 @@ class HistoryManager(initialRecipe: EditRecipe) {
     /** Get the full undo history descriptions for UI display. */
     fun getHistoryDescriptions(): List<String> = undoStack.map { it.description }
 
+    /**
+     * Tip 122: Restore history state directly to a specific historical step index.
+     */
+    fun restoreToStep(index: Int): EditRecipe? {
+        if (index !in 0 until undoStack.size) return null
+        while (undoStack.size - 1 > index) {
+            val popped = undoStack.removeLast()
+            redoStack.addLast(popped)
+        }
+        val target = undoStack.last()
+        currentRecipe = target.recipe
+        _liveRecipe.value = currentRecipe
+        updateState()
+        return currentRecipe
+    }
+
     private fun updateState() {
         _canUndo.value = undoStack.size > 1
         _canRedo.value = redoStack.isNotEmpty()

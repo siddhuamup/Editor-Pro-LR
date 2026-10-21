@@ -54,9 +54,27 @@ enum class MaskOverlayColor(val hexArgb: Long, val label: String) {
     WHITE(0x80FFFFFFL, "White")
 }
 
+/**
+ * Tip 98: Photo EXIF Information for Info Overlay HUD
+ */
+data class PhotoExifInfo(
+    val fileName: String = "Photo",
+    val width: Int = 0,
+    val height: Int = 0,
+    val megaPixels: String = "",
+    val cameraModel: String = "",
+    val lensModel: String = "",
+    val iso: String = "",
+    val focalLength: String = "",
+    val aperture: String = "",
+    val shutterSpeed: String = "",
+    val isP3Gamut: Boolean = false,
+    val hasGainMap: Boolean = false
+)
+
 class EditorViewModel(application: Application) : AndroidViewModel(application), com.cleanlr.ui.shortcuts.EditorShortcutsDispatcher {
 
-    private val historyManager = HistoryManager(EditRecipe())
+    val historyManager = HistoryManager(EditRecipe())
 
     private val versionManager = VersionManager(EditRecipe())
     val versions: StateFlow<List<NamedVersion>> = versionManager.versions
@@ -84,6 +102,29 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     private val _sourceUri = MutableStateFlow<Uri?>(null)
     val sourceUri: StateFlow<Uri?> = _sourceUri.asStateFlow()
+
+    // Tips 83, 98: Photo EXIF Metadata
+    private val _photoExif = MutableStateFlow<PhotoExifInfo?>(null)
+    val photoExif: StateFlow<PhotoExifInfo?> = _photoExif.asStateFlow()
+
+    // Tips 92–95: Split View Position & Orientation
+    private val _splitPosition = MutableStateFlow(0.5f)
+    val splitPosition: StateFlow<Float> = _splitPosition.asStateFlow()
+
+    private val _isSplitHorizontal = MutableStateFlow(false)
+    val isSplitHorizontal: StateFlow<Boolean> = _isSplitHorizontal.asStateFlow()
+
+    // Tip 100: Rule of Thirds 3x3 Grid
+    private val _showGrid = MutableStateFlow(false)
+    val showGrid: StateFlow<Boolean> = _showGrid.asStateFlow()
+
+    // Tip 119: Aspect Ratio Guide
+    private val _aspectRatioGuide = MutableStateFlow<String?>(null)
+    val aspectRatioGuide: StateFlow<String?> = _aspectRatioGuide.asStateFlow()
+
+    // Tip 118: Zoom Lock
+    private val _isZoomLocked = MutableStateFlow(false)
+    val isZoomLocked: StateFlow<Boolean> = _isZoomLocked.asStateFlow()
 
     private val _histogramData = MutableStateFlow(HistogramData())
     val histogramData: StateFlow<HistogramData> = _histogramData.asStateFlow()
@@ -283,12 +324,97 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val context = getApplication<Application>()
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val decoded = BitmapFactory.decodeStream(inputStream)
-                inputStream?.close()
-                if (decoded != null) {
-                    _bitmap.value = decoded
-                    // XMP / Metadata Round-Trip: restore embedded recipe if photo was exported by CleanLR / Lightroom
+
+                // Tip 84: Smart Preview Downsampling (inJustDecodeBounds)
+                val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                context.contentResolver.openInputStream(uri)?.use { inStream ->
+                    BitmapFactory.decodeStream(inStream, null, boundsOptions)
+                }
+
+                val origW = boundsOptions.outWidth
+                val origH = boundsOptions.outHeight
+                val maxDim = maxOf(origW, origH)
+                var sampleSize = 1
+                val targetMaxEdge = 2560
+                while (maxDim / (sampleSize * 2) >= targetMaxEdge) {
+                    sampleSize *= 2
+                }
+
+                // Decode preview bitmap with sampleSize
+                val decodeOptions = BitmapFactory.Options().apply {
+                    inSampleSize = sampleSize
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                }
+                val rawDecoded = context.contentResolver.openInputStream(uri)?.use { inStream ->
+                    BitmapFactory.decodeStream(inStream, null, decodeOptions)
+                }
+
+                if (rawDecoded != null) {
+                    // Tip 83: EXIF Auto-Rotate & Tip 98: Metadata Extraction
+                    var rotationDegrees = 0f
+                    var flipHorizontal = false
+                    val fileName = uri.lastPathSegment?.substringAfterLast('/') ?: "Photo"
+                    var exifInfo = PhotoExifInfo(
+                        fileName = fileName,
+                        width = origW,
+                        height = origH,
+                        megaPixels = if (origW > 0 && origH > 0) String.format(java.util.Locale.US, "%.1f", (origW * origH) / 1_000_000f) else ""
+                    )
+
+                    try {
+                        context.contentResolver.openInputStream(uri)?.use { inStream ->
+                            val exif = androidx.exifinterface.media.ExifInterface(inStream)
+                            val orientation = exif.getAttributeInt(
+                                androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,
+                                androidx.exifinterface.media.ExifInterface.ORIENTATION_NORMAL
+                            )
+                            when (orientation) {
+                                androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90 -> rotationDegrees = 90f
+                                androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_180 -> rotationDegrees = 180f
+                                androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_270 -> rotationDegrees = 270f
+                                androidx.exifinterface.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> flipHorizontal = true
+                                else -> {}
+                            }
+
+                            val make = exif.getAttribute(androidx.exifinterface.media.ExifInterface.TAG_MAKE) ?: ""
+                            val model = exif.getAttribute(androidx.exifinterface.media.ExifInterface.TAG_MODEL) ?: ""
+                            val cameraModel = if (model.startsWith(make)) model else "$make $model".trim()
+                            val lens = exif.getAttribute(androidx.exifinterface.media.ExifInterface.TAG_LENS_MODEL) ?: ""
+                            val iso = exif.getAttribute(androidx.exifinterface.media.ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY) ?: ""
+                            val focal = exif.getAttributeDouble(androidx.exifinterface.media.ExifInterface.TAG_FOCAL_LENGTH, 0.0)
+                            val fNumber = exif.getAttributeDouble(androidx.exifinterface.media.ExifInterface.TAG_F_NUMBER, 0.0)
+                            val expTime = exif.getAttributeDouble(androidx.exifinterface.media.ExifInterface.TAG_EXPOSURE_TIME, 0.0)
+                            val shutterStr = if (expTime > 0) {
+                                if (expTime < 1.0) "1/${(1.0 / expTime).toInt()}s" else "${String.format(java.util.Locale.US, "%.1f", expTime)}s"
+                            } else ""
+
+                            exifInfo = exifInfo.copy(
+                                cameraModel = cameraModel,
+                                lensModel = lens,
+                                iso = if (iso.isNotEmpty()) "ISO $iso" else "",
+                                focalLength = if (focal > 0) "${focal.toInt()}mm" else "",
+                                aperture = if (fNumber > 0) "f/${String.format(java.util.Locale.US, "%.1f", fNumber)}" else "",
+                                shutterSpeed = shutterStr
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.w("EditorViewModel", "Failed to extract EXIF", e)
+                    }
+
+                    _photoExif.value = exifInfo
+
+                    // Apply rotation matrix
+                    val matrix = Matrix()
+                    if (rotationDegrees != 0f) matrix.postRotate(rotationDegrees)
+                    if (flipHorizontal) matrix.postScale(-1f, 1f)
+
+                    val finalBitmap = if (!matrix.isIdentity) {
+                        Bitmap.createBitmap(rawDecoded, 0, 0, rawDecoded.width, rawDecoded.height, matrix, true)
+                    } else rawDecoded
+
+                    _bitmap.value = finalBitmap
+
+                    // XMP / Metadata Round-Trip
                     val restoredRecipe = context.contentResolver.openInputStream(uri)?.use { inStream ->
                         com.cleanlr.export.ExportMetadataWriter.extractRecipe(inStream)
                     }
@@ -302,6 +428,47 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
             } catch (e: Exception) {
                 Log.e("EditorViewModel", "Failed to load image from URI", e)
             }
+        }
+    }
+
+    fun setSplitPosition(pos: Float) {
+        _splitPosition.value = pos.coerceIn(0.05f, 0.95f)
+    }
+
+    fun toggleSplitOrientation() {
+        _isSplitHorizontal.value = !_isSplitHorizontal.value
+    }
+
+    fun toggleGrid() {
+        _showGrid.value = !_showGrid.value
+    }
+
+    fun setAspectRatioGuide(guide: String?) {
+        _aspectRatioGuide.value = guide
+    }
+
+    fun toggleZoomLock() {
+        _isZoomLocked.value = !_isZoomLocked.value
+    }
+
+    fun getHistorySteps(): List<String> {
+        return historyManager.getHistoryDescriptions()
+    }
+
+    fun restoreToHistoryStep(index: Int) {
+        val restored = historyManager.restoreToStep(index)
+        if (restored != null) {
+            _recipe.value = restored
+            autoSaver.scheduleSave("current_photo", restored)
+        }
+    }
+
+    fun cycleAspectRatioGuide() {
+        _aspectRatioGuide.value = when (_aspectRatioGuide.value) {
+            null -> "4:5"
+            "4:5" -> "9:16"
+            "9:16" -> "1:1"
+            else -> null
         }
     }
 
