@@ -21,9 +21,11 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -154,15 +156,26 @@ fun EditorScreen(
 
     var showHistoryMenu by remember { mutableStateOf(false) }
     var showViewOptionsMenu by remember { mutableStateOf(false) }
+    var showEditorOverflowMenu by remember { mutableStateOf(false) }
+    var showShareSheet by remember { mutableStateOf(false) }
     var showExportConfigSheet by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var selectedMobileTool by remember { mutableStateOf("Edit") }
+
+    var isHdrModeActive by remember { mutableStateOf(false) }
+    var hdrLimitEv by remember { mutableFloatStateOf(1.0f) }
+    var lensBlurAmount by remember { mutableFloatStateOf(0f) }
+    var selectedBokehShape by remember { mutableStateOf("Circle") }
+    var removeChromaticAberration by remember { mutableStateOf(false) }
+    var enableLensCorrections by remember { mutableStateOf(false) }
+    var selectedProfileGroup by remember { mutableStateOf("Adobe Raw") }
+    var selectedProfile by remember { mutableStateOf("Adobe Color") }
 
     val allPresets by viewModel.allPresets.collectAsState()
     var showSavePresetDialog by remember { mutableStateOf(false) }
     var newPresetName by remember { mutableStateOf("") }
     var colorSubTab by remember { mutableStateOf("WB") }
-    var effectsSubTab by remember { mutableStateOf("Presence") }
+    var effectsSubTab by remember { mutableStateOf("Effects") }
     var detailSubTab by remember { mutableStateOf("Sharpening") }
 
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -206,407 +219,249 @@ fun EditorScreen(
         containerColor = canvasBackground.color,
         topBar = {
             if (!isCleanScreenMode) {
-                // Tip 10: Compact 48.dp TopAppBar height
                 TopAppBar(
-                    modifier = Modifier.height(48.dp),
+                    modifier = Modifier.height(50.dp),
                     navigationIcon = {
-                        if (onBack != null) {
-                            IconButton(onClick = onBack) {
-                                Icon(
-                                    imageVector = Icons.Default.ArrowBack,
-                                    contentDescription = "Back to library",
-                                    tint = SpectrumTextPrimary
-                                )
-                            }
-                        }
-                    },
-                    title = {
-                        if (onBack == null) {
-                            Text(
-                                text = "Lightroom Clean",
-                                color = SpectrumTextPrimary,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold
+                        IconButton(onClick = { onBack?.invoke() }) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back to library",
+                                tint = SpectrumTextPrimary
                             )
                         }
                     },
+                    title = { },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = SpectrumSurface
                     ),
                     actions = {
-                        if (onBack == null) {
-
-                        // Tip 1: Canvas Background Switcher (Pure Black, Dark Gray, Middle Gray, White)
-                        IconButton(onClick = { viewModel.cycleCanvasBackground() }) {
-                            Icon(
-                                imageVector = Icons.Default.Contrast,
-                                contentDescription = "Canvas Background (${canvasBackground.label})",
-                                tint = SpectrumIconNormal
-                            )
+                        // Mask overlay toggle in Masking mode (Screenshot 34)
+                        if (selectedMobileTool == "Masking") {
+                            IconButton(onClick = { viewModel.toggleMaskOverlay() }) {
+                                Icon(
+                                    imageVector = if (isMaskOverlayVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = "Toggle mask overlay",
+                                    tint = if (isMaskOverlayVisible) SpectrumBlue else SpectrumIconDisabled
+                                )
+                            }
                         }
 
-                        // Tip 122: Undo with long-press history dropdown
-                        Box {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .pointerInput(canUndo) {
-                                        detectTapGestures(
-                                            onTap = { if (canUndo) viewModel.undo() },
-                                            onLongPress = {
-                                                if (canUndo) {
+                        // HDR Mode Pill Badge (Screenshot 14)
+                        if (isHdrModeActive || recipe.isHdrEnabled) {
+                            Surface(
+                                color = SpectrumBlue,
+                                shape = RoundedCornerShape(4.dp),
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            ) {
+                                Text(
+                                    text = "HDR",
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                        // Undo with dropdown arrow & long-press history (Screenshots 14, 34)
+                        if (canUndo) {
+                            Box {
+                                Row(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .pointerInput(canUndo) {
+                                            detectTapGestures(
+                                                onTap = { viewModel.undo() },
+                                                onLongPress = {
                                                     view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                                                     showHistoryMenu = true
                                                 }
+                                            )
+                                        }
+                                        .padding(horizontal = 6.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.Undo,
+                                        contentDescription = "Undo (Tap) / History (Long-Press)",
+                                        tint = SpectrumTextPrimary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = null,
+                                        tint = SpectrumTextPrimary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+
+                                DropdownMenu(
+                                    expanded = showHistoryMenu,
+                                    onDismissRequest = { showHistoryMenu = false },
+                                    modifier = Modifier
+                                        .background(SpectrumElevated)
+                                        .border(1.dp, SpectrumInnerBorder, RoundedCornerShape(8.dp))
+                                ) {
+                                    val historySteps = viewModel.getHistorySteps()
+                                    Text(
+                                        text = "Edit History (${historySteps.size} steps)",
+                                        color = SpectrumTextSecondary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                    )
+                                    HorizontalDivider(color = SpectrumInnerBorder)
+                                    historySteps.forEachIndexed { index, stepName ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = "${index + 1}. $stepName",
+                                                    color = if (index == historySteps.lastIndex) SpectrumBlue else SpectrumTextPrimary,
+                                                    fontSize = 13.sp,
+                                                    fontWeight = if (index == historySteps.lastIndex) FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            },
+                                            onClick = {
+                                                viewModel.restoreToHistoryStep(index)
+                                                showHistoryMenu = false
                                             }
                                         )
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.Undo,
-                                    contentDescription = "Undo (Tap) / History (Long-Press)",
-                                    tint = if (canUndo) SpectrumIconNormal else SpectrumIconDisabled
-                                )
-                            }
-
-                            DropdownMenu(
-                                expanded = showHistoryMenu,
-                                onDismissRequest = { showHistoryMenu = false },
-                                modifier = Modifier
-                                    .background(SpectrumElevated)
-                                    .border(1.dp, SpectrumInnerBorder, RoundedCornerShape(8.dp))
-                            ) {
-                                val historySteps = viewModel.getHistorySteps()
-                                Text(
-                                    text = "Edit History (${historySteps.size} steps)",
-                                    color = SpectrumTextSecondary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                                )
-                                HorizontalDivider(color = SpectrumInnerBorder)
-                                historySteps.forEachIndexed { index, stepName ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                text = "${index + 1}. $stepName",
-                                                color = if (index == historySteps.lastIndex) SpectrumBlue else SpectrumTextPrimary,
-                                                fontSize = 13.sp,
-                                                fontWeight = if (index == historySteps.lastIndex) FontWeight.Bold else FontWeight.Normal
-                                            )
-                                        },
-                                        onClick = {
-                                            viewModel.restoreToHistoryStep(index)
-                                            showHistoryMenu = false
-                                        }
-                                    )
+                                    }
                                 }
                             }
                         }
 
-                        // Redo
-                        IconButton(
-                            onClick = { viewModel.redo() },
-                            enabled = canRedo
-                        ) {
+                        // Share / Export Icon (Screenshots 4, 6)
+                        IconButton(onClick = { showShareSheet = true }) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Redo,
-                                contentDescription = "Redo",
-                                tint = if (canRedo) SpectrumIconNormal else SpectrumIconDisabled
-                            )
-                        }
-
-                        // Targeted Adjustment Tool (TAT)
-                        IconButton(onClick = { viewModel.toggleTat() }) {
-                            Icon(
-                                imageVector = Icons.Default.Adjust,
-                                contentDescription = "Targeted Adjustment Tool (TAT)",
-                                tint = if (isTatActive) SpectrumBlue else SpectrumTextPrimary
-                            )
-                        }
-
-                        // Tip 121: Dual Behavior Compare (Tap = Toggle Split View; Press & Hold = Temporary Before)
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                            viewModel.toggleSplitView()
-                                        },
-                                        onPress = {
-                                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                                            viewModel.setComparingOriginal(true)
-                                            tryAwaitRelease()
-                                            viewModel.setComparingOriginal(false)
-                                        }
-                                    )
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.CompareArrows,
-                                contentDescription = "Compare (Tap: Split / Hold: Before)",
-                                tint = if (isComparingOriginal || isSplitView) SpectrumBlue else SpectrumTextPrimary
-                            )
-                        }
-
-                        // Alt / Option Key Secret Previews Toggle (Section 4.1)
-                        Surface(
-                            color = if (altClippingMode > 0) SpectrumBlue else SpectrumElevated,
-                            shape = RoundedCornerShape(4.dp),
-                            modifier = Modifier
-                                .clickable {
-                                    val nextMode = when (altClippingMode) {
-                                        0 -> 1 // Mode 1: Whites / Exposure
-                                        1 -> 2 // Mode 2: Blacks / Shadows
-                                        2 -> 3 // Mode 3: Masking
-                                        else -> 0
-                                    }
-                                    viewModel.setAltClippingMode(nextMode)
-                                }
-                                .padding(horizontal = 4.dp)
-                        ) {
-                            Text(
-                                text = when (altClippingMode) {
-                                    1 -> "ALT:HI"
-                                    2 -> "ALT:SH"
-                                    3 -> "ALT:MSK"
-                                    else -> "ALT"
-                                },
-                                color = if (altClippingMode > 0) Color.White else SpectrumTextSecondary,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        // View Options & Guides Dropdown (Tips 98, 100, 118, 119)
-                        Box {
-                            IconButton(onClick = { showViewOptionsMenu = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.Tune,
-                                    contentDescription = "View Options & Guides",
-                                    tint = if (isInfoOverlayVisible || showGrid || aspectRatioGuide != null || isZoomLocked) SpectrumBlue else SpectrumTextPrimary
-                                )
-                            }
-
-                            DropdownMenu(
-                                expanded = showViewOptionsMenu,
-                                onDismissRequest = { showViewOptionsMenu = false },
-                                modifier = Modifier
-                                    .background(SpectrumElevated)
-                                    .border(1.dp, SpectrumInnerBorder, RoundedCornerShape(8.dp))
-                            ) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.Info,
-                                                contentDescription = null,
-                                                tint = if (isInfoOverlayVisible) SpectrumBlue else SpectrumTextSecondary,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = if (isInfoOverlayVisible) "Hide Info HUD (I)" else "Show Info HUD (I)",
-                                                color = SpectrumTextPrimary,
-                                                fontSize = 13.sp
-                                            )
-                                        }
-                                    },
-                                    onClick = {
-                                        viewModel.toggleInfoOverlay()
-                                        showViewOptionsMenu = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.GridOn,
-                                                contentDescription = null,
-                                                tint = if (showGrid) SpectrumBlue else SpectrumTextSecondary,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = if (showGrid) "Hide 3x3 Grid" else "Show 3x3 Grid",
-                                                color = SpectrumTextPrimary,
-                                                fontSize = 13.sp
-                                            )
-                                        }
-                                    },
-                                    onClick = {
-                                        viewModel.toggleGrid()
-                                        showViewOptionsMenu = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.AspectRatio,
-                                                contentDescription = null,
-                                                tint = if (aspectRatioGuide != null) SpectrumBlue else SpectrumTextSecondary,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = "Guide: ${aspectRatioGuide ?: "None"} (Tap to Cycle)",
-                                                color = SpectrumTextPrimary,
-                                                fontSize = 13.sp
-                                            )
-                                        }
-                                    },
-                                    onClick = {
-                                        viewModel.cycleAspectRatioGuide()
-                                        showViewOptionsMenu = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = if (isZoomLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                                                contentDescription = null,
-                                                tint = if (isZoomLocked) SpectrumBlue else SpectrumTextSecondary,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = if (isZoomLocked) "Zoom Locked (Preserved)" else "Lock Zoom & Pan",
-                                                color = SpectrumTextPrimary,
-                                                fontSize = 13.sp
-                                            )
-                                        }
-                                    },
-                                    onClick = {
-                                        viewModel.toggleZoomLock()
-                                        showViewOptionsMenu = false
-                                    }
-                                )
-                                HorizontalDivider(color = SpectrumInnerBorder)
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.ContentCopy, contentDescription = null, tint = SpectrumTextSecondary, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text("Copy Edit Settings", color = SpectrumTextPrimary, fontSize = 13.sp)
-                                        }
-                                    },
-                                    onClick = {
-                                        viewModel.copyEditSettings()
-                                        showViewOptionsMenu = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.ContentPaste, contentDescription = null, tint = SpectrumTextSecondary, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text("Paste Edit Settings", color = SpectrumTextPrimary, fontSize = 13.sp)
-                                        }
-                                    },
-                                    onClick = {
-                                        viewModel.pasteEditSettings()
-                                        showViewOptionsMenu = false
-                                    }
-                                )
-                                HorizontalDivider(color = SpectrumInnerBorder)
-                                Text(
-                                    text = "DEMO SCENES (Tip 525)",
-                                    color = SpectrumTextSecondary,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
-                                )
-                                EditorViewModel.DemoScene.values().forEach { scene ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(scene.title, color = SpectrumTextPrimary, fontSize = 12.sp)
-                                        },
-                                        onClick = {
-                                            viewModel.loadDemoScene(scene)
-                                            showViewOptionsMenu = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        // Pick image
-                        IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
-                            Icon(
-                                imageVector = Icons.Default.AddPhotoAlternate,
-                                contentDescription = "Open Photo",
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share and Export",
                                 tint = SpectrumTextPrimary
                             )
                         }
 
-                        // Tip 120: Export (Tap: Settings Sheet; Long-Press: Instant Quick Export & Share)
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onTap = { showExportConfigSheet = true },
-                                        onLongPress = {
-                                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                                            viewModel.exportImage(com.cleanlr.export.ExportConfig(autoShare = true))
-                                        }
-                                    )
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FileDownload,
-                                contentDescription = "Export Image (Tap) / Quick Share (Long-Press)",
-                                tint = SpectrumBlue
-                            )
-                        }
+                        // 3-dots Overflow Menu (Screenshots 4, 5)
+                        Box {
+                            IconButton(onClick = { showEditorOverflowMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "More options",
+                                    tint = SpectrumTextPrimary
+                                )
+                            }
 
-                        } else {
-                            IconButton(onClick = { if (canUndo) viewModel.undo() }, enabled = canUndo) {
-                                Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo", tint = SpectrumTextPrimary)
-                            }
-                            IconButton(onClick = { viewModel.redo() }, enabled = canRedo) {
-                                Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = "Redo", tint = SpectrumTextPrimary)
-                            }
-                            IconButton(onClick = { viewModel.exportImage(com.cleanlr.export.ExportConfig(autoShare = true)) }) {
-                                Icon(Icons.Default.Share, contentDescription = "Export and share", tint = SpectrumTextPrimary)
-                            }
-                            Box {
-                                IconButton(onClick = { showViewOptionsMenu = true }) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = SpectrumTextPrimary)
-                                }
-                                DropdownMenu(
-                                    expanded = showViewOptionsMenu,
-                                    onDismissRequest = { showViewOptionsMenu = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Compare before and after") },
-                                        onClick = { viewModel.toggleSplitView(); showViewOptionsMenu = false }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Open another photo") },
-                                        onClick = { imagePickerLauncher.launch("image/*"); showViewOptionsMenu = false }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Export settings") },
-                                        onClick = { showExportConfigSheet = true; showViewOptionsMenu = false }
-                                    )
-                                }
+                            DropdownMenu(
+                                expanded = showEditorOverflowMenu,
+                                onDismissRequest = { showEditorOverflowMenu = false },
+                                modifier = Modifier
+                                    .background(SpectrumElevated)
+                                    .border(1.dp, SpectrumInnerBorder, RoundedCornerShape(8.dp))
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.SaveAlt, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(12.dp))
+                                            Text("Save copy to device", color = SpectrumTextPrimary, fontSize = 14.sp)
+                                        }
+                                    },
+                                    onClick = {
+                                        showEditorOverflowMenu = false
+                                        viewModel.exportImage(com.cleanlr.export.ExportConfig())
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.Tune, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(12.dp))
+                                            Text("View options", color = SpectrumTextPrimary, fontSize = 14.sp)
+                                        }
+                                    },
+                                    onClick = {
+                                        showEditorOverflowMenu = false
+                                        showViewOptionsMenu = true
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.AddBox, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(12.dp))
+                                            Text("Create Preset", color = SpectrumTextPrimary, fontSize = 14.sp)
+                                        }
+                                    },
+                                    onClick = {
+                                        showEditorOverflowMenu = false
+                                        showSavePresetDialog = true
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.ContentCopy, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(12.dp))
+                                            Text("Copy Settings", color = SpectrumTextPrimary, fontSize = 14.sp)
+                                        }
+                                    },
+                                    onClick = {
+                                        showEditorOverflowMenu = false
+                                        viewModel.copyEditSettings()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.ContentPaste, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(12.dp))
+                                            Text("Paste Settings", color = SpectrumTextPrimary, fontSize = 14.sp)
+                                        }
+                                    },
+                                    onClick = {
+                                        showEditorOverflowMenu = false
+                                        viewModel.pasteEditSettings()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.History, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(12.dp))
+                                            Text("Apply from previous", color = SpectrumTextPrimary, fontSize = 14.sp)
+                                        }
+                                    },
+                                    onClick = {
+                                        showEditorOverflowMenu = false
+                                        viewModel.pasteEditSettings()
+                                    }
+                                )
+                                HorizontalDivider(color = SpectrumInnerBorder)
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.Help, contentDescription = null, tint = SpectrumTextSecondary, modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(12.dp))
+                                            Text("Help", color = SpectrumTextSecondary, fontSize = 14.sp)
+                                        }
+                                    },
+                                    onClick = { showEditorOverflowMenu = false }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.AccountCircle, contentDescription = null, tint = SpectrumTextSecondary, modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(12.dp))
+                                            Text("Your profile", color = SpectrumTextSecondary, fontSize = 14.sp)
+                                        }
+                                    },
+                                    onClick = { showEditorOverflowMenu = false }
+                                )
                             }
                         }
                     }
-            )
-        }
-    },
+                )
+            }
+        },
     bottomBar = {
         if (!isCleanScreenMode) {
             MobilePrimaryToolbar(
@@ -806,125 +661,184 @@ fun EditorScreen(
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                     contentPadding = PaddingValues(horizontal = 14.dp)
                 ) {
-                    // Adobe Signature "Auto" One-Touch Button
-                    item {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .clickable {
-                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                    viewModel.autoTone()
-                                }
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AutoFixHigh,
-                                contentDescription = "Auto Tone",
-                                tint = SpectrumIconNormal,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Auto",
-                                color = SpectrumTextPrimary,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                        }
-                    }
-
-                    items(EditorToolTab.values()) { tab ->
-                        val isSelected = tab == activeTab
-                        val isModified = viewModel.isTabModified(tab)
-                        val isBypassed = bypassedTabs.contains(tab)
-                        val tabIcon = when (tab) {
-                            EditorToolTab.CROP -> Icons.Default.Crop
-                            EditorToolTab.LIGHT -> Icons.Default.Brightness6
-                            EditorToolTab.COLOR -> Icons.Default.Palette
-                            EditorToolTab.EFFECTS -> Icons.Default.AutoAwesome
-                            EditorToolTab.DETAIL -> Icons.Default.Tune
-                            EditorToolTab.CURVES -> Icons.Default.Timeline
-                            EditorToolTab.PRESETS -> Icons.Default.Style
-                            EditorToolTab.VERSIONS -> Icons.Default.HistoryEdu
-                            EditorToolTab.MASKS -> Icons.Default.Layers
-                        }
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .pointerInput(tab) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                            viewModel.setActiveTab(tab)
-                                        },
-                                        onLongPress = {
-                                            // Tip 25: Long-press to reset tab
-                                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                                            viewModel.resetTab(tab)
-                                        },
-                                        onDoubleTap = {
-                                            // Tip 26: Double-tap to bypass tab
-                                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                                            viewModel.toggleBypassTab(tab)
-                                        }
-                                    )
-                                }
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = tabIcon,
-                                contentDescription = tab.title,
-                                tint = if (isSelected) SpectrumBlue else if (isBypassed) SpectrumIconDisabled else SpectrumIconNormal,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = tab.title,
-                                color = if (isSelected) SpectrumBlue else if (isBypassed) SpectrumIconDisabled else SpectrumTextSecondary,
-                                fontSize = 10.sp,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                            )
-                            // Tips 23 & 24: Active Modification Indicator Dot
-                            if (isModified) {
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .size(4.dp)
-                                        .clip(androidx.compose.foundation.shape.CircleShape)
-                                        .background(if (isBypassed) Color.Gray else SpectrumActiveDot)
+                    if (selectedMobileTool == "Actions") {
+                        val actions = listOf(
+                            Triple("Auto", Icons.Default.AutoFixHigh) { viewModel.autoTone() },
+                            Triple("Enhance", Icons.Default.AutoAwesome) { viewModel.autoTone() },
+                            Triple("Subject", Icons.Default.Person) {
+                                viewModel.setActiveTab(EditorToolTab.MASKS)
+                                selectedMobileTool = "Masking"
+                            },
+                            Triple("Background", Icons.Default.Wallpaper) {
+                                viewModel.setActiveTab(EditorToolTab.MASKS)
+                                selectedMobileTool = "Masking"
+                            },
+                            Triple("Sky", Icons.Default.Cloud) {
+                                viewModel.setActiveTab(EditorToolTab.MASKS)
+                                selectedMobileTool = "Masking"
+                            },
+                            Triple("Animate", Icons.Default.Animation) { }
+                        )
+                        items(actions) { (label, icon, action) ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .clickable {
+                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                        action()
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = label,
+                                    tint = SpectrumIconNormal,
+                                    modifier = Modifier.size(20.dp)
                                 )
-                            } else {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = label,
+                                    color = SpectrumTextPrimary,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
                                 Spacer(modifier = Modifier.height(6.dp))
                             }
                         }
-                    }
+                    } else {
+                        // Adobe Signature "Auto" One-Touch Button
+                        item {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .clickable {
+                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                        viewModel.autoTone()
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoFixHigh,
+                                    contentDescription = "Auto Tone",
+                                    tint = SpectrumIconNormal,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Auto",
+                                    color = SpectrumTextPrimary,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                            }
+                        }
 
-                    // Reset Action Button
-                    item {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .clickable {
-                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                    showResetDialog = true
+                        val visibleTabs = listOf(
+                            EditorToolTab.LIGHT,
+                            EditorToolTab.COLOR,
+                            EditorToolTab.BLUR,
+                            EditorToolTab.EFFECTS,
+                            EditorToolTab.DETAIL,
+                            EditorToolTab.OPTICS,
+                            EditorToolTab.PROFILES
+                        )
+
+                        items(visibleTabs) { tab ->
+                            val isSelected = tab == activeTab
+                            val isModified = viewModel.isTabModified(tab)
+                            val isBypassed = bypassedTabs.contains(tab)
+                            val tabIcon = when (tab) {
+                                EditorToolTab.CROP -> Icons.Default.Crop
+                                EditorToolTab.LIGHT -> Icons.Default.Brightness6
+                                EditorToolTab.COLOR -> Icons.Default.Palette
+                                EditorToolTab.BLUR -> Icons.Default.BlurOn
+                                EditorToolTab.EFFECTS -> Icons.Default.AutoAwesome
+                                EditorToolTab.DETAIL -> Icons.Default.Tune
+                                EditorToolTab.OPTICS -> Icons.Default.CameraAlt
+                                EditorToolTab.PROFILES -> Icons.Default.ColorLens
+                                EditorToolTab.CURVES -> Icons.Default.Timeline
+                                EditorToolTab.PRESETS -> Icons.Default.Style
+                                EditorToolTab.VERSIONS -> Icons.Default.HistoryEdu
+                                EditorToolTab.MASKS -> Icons.Default.Layers
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .pointerInput(tab) {
+                                        detectTapGestures(
+                                            onTap = {
+                                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                                viewModel.setActiveTab(tab)
+                                            },
+                                            onLongPress = {
+                                                // Tip 25: Long-press to reset tab
+                                                view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                                viewModel.resetTab(tab)
+                                            },
+                                            onDoubleTap = {
+                                                // Tip 26: Double-tap to bypass tab
+                                                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                                                viewModel.toggleBypassTab(tab)
+                                            }
+                                        )
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = tabIcon,
+                                    contentDescription = tab.title,
+                                    tint = if (isSelected) SpectrumBlue else if (isBypassed) SpectrumIconDisabled else SpectrumIconNormal,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = tab.title,
+                                    color = if (isSelected) SpectrumBlue else if (isBypassed) SpectrumIconDisabled else SpectrumTextSecondary,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                                // Tips 23 & 24: Active Modification Indicator Dot
+                                if (isModified) {
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(4.dp)
+                                            .clip(androidx.compose.foundation.shape.CircleShape)
+                                            .background(if (isBypassed) Color.Gray else SpectrumActiveDot)
+                                    )
+                                } else {
+                                    Spacer(modifier = Modifier.height(6.dp))
                                 }
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.RestartAlt,
-                                contentDescription = "Reset All",
-                                tint = SpectrumIconNormal,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Reset",
-                                color = SpectrumTextSecondary,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
+                            }
+                        }
+
+                        // Reset Action Button
+                        item {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .clickable {
+                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                        showResetDialog = true
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.RestartAlt,
+                                    contentDescription = "Reset All",
+                                    tint = SpectrumIconNormal,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Reset",
+                                    color = SpectrumTextSecondary,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                            }
                         }
                     }
                 }
@@ -991,6 +905,10 @@ fun EditorScreen(
                         ) {
                     when {
                         isCropActive -> CropAndExpandPanel(
+                            crop = recipe.crop,
+                            onRotate = { viewModel.rotateCrop(it) },
+                            onFlip = { viewModel.flipCrop(it) },
+                            onStraighten = { viewModel.setStraightenAngle(it) },
                             aspectRatioGuide = aspectRatioGuide,
                             onAspectRatioSelected = { viewModel.setAspectRatioGuide(it) },
                             onCancel = {
@@ -1025,6 +943,44 @@ fun EditorScreen(
                         }
 
                         EditorToolTab.LIGHT -> {
+                            // Curve Navigation Button (Screenshot 13)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    color = SpectrumElevated,
+                                    shape = RoundedCornerShape(16.dp),
+                                    border = BorderStroke(1.dp, SpectrumInnerBorder),
+                                    modifier = Modifier.clickable {
+                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                        viewModel.setActiveTab(EditorToolTab.CURVES)
+                                    }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Timeline,
+                                            contentDescription = "Tone Curve",
+                                            tint = SpectrumBlue,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "Curve",
+                                            color = SpectrumTextPrimary,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                }
+                            }
+
                             // Tip 52: Exposure track — subtle luminance gradient + EV stop marks
                             val exposureTrackBrush = remember {
                                 Brush.horizontalGradient(listOf(Color(0xFF1A1A1A), Color(0xFFE0E0E0)))
@@ -1119,6 +1075,85 @@ fun EditorScreen(
                                     viewModel.onSliderTouchEnd("Blacks")
                                 }
                             )
+
+                            // Edit in HDR Mode Card (Screenshot 14)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(color = SpectrumGroupDivider, thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Surface(
+                                color = Color(0xFF1E1E1E),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, if (isHdrModeActive) SpectrumBlue else SpectrumInnerBorder),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Surface(
+                                                color = if (isHdrModeActive) SpectrumBlue else Color(0xFF333333),
+                                                shape = RoundedCornerShape(4.dp)
+                                            ) {
+                                                Text(
+                                                    text = "HDR",
+                                                    color = Color.White,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                            Spacer(Modifier.width(10.dp))
+                                            Column {
+                                                Text(
+                                                    text = "Edit in HDR Mode",
+                                                    color = SpectrumTextPrimary,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                                Text(
+                                                    text = "Visualize and edit high dynamic range photos",
+                                                    color = SpectrumTextSecondary,
+                                                    fontSize = 11.sp
+                                                )
+                                            }
+                                        }
+                                        Switch(
+                                            checked = isHdrModeActive,
+                                            onCheckedChange = {
+                                                isHdrModeActive = it
+                                                viewModel.updateRecipe("Toggle HDR Mode") { r -> r.copy(isHdrEnabled = it) }
+                                            },
+                                            colors = SwitchDefaults.colors(
+                                                checkedThumbColor = Color.White,
+                                                checkedTrackColor = SpectrumBlue
+                                            )
+                                        )
+                                    }
+
+                                    if (isHdrModeActive) {
+                                        Spacer(Modifier.height(10.dp))
+                                        RampedSlider(
+                                            label = "HDR Limit",
+                                            value = hdrLimitEv,
+                                            minVal = 1.0f,
+                                            maxVal = 4.0f,
+                                            defaultValue = 1.0f,
+                                            isBipolar = false,
+                                            formatPattern = "+%.1f",
+                                            unitSuffix = "EV",
+                                            onValueChangeStart = { viewModel.onSliderTouchStart() },
+                                            onValueChange = { hdrLimitEv = it },
+                                            onValueChangeEnd = { viewModel.onSliderTouchEnd("HDR Limit") }
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         EditorToolTab.COLOR -> {
@@ -1848,11 +1883,65 @@ fun EditorScreen(
                         }
 
                         EditorToolTab.CURVES -> {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Tone Curve",
+                                    color = SpectrumTextPrimary,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                TextButton(
+                                    onClick = {
+                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                        viewModel.setActiveTab(EditorToolTab.LIGHT)
+                                    }
+                                ) {
+                                    Text(
+                                        text = "DONE",
+                                        color = SpectrumBlue,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                             ToneCurveWidget(
                                 curves = recipe.curves,
                                 onCurveChanged = { updated ->
                                     viewModel.updateRecipe("Tone Curve") { it.copy(curves = updated) }
                                 }
+                            )
+                        }
+
+                        EditorToolTab.BLUR -> {
+                            LensBlurPanel(
+                                blurAmount = lensBlurAmount,
+                                onBlurAmountChange = { lensBlurAmount = it },
+                                selectedBokehShape = selectedBokehShape,
+                                onBokehShapeSelected = { selectedBokehShape = it }
+                            )
+                        }
+
+                        EditorToolTab.OPTICS -> {
+                            OpticsPanel(
+                                removeChromaticAberration = removeChromaticAberration,
+                                onRemoveChromaticAberrationChange = { removeChromaticAberration = it },
+                                enableLensCorrections = enableLensCorrections,
+                                onEnableLensCorrectionsChange = { enableLensCorrections = it }
+                            )
+                        }
+
+                        EditorToolTab.PROFILES -> {
+                            ProfilesPanel(
+                                selectedGroup = selectedProfileGroup,
+                                onGroupSelected = { selectedProfileGroup = it },
+                                selectedProfile = selectedProfile,
+                                onProfileSelected = { selectedProfile = it }
                             )
                         }
 
@@ -2031,6 +2120,253 @@ fun EditorScreen(
         )
     }
 
+        if (showShareSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showShareSheet = false },
+                containerColor = Color(0xFF1E1E1E),
+                dragHandle = {
+                    Box(
+                        modifier = Modifier
+                            .padding(vertical = 10.dp)
+                            .size(width = 36.dp, height = 4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color(0xFF555555))
+                    )
+                }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 32.dp)
+                ) {
+                    // Header Row: Thumbnail + Info + Close Button
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF333333)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Image,
+                                contentDescription = null,
+                                tint = Color(0xFF888888),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Original Photo",
+                                color = Color.White,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "Full resolution • JPEG / RAW",
+                                color = Color(0xFFAAAAAA),
+                                fontSize = 12.sp
+                            )
+                        }
+                        IconButton(onClick = { showShareSheet = false }) {
+                            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                        }
+                    }
+
+                    // Quick Actions: Circular Buttons [Share | Export as...]
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        // Share circular button
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clickable {
+                                    showShareSheet = false
+                                    viewModel.shareLastExport(context)
+                                }
+                                .padding(horizontal = 24.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(Color(0xFF2C2C2C)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White, modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text("Share", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        }
+
+                        // Export as... circular button
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clickable {
+                                    showShareSheet = false
+                                    showExportConfigSheet = true
+                                }
+                                .padding(horizontal = 24.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(Color(0xFF2C2C2C)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Tune, contentDescription = "Export as...", tint = Color.White, modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text("Export as...", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+
+                    HorizontalDivider(color = Color(0xFF333333), modifier = Modifier.padding(vertical = 12.dp))
+
+                    // Options List
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showShareSheet = false
+                                viewModel.exportImage(com.cleanlr.export.ExportConfig())
+                            }
+                            .padding(vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.SaveAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(16.dp))
+                        Text("Save copy to device", color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                        IconButton(
+                            onClick = {
+                                showShareSheet = false
+                                showExportConfigSheet = true
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.Settings, contentDescription = "Export settings", tint = Color(0xFF888888), modifier = Modifier.size(18.dp))
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showShareSheet = false }
+                            .padding(vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Link, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(16.dp))
+                        Text("Get link", color = Color.White, fontSize = 15.sp)
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showShareSheet = false }
+                            .padding(vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.PlayCircleOutline, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(16.dp))
+                        Text("Create edit replay", color = Color.White, fontSize = 15.sp)
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showShareSheet = false }
+                            .padding(vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Public, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(16.dp))
+                        Text("Post to Community", color = Color.White, fontSize = 15.sp)
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showShareSheet = false }
+                            .padding(vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.PersonAdd, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(16.dp))
+                        Text("Invite to edit", color = Color.White, fontSize = 15.sp)
+                    }
+                }
+            }
+        }
+
+        if (showViewOptionsMenu) {
+            AlertDialog(
+                onDismissRequest = { showViewOptionsMenu = false },
+                title = {
+                    Text("View options", color = SpectrumTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Show Info Overlay", color = SpectrumTextPrimary, fontSize = 14.sp)
+                            Switch(
+                                checked = isInfoOverlayVisible,
+                                onCheckedChange = { viewModel.toggleInfoOverlay() },
+                                colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SpectrumBlue)
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Grid & Composition Guide", color = SpectrumTextPrimary, fontSize = 14.sp)
+                            Switch(
+                                checked = showGrid,
+                                onCheckedChange = { viewModel.toggleGrid() },
+                                colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SpectrumBlue)
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Lock 100% Zoom", color = SpectrumTextPrimary, fontSize = 14.sp)
+                            Switch(
+                                checked = isZoomLocked,
+                                onCheckedChange = { viewModel.toggleZoomLock() },
+                                colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SpectrumBlue)
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showViewOptionsMenu = false }) {
+                        Text("Done", color = SpectrumBlue)
+                    }
+                },
+                containerColor = SpectrumSurface
+            )
+        }
+
         if (showExportConfigSheet) {
             com.cleanlr.ui.export.ExportConfigBottomSheet(
                 onDismiss = { showExportConfigSheet = false },
@@ -2072,15 +2408,15 @@ private fun MobilePrimaryToolbar(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(SpectrumSurface)
+            .background(Color(0xFF1A1A1A))
             .navigationBarsPadding()
     ) {
-        HorizontalDivider(color = SpectrumBorder)
+        HorizontalDivider(color = Color(0xFF2A2A2A))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(68.dp)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .height(64.dp)
+                .padding(horizontal = 6.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             tools.forEach { (label, icon) ->
@@ -2089,24 +2425,24 @@ private fun MobilePrimaryToolbar(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(if (active) SpectrumBlue else Color.Transparent)
+                        .clip(RoundedCornerShape(8.dp))
                         .clickable { onToolSelected(label) }
-                        .padding(vertical = 5.dp),
+                        .padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = label,
-                        tint = if (active) Color.White else SpectrumIconNormal,
-                        modifier = Modifier.size(21.dp)
+                        tint = if (active) Color(0xFF1686FF) else Color(0xFFB0B0B0),
+                        modifier = Modifier.size(22.dp)
                     )
                     Spacer(Modifier.height(3.dp))
                     Text(
                         text = label,
-                        color = if (active) Color.White else SpectrumTextSecondary,
-                        fontSize = 9.sp,
+                        color = if (active) Color(0xFF1686FF) else Color(0xFF888888),
+                        fontSize = 10.sp,
+                        fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                         maxLines = 1
                     )
                 }
@@ -2114,8 +2450,91 @@ private fun MobilePrimaryToolbar(
         }
     }
 }
+
+/**
+ * Curved Straighten Dial Arc matching Reference Screenshot 11
+ */
+@Composable
+private fun CurvedStraightenDial(
+    angle: Float,
+    onAngleChange: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    val delta = dragAmount.x / 14f
+                    val newAngle = (angle + delta).coerceIn(-45f, 45f)
+                    onAngleChange(newAngle)
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+            val width = size.width
+            val height = size.height
+            val centerX = width / 2f
+            val arcY = height * 0.85f
+
+            // Draw curved subtle arc base line
+            val path = androidx.compose.ui.graphics.Path().apply {
+                moveTo(width * 0.08f, arcY)
+                quadraticBezierTo(centerX, arcY - 14f, width * 0.92f, arcY)
+            }
+            drawPath(path, color = Color(0xFF444444), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f))
+
+            // Draw ticks along the dial
+            val tickCount = 41
+            for (i in 0 until tickCount) {
+                val tickFraction = i / (tickCount - 1).toFloat()
+                val tickX = width * 0.08f + tickFraction * (width * 0.84f)
+                val curveOffset = 14f * (1f - ((tickX - centerX) / (width * 0.42f)).let { it * it }.coerceIn(0f, 1f))
+                val currentY = arcY - curveOffset
+                val isMajor = i % 5 == 0
+                val tickHeight = if (isMajor) 12f else 6f
+                val isCenter = i == tickCount / 2
+                val tickColor = if (isCenter) Color(0xFF1686FF) else if (isMajor) Color(0xFFAAAAAA) else Color(0xFF555555)
+
+                drawLine(
+                    color = tickColor,
+                    start = androidx.compose.ui.geometry.Offset(tickX, currentY - tickHeight),
+                    end = androidx.compose.ui.geometry.Offset(tickX, currentY),
+                    strokeWidth = if (isCenter) 2.5f else 1.2f
+                )
+            }
+        }
+
+        // Center degree readout pill (e.g. "0.00°")
+        Surface(
+            color = Color(0xFF222222),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, Color(0xFF444444)),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 2.dp)
+                .clickable { onAngleChange(0f) }
+        ) {
+            Text(
+                text = String.format(java.util.Locale.US, "%.2f°", angle),
+                color = if (angle != 0f) Color(0xFF1686FF) else Color.White,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+            )
+        }
+    }
+}
+
 @Composable
 private fun CropAndExpandPanel(
+    crop: com.cleanlr.model.CropAdjustments,
+    onRotate: (Boolean) -> Unit,
+    onFlip: (Boolean) -> Unit,
+    onStraighten: (Float) -> Unit,
     aspectRatioGuide: String?,
     onAspectRatioSelected: (String?) -> Unit,
     onCancel: () -> Unit,
@@ -2123,12 +2542,72 @@ private fun CropAndExpandPanel(
 ) {
     var page by remember { mutableStateOf("Aspect") }
     var geometryMode by remember { mutableStateOf("Auto") }
-    val ratios = listOf("Original" to null, "1:1" to "1:1", "4:5" to "4:5", "9:16" to "9:16")
+    var isAspectLocked by remember { mutableStateOf(false) }
+    var showOverflowFlip by remember { mutableStateOf(false) }
+
+    val ratios = listOf(
+        "Free" to null,
+        "Original" to "Original",
+        "1:1" to "1:1",
+        "4:5" to "4:5",
+        "16:9" to "16:9",
+        "9:16" to "9:16",
+        "3:2" to "3:2",
+        "4:3" to "4:3"
+    )
     val geometryModes = listOf("Auto", "Level", "Vertical", "Full", "Guided")
 
     Column(modifier = Modifier.fillMaxWidth().background(SpectrumSurface)) {
+        // Curved Straighten Dial Arc (Screenshot 11)
+        CurvedStraightenDial(
+            angle = crop.straightenAngle,
+            onAngleChange = onStraighten
+        )
+
+        // Control Row: Fullscreen, Aspect lock, Rotate 90, Overflow (Flip)
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { }) {
+                Icon(Icons.Default.Fullscreen, contentDescription = "Fullscreen preview", tint = Color.White)
+            }
+            IconButton(onClick = { isAspectLocked = !isAspectLocked }) {
+                Icon(
+                    if (isAspectLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                    contentDescription = "Aspect lock",
+                    tint = if (isAspectLocked) Color(0xFF1686FF) else Color.White
+                )
+            }
+            IconButton(onClick = { onRotate(true) }) {
+                Icon(Icons.Default.RotateRight, contentDescription = "Rotate 90 degrees", tint = Color.White)
+            }
+            Box {
+                IconButton(onClick = { showOverflowFlip = true }) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "More crop tools", tint = Color.White)
+                }
+                DropdownMenu(
+                    expanded = showOverflowFlip,
+                    onDismissRequest = { showOverflowFlip = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Flip Horizontal") },
+                        onClick = { onFlip(true); showOverflowFlip = false }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Flip Vertical") },
+                        onClick = { onFlip(false); showOverflowFlip = false }
+                    )
+                }
+            }
+        }
+
+        // Tabs: [Aspect, Geometry]
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 4.dp),
             horizontalArrangement = Arrangement.Center
         ) {
             listOf("Aspect", "Geometry").forEach { item ->
@@ -2139,76 +2618,385 @@ private fun CropAndExpandPanel(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(item, color = if (page == item) Color.White else SpectrumTextSecondary, fontSize = 14.sp)
-                    Spacer(Modifier.height(5.dp))
-                    Box(Modifier.width(72.dp).height(2.dp).background(if (page == item) Color.White else Color.Transparent))
+                    Spacer(Modifier.height(4.dp))
+                    Box(Modifier.width(60.dp).height(2.dp).background(if (page == item) Color.White else Color.Transparent))
                 }
             }
         }
 
         if (page == "Aspect") {
             Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 7.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 ratios.forEach { (label, ratio) ->
                     val selected = (ratio == null && aspectRatioGuide == null) || ratio == aspectRatioGuide
                     Surface(
-                        color = if (selected) SpectrumBlue else SpectrumElevated,
+                        color = if (selected) Color(0xFF1686FF) else Color(0xFF2C2C2C),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.clickable { onAspectRatioSelected(ratio) }
                     ) {
-                        Text(label, color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                        Text(label, color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp))
                     }
                 }
             }
         } else {
             Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 10.dp, vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(7.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 geometryModes.forEach { mode ->
                     val selected = geometryMode == mode
                     Surface(
-                        color = if (selected) SpectrumBlue else SpectrumElevated,
+                        color = if (selected) Color(0xFF1686FF) else Color(0xFF2C2C2C),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.clickable { geometryMode = mode }
                     ) {
-                        Text(mode, color = Color.White, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp))
+                        Text(mode, color = Color.White, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp))
                     }
                 }
             }
         }
 
-        HorizontalDivider(color = SpectrumBorder)
+        HorizontalDivider(color = Color(0xFF333333), modifier = Modifier.padding(top = 4.dp))
         Row(
             modifier = Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = onCancel) { Icon(Icons.Default.Close, contentDescription = "Cancel crop", tint = SpectrumTextPrimary) }
-            Text("Crop and expand", color = SpectrumTextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            IconButton(onClick = onApply) { Icon(Icons.Default.Check, contentDescription = "Apply crop", tint = SpectrumTextPrimary) }
+            IconButton(onClick = onCancel) { Icon(Icons.Default.Close, contentDescription = "Cancel crop", tint = Color.White) }
+            Text("Crop and expand", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            IconButton(onClick = onApply) { Icon(Icons.Default.Check, contentDescription = "Apply crop", tint = Color.White) }
         }
     }
 }
 
+/**
+ * Remove Tool Panel matching Reference Screenshot 35
+ */
 @Composable
 private fun RemoveToolPanel() {
-    var brushSize by remember { mutableFloatStateOf(10f) }
+    var brushSize by remember { mutableFloatStateOf(25f) }
     var detectObjects by remember { mutableStateOf(false) }
     var generativeAI by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxWidth().background(SpectrumSurface).padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text("Remove", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-        Slider(value = brushSize, onValueChange = { brushSize = it }, valueRange = 1f..100f)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Detect objects", color = SpectrumTextPrimary, modifier = Modifier.weight(1f))
-            Switch(checked = detectObjects, onCheckedChange = { detectObjects = it })
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SpectrumSurface)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        // Floating pill: "Remove extra people"
+        Surface(
+            color = Color(0xFF252525),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF3A3A3A)),
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .clickable { }
+                .padding(bottom = 8.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.PersonRemove, contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Remove extra people", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            }
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Generative AI", color = SpectrumTextPrimary, modifier = Modifier.weight(1f))
-            Switch(checked = generativeAI, onCheckedChange = { generativeAI = it })
+
+        RampedSlider(
+            label = "Size",
+            value = brushSize,
+            minVal = 1f,
+            maxVal = 100f,
+            defaultValue = 25f,
+            isBipolar = false,
+            onValueChangeStart = { },
+            onValueChange = { brushSize = it },
+            onValueChangeEnd = { }
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Detect objects", color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+            Switch(
+                checked = detectObjects,
+                onCheckedChange = { detectObjects = it },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = Color(0xFF1686FF)
+                )
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Generative AI", color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+            Switch(
+                checked = generativeAI,
+                onCheckedChange = { generativeAI = it },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = Color(0xFF1686FF)
+                )
+            )
+        }
+    }
+}
+
+/**
+ * Lens Blur Panel matching Reference Screenshot 26
+ */
+@Composable
+private fun LensBlurPanel(
+    blurAmount: Float,
+    onBlurAmountChange: (Float) -> Unit,
+    selectedBokehShape: String,
+    onBokehShapeSelected: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 6.dp)
+    ) {
+        Surface(
+            color = Color(0xFF242424),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Depth map detected", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            }
+        }
+
+        RampedSlider(
+            label = "Blur Amount",
+            value = blurAmount,
+            minVal = 0f,
+            maxVal = 100f,
+            defaultValue = 0f,
+            isBipolar = false,
+            onValueChangeStart = { },
+            onValueChange = { onBlurAmountChange(it) },
+            onValueChangeEnd = { }
+        )
+
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "BOKEH",
+            color = Color(0xFF888888),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+
+        val shapes = listOf("Circle", "Bubble", "5-blade", "Ring", "Cat eye")
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            shapes.forEach { shape ->
+                val isSelected = selectedBokehShape == shape
+                Surface(
+                    color = if (isSelected) Color(0xFF1686FF) else Color(0xFF2C2C2C),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.clickable { onBokehShapeSelected(shape) }
+                ) {
+                    Text(
+                        text = shape,
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Optics Panel matching Reference Screenshot 31
+ */
+@Composable
+private fun OpticsPanel(
+    removeChromaticAberration: Boolean,
+    onRemoveChromaticAberrationChange: (Boolean) -> Unit,
+    enableLensCorrections: Boolean,
+    onEnableLensCorrectionsChange: (Boolean) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Remove chromatic aberration",
+                color = Color.White,
+                fontSize = 14.sp,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = removeChromaticAberration,
+                onCheckedChange = onRemoveChromaticAberrationChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = Color(0xFF1686FF)
+                )
+            )
+        }
+
+        HorizontalDivider(color = Color(0xFF333333))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Enable lens corrections",
+                color = Color.White,
+                fontSize = 14.sp,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = enableLensCorrections,
+                onCheckedChange = onEnableLensCorrectionsChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = Color(0xFF1686FF)
+                )
+            )
+        }
+    }
+}
+
+/**
+ * Profiles Panel matching Reference Screenshot 32
+ */
+@Composable
+private fun ProfilesPanel(
+    selectedGroup: String,
+    onGroupSelected: (String) -> Unit,
+    selectedProfile: String,
+    onProfileSelected: (String) -> Unit
+) {
+    var showGroupMenu by remember { mutableStateOf(false) }
+    val profiles = listOf("Adobe Color", "Adobe Monochrome", "Adobe Portrait", "Adobe Landscape", "Adobe Neutral", "Adobe Vivid")
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 6.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable { showGroupMenu = true }
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = selectedGroup,
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.White)
+        }
+
+        DropdownMenu(
+            expanded = showGroupMenu,
+            onDismissRequest = { showGroupMenu = false }
+        ) {
+            listOf("Adobe Raw", "Camera Matching", "Legacy", "Artistic", "B&W", "Modern", "Vintage").forEach { group ->
+                DropdownMenuItem(
+                    text = { Text(group) },
+                    onClick = {
+                        onGroupSelected(group)
+                        showGroupMenu = false
+                    }
+                )
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            profiles.forEach { profile ->
+                val isSelected = selectedProfile == profile
+                Surface(
+                    color = Color(0xFF282828),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.5.dp, if (isSelected) Color(0xFF1686FF) else Color(0xFF404040)),
+                    modifier = Modifier
+                        .width(96.dp)
+                        .clickable { onProfileSelected(profile) }
+                ) {
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(
+                                    when (profile) {
+                                        "Adobe Monochrome" -> Brush.verticalGradient(listOf(Color(0xFF222222), Color(0xFF888888)))
+                                        "Adobe Landscape" -> Brush.verticalGradient(listOf(Color(0xFF1B5E20), Color(0xFF388E3C)))
+                                        "Adobe Portrait" -> Brush.verticalGradient(listOf(Color(0xFF8D6E63), Color(0xFFD7CCC8)))
+                                        "Adobe Vivid" -> Brush.verticalGradient(listOf(Color(0xFFE65100), Color(0xFFFFB74D)))
+                                        else -> Brush.verticalGradient(listOf(Color(0xFF0D47A1), Color(0xFF42A5F5)))
+                                    }
+                                )
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = profile.removePrefix("Adobe "),
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
         }
     }
 }

@@ -146,8 +146,29 @@ object ClippingIndicatorMath {
         return (count / total * 100f).coerceIn(0f, 100f)
     }
 
+    val SHADOW_CLIPPING_COLOR = Color(0xFF0055FF)
+    val HIGHLIGHT_CLIPPING_COLOR = Color(0xFFFF2222)
     val INACTIVE_COLOR = Color(0xFF2A2A2A)
     val INACTIVE_BORDER_COLOR = Color(0xFF656565)
+
+    fun isShadowClipped(data: HistogramData, isForcedActive: Boolean = false): Boolean {
+        if (isForcedActive) return true
+        val r = data.redBins.isNotEmpty() && data.redBins[0] > 0
+        val g = data.greenBins.isNotEmpty() && data.greenBins[0] > 0
+        val b = data.blueBins.isNotEmpty() && data.blueBins[0] > 0
+        val l = data.lumaBins.isNotEmpty() && data.lumaBins[0] > 0
+        return r || g || b || l
+    }
+
+    fun isHighlightClipped(data: HistogramData, isForcedActive: Boolean = false): Boolean {
+        if (isForcedActive) return true
+        val lastIdx = 255
+        val r = data.redBins.size > lastIdx && data.redBins[lastIdx] > 0
+        val g = data.greenBins.size > lastIdx && data.greenBins[lastIdx] > 0
+        val b = data.blueBins.size > lastIdx && data.blueBins[lastIdx] > 0
+        val l = data.lumaBins.size > lastIdx && data.lumaBins[lastIdx] > 0
+        return r || g || b || l
+    }
 }
 
 /**

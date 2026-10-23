@@ -37,8 +37,11 @@ enum class EditorToolTab(val title: String) {
     CROP("Crop"),
     LIGHT("Light"),
     COLOR("Color"),
+    BLUR("Blur"),
     EFFECTS("Effects"),
     DETAIL("Detail"),
+    OPTICS("Optics"),
+    PROFILES("Profiles"),
     CURVES("Curves"),
     PRESETS("Presets"),
     VERSIONS("Versions"),
@@ -1152,10 +1155,13 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                 r.effects.texture != 0f || r.effects.clarity != 0f || r.effects.dehaze != 0f ||
                 r.effects.vignetteAmount != 0f || r.effects.grainAmount != 0f
             }
+            EditorToolTab.BLUR -> false
             EditorToolTab.DETAIL -> {
                 r.detail.sharpening != 40f && r.detail.sharpening != 0f ||
                 r.detail.luminanceNoise != 0f || r.detail.colorNoise != 25f
             }
+            EditorToolTab.OPTICS -> false
+            EditorToolTab.PROFILES -> false
             EditorToolTab.CURVES -> {
                 r.curves != com.cleanlr.model.ToneCurves()
             }
@@ -1194,6 +1200,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                     )
                 }
             }
+            EditorToolTab.BLUR -> {}
             EditorToolTab.EFFECTS -> {
                 updateRecipe("Reset Effects") {
                     it.copy(effects = com.cleanlr.model.EffectsAdjustments())
@@ -1204,6 +1211,8 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                     it.copy(detail = com.cleanlr.model.DetailAdjustments())
                 }
             }
+            EditorToolTab.OPTICS -> {}
+            EditorToolTab.PROFILES -> {}
             EditorToolTab.CURVES -> {
                 updateRecipe("Reset Curves") {
                     it.copy(curves = com.cleanlr.model.ToneCurves())
