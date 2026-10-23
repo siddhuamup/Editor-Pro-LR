@@ -33,6 +33,9 @@ data class EditRecipe(
     val colorGrading: ColorGrading = ColorGrading.default(),
     val masks: List<MaskLayer> = emptyList(),
     val crop: CropAdjustments = CropAdjustments(),
+    val blur: BlurAdjustments = BlurAdjustments(),
+    val optics: OpticsAdjustments = OpticsAdjustments(),
+    val profile: String = "Adobe Color",
     // Backward compatibility for legacy stage access
     val presence: PresenceAdjustments = PresenceAdjustments(
         texture = effects.texture,
@@ -115,6 +118,23 @@ data class CropAdjustments(
     val aspectRatio: String = "Free",       // "Free", "Original", "1:1", "4:5", "16:9", "9:16", "3:2", "4:3"
     val verticalPerspective: Float = 0.0f,  // -100f to +100f (Tip 413)
     val horizontalPerspective: Float = 0.0f // -100f to +100f (Tip 413)
+)
+
+@Serializable
+data class BlurAdjustments(
+    val amount: Float = 0.0f,               // 0f to 100f
+    val bokehShape: String = "Circle",      // Circle, Bubble, 5-blade, Ring, Cat eye
+    val boost: Float = 0.0f,
+    val focalRangeStart: Float = 0.0f,
+    val focalRangeEnd: Float = 1.0f
+)
+
+@Serializable
+data class OpticsAdjustments(
+    val removeChromaticAberration: Boolean = false,
+    val enableLensCorrections: Boolean = false,
+    val distortion: Float = 0.0f,
+    val vignetteAmount: Float = 0.0f
 )
 
 @Serializable

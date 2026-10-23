@@ -629,14 +629,14 @@ private fun LibraryNavigationDrawerContent(
             Spacer(Modifier.width(14.dp))
             Column {
                 Text(
-                    text = "Lightroom Member",
+                    text = "CleanLightroom",
                     color = Color.White,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = "Creative Cloud • Active",
+                    text = "Local Library • Device Storage",
                     color = Color(0xFF9E9E9E),
                     fontSize = 12.sp
                 )
@@ -657,10 +657,10 @@ private fun LibraryNavigationDrawerContent(
         DrawerItem(icon = Icons.Default.Science, label = "Early access", onClick = onCloseDrawer)
         DrawerItem(icon = Icons.Default.Settings, label = "Preferences", onClick = onCloseDrawer)
         DrawerItem(icon = Icons.Default.NewReleases, label = "What's New", onClick = onCloseDrawer)
-        DrawerItem(icon = Icons.Default.Info, label = "About Lightroom", onClick = onCloseDrawer)
+        DrawerItem(icon = Icons.Default.Info, label = "About CleanLightroom", onClick = onCloseDrawer)
         DrawerItem(icon = Icons.Default.Storage, label = "Local storage", onClick = onCloseDrawer)
         DrawerItem(icon = Icons.AutoMirrored.Filled.Help, label = "Help & Support", onClick = onCloseDrawer)
-        DrawerItem(icon = Icons.Default.ThumbUp, label = "Rate Lightroom", onClick = onCloseDrawer)
+        DrawerItem(icon = Icons.Default.ThumbUp, label = "Rate CleanLightroom", onClick = onCloseDrawer)
 
         HorizontalDivider(color = Color(0xFF2C2C2C), modifier = Modifier.padding(vertical = 8.dp))
 

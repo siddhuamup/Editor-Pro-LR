@@ -1131,6 +1131,10 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         _isCleanScreenMode.value = active
     }
 
+    fun setBrushSize(size: Float) {
+        _brushSize.value = size
+    }
+
     // Tips 23 & 24: Active Modification Indicator Check
     fun isTabModified(tab: EditorToolTab): Boolean {
         val r = _recipe.value
@@ -1155,13 +1159,19 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                 r.effects.texture != 0f || r.effects.clarity != 0f || r.effects.dehaze != 0f ||
                 r.effects.vignetteAmount != 0f || r.effects.grainAmount != 0f
             }
-            EditorToolTab.BLUR -> false
+            EditorToolTab.BLUR -> {
+                r.blur.amount != 0f || r.blur.boost != 0f
+            }
             EditorToolTab.DETAIL -> {
                 r.detail.sharpening != 40f && r.detail.sharpening != 0f ||
                 r.detail.luminanceNoise != 0f || r.detail.colorNoise != 25f
             }
-            EditorToolTab.OPTICS -> false
-            EditorToolTab.PROFILES -> false
+            EditorToolTab.OPTICS -> {
+                r.optics.removeChromaticAberration || r.optics.enableLensCorrections || r.optics.distortion != 0f || r.optics.vignetteAmount != 0f
+            }
+            EditorToolTab.PROFILES -> {
+                r.profile != "Adobe Color"
+            }
             EditorToolTab.CURVES -> {
                 r.curves != com.cleanlr.model.ToneCurves()
             }
@@ -1200,7 +1210,11 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                     )
                 }
             }
-            EditorToolTab.BLUR -> {}
+            EditorToolTab.BLUR -> {
+                updateRecipe("Reset Blur") {
+                    it.copy(blur = com.cleanlr.model.BlurAdjustments())
+                }
+            }
             EditorToolTab.EFFECTS -> {
                 updateRecipe("Reset Effects") {
                     it.copy(effects = com.cleanlr.model.EffectsAdjustments())
@@ -1211,8 +1225,16 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                     it.copy(detail = com.cleanlr.model.DetailAdjustments())
                 }
             }
-            EditorToolTab.OPTICS -> {}
-            EditorToolTab.PROFILES -> {}
+            EditorToolTab.OPTICS -> {
+                updateRecipe("Reset Optics") {
+                    it.copy(optics = com.cleanlr.model.OpticsAdjustments())
+                }
+            }
+            EditorToolTab.PROFILES -> {
+                updateRecipe("Reset Profile") {
+                    it.copy(profile = "Adobe Color")
+                }
+            }
             EditorToolTab.CURVES -> {
                 updateRecipe("Reset Curves") {
                     it.copy(curves = com.cleanlr.model.ToneCurves())
