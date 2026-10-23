@@ -555,3 +555,231 @@ canvas#wheelCanvas {
   color: var(--text-primary);
   border-color: var(--border-active);
 }
+
+.preset-chip.active {
+  background: var(--blue-accent);
+  color: white;
+  border-color: var(--blue-accent);
+  font-weight: 600;
+}
+
+/* Header Dropdowns & Selects */
+.header-select {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  outline: none;
+}
+.header-select:hover {
+  border-color: var(--border-active);
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--bg-elevated);
+  min-width: 200px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  z-index: 100;
+  overflow: hidden;
+}
+.dropdown-content a {
+  color: var(--text-primary);
+  padding: 8px 12px;
+  text-decoration: none;
+  display: block;
+  font-size: 11px;
+}
+.dropdown-content a:hover {
+  background-color: var(--bg-hover);
+}
+.dropdown-content a.danger {
+  color: #ff5252;
+}
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+/* Section Titles & Sub-Sliders */
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #c0c0c0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.sub-slider-group {
+  padding-left: 10px;
+  border-left: 2px solid var(--border-subtle);
+  margin-left: 4px;
+}
+
+/* Badges & Chips */
+.badge-pill {
+  font-size: 9px;
+  background: rgba(20, 115, 230, 0.25);
+  color: #5ab1ff;
+  padding: 2px 5px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+.quick-chips-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.action-chip {
+  flex: 1;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  padding: 6px 4px;
+  border-radius: 14px;
+  font-size: 11px;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: center;
+  justify-content: center;
+}
+.action-chip:hover {
+  background: var(--bg-hover);
+}
+.action-chip.active {
+  background: var(--blue-accent);
+  color: white;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.text-btn:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+/* Swatch active indicator dot */
+.swatch-btn {
+  position: relative;
+}
+.swatch-dot {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: white;
+  display: none;
+}
+.swatch-btn.modified .swatch-dot {
+  display: block;
+}
+
+/* Crop & Geometry */
+.crop-btn-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.action-btn {
+  flex: 1;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 4px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--text-primary);
+  cursor: pointer;
+  justify-content: center;
+}
+.action-btn:hover {
+  background: var(--bg-hover);
+}
+.action-btn.active {
+  background: var(--blue-accent);
+  color: white;
+}
+
+.aspect-ratio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.aspect-chip {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.aspect-chip:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.aspect-chip.active {
+  background: var(--blue-accent);
+  color: white;
+  border-color: var(--blue-accent);
+}
+
+/* Presets Top Bar & Category Tabs */
+.presets-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.preset-amount-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.preset-category-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  overflow-x: auto;
+}
+.cat-pill {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.cat-pill:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.cat-pill.active {
+  background: var(--blue-accent);
+  color: white;
+  font-weight: 600;
+}

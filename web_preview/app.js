@@ -1,7 +1,8 @@
 /**
  * Clean Lightroom Web Studio - Core Engine & WebGL Shader Pipeline
  * Features: Melissa RGB (Linear ProPhoto), Fritsch-Carlson Spline, 8-Channel HSL, 
- * 3-Way Color Grading, Interactive 5-Zone Histogram, Before/After & Alt-Clipping.
+ * 3-Way Color Grading, Interactive 5-Zone Histogram, Post-Crop Vignette, Film Grain,
+ * Crop & Geometry (Rotate, Flip, Straighten), 21 Pro Presets Starter Pack, and 4 Demo Scenes.
  */
 
 // State Object
@@ -23,10 +24,28 @@ const state = {
     vibrance: 0.0,
     saturation: 0.0
   },
+  effects: {
+    vignetteAmount: 0.0,
+    vignetteMidpoint: 50.0,
+    vignetteFeather: 50.0,
+    grainAmount: 0.0,
+    grainSize: 25.0,
+    grainRoughness: 50.0
+  },
   detail: {
     sharpening: 40.0,
+    sharpenRadius: 1.0,
+    sharpenDetail: 25.0,
     masking: 0.0,
-    noiseReduction: 0.0
+    luminanceNoise: 0.0,
+    colorNoise: 25.0
+  },
+  crop: {
+    rotationDegrees: 0,
+    straightenAngle: 0.0,
+    flipH: false,
+    flipV: false,
+    aspectRatio: 'free'
   },
   hsl: [
     { hue: 0, sat: 0, lum: 0 }, // 0: Red
@@ -50,6 +69,9 @@ const state = {
     parametricShadows: 0,
     points: [{ x: 0, y: 0 }, { x: 255, y: 255 }]
   },
+  activePreset: null,
+  presetAmount: 100,
+  baseStateBeforePreset: null,
   altClippingMode: 0, // 0: normal, 1: whites, 2: blacks, 3: mask
   showOriginal: false,
   zoomScale: 1.0,
@@ -61,7 +83,6 @@ const state = {
 const history = {
   undoStack: [],
   redoStack: [],
-  snapshot: null,
 
   pushSnapshot(actionName) {
     this.undoStack.push({
@@ -93,10 +114,14 @@ const history = {
 function restoreState(s) {
   Object.assign(state.basic, s.basic);
   Object.assign(state.presence, s.presence);
-  Object.assign(state.detail, s.detail);
+  if (s.effects) Object.assign(state.effects, s.effects);
+  if (s.detail) Object.assign(state.detail, s.detail);
+  if (s.crop) Object.assign(state.crop, s.crop);
   state.hsl = JSON.parse(JSON.stringify(s.hsl));
   state.grading = JSON.parse(JSON.stringify(s.grading));
   state.curves = JSON.parse(JSON.stringify(s.curves));
+  state.activePreset = s.activePreset || null;
+  state.presetAmount = s.presetAmount || 100;
   syncAllUiInputs();
   requestPipelineRender();
 }
@@ -144,6 +169,18 @@ uniform float uTexture;
 uniform float uDehaze;
 uniform float uVibrance;
 uniform float uSaturation;
+
+uniform float uVignetteAmount;
+uniform float uVignetteMidpoint;
+uniform float uVignetteFeather;
+
+uniform float uGrainAmount;
+uniform float uGrainSize;
+uniform float uGrainRoughness;
+
+uniform float uRotationDeg;
+uniform float uStraightenDeg;
+uniform vec2 uFlip;
 
 uniform vec3 uGradeShadows;
 uniform vec3 uGradeMidtones;
@@ -232,7 +269,23 @@ float circularDist(float a, float b) {
 }
 
 void main() {
-    vec4 rawColor = texture2D(uImageTexture, vTexCoord);
+    // 0. Crop, Rotate, Straighten & Flip Transformation
+    vec2 uv = vTexCoord;
+    if (uFlip.x > 0.5) uv.x = 1.0 - uv.x;
+    if (uFlip.y > 0.5) uv.y = 1.0 - uv.y;
+
+    float totalAngle = radians(uRotationDeg + uStraightenDeg);
+    if (totalAngle != 0.0) {
+        vec2 centered = uv - vec2(0.5);
+        float s = sin(totalAngle);
+        float c = cos(totalAngle);
+        float autoScale = 1.0 + abs(sin(totalAngle * 2.0)) * 0.42;
+        centered = mat2(c, -s, s, c) * (centered / autoScale);
+        uv = centered + vec2(0.5);
+    }
+    uv = clamp(uv, 0.0, 1.0);
+
+    vec4 rawColor = texture2D(uImageTexture, uv);
     vec3 col = srgbToLinear(rawColor.rgb);
 
     // 1. Convert to Melissa RGB (Linear ProPhoto)
@@ -332,7 +385,29 @@ void main() {
         col = mix(col, col * hiColor * 2.0, highWeight * (uGradeHighlights.y / 100.0));
     }
 
-    // 7. Tone Curve LUT
+    // 7. Post-Crop Vignette (Tip 291 & 296)
+    if (uVignetteAmount != 0.0) {
+        vec2 normVig = (vTexCoord - 0.5) * 2.0;
+        float dist = length(normVig);
+        float mid = uVignetteMidpoint / 100.0;
+        float fthr = max(uVignetteFeather / 100.0, 0.05);
+        float vig = smoothstep(mid - fthr * 0.5, mid + fthr * 0.5, dist);
+        if (uVignetteAmount < 0.0) {
+            col *= (1.0 + (uVignetteAmount / 100.0) * vig);
+        } else {
+            col = mix(col, vec3(1.0), (uVignetteAmount / 100.0) * vig * 0.6);
+        }
+    }
+
+    // 8. Film Grain (Tip 292 & 297)
+    if (uGrainAmount > 0.0) {
+        float grainScale = max(10.0, 110.0 - uGrainSize * 0.8);
+        float n = fract(sin(dot(vTexCoord * grainScale, vec2(12.9898, 78.233))) * 43758.5453);
+        float grain = (n - 0.5) * (uGrainAmount / 100.0) * 0.28 * (1.0 + uGrainRoughness / 100.0);
+        col += vec3(grain);
+    }
+
+    // 9. Tone Curve LUT
     if (uEnableCurve) {
         float lutR = texture2D(uToneCurveLut, vec2(clamp(col.r, 0.0, 1.0), 0.5)).r;
         float lutG = texture2D(uToneCurveLut, vec2(clamp(col.g, 0.0, 1.0), 0.5)).r;
@@ -340,7 +415,7 @@ void main() {
         col = vec3(lutR, lutG, lutB);
     }
 
-    // 8. Alt-Clipping Overlay
+    // 10. Alt-Clipping Overlay
     if (uAltClippingMode == 1) { // Whites
         bool clipR = col.r >= 1.0;
         bool clipG = col.g >= 1.0;
@@ -366,7 +441,7 @@ void main() {
         }
     }
 
-    // 9. Display sRGB
+    // 11. Display sRGB
     vec3 finalRgb = linearToSrgb(col);
     gl_FragColor = vec4(finalRgb, rawColor.a);
 }
@@ -404,6 +479,9 @@ function initWebGL() {
     'uImageTexture', 'uToneCurveLut', 'uExposure', 'uContrast',
     'uHighlights', 'uShadows', 'uWhites', 'uBlacks', 'uWhiteBalanceGain',
     'uClarity', 'uTexture', 'uDehaze', 'uVibrance', 'uSaturation',
+    'uVignetteAmount', 'uVignetteMidpoint', 'uVignetteFeather',
+    'uGrainAmount', 'uGrainSize', 'uGrainRoughness',
+    'uRotationDeg', 'uStraightenDeg', 'uFlip',
     'uGradeShadows', 'uGradeMidtones', 'uGradeHighlights',
     'uHslRed', 'uHslOrange', 'uHslYellow', 'uHslGreen',
     'uHslAqua', 'uHslBlue', 'uHslPurple', 'uHslMagenta',
@@ -603,6 +681,8 @@ function renderFrame() {
 
   const b = state.showOriginal ? {} : state.basic;
   const p = state.showOriginal ? {} : state.presence;
+  const eff = state.showOriginal ? {} : state.effects;
+  const c = state.showOriginal ? {} : state.crop;
 
   gl.uniform1f(uniformLocations.uExposure, b.exposure || 0.0);
   gl.uniform1f(uniformLocations.uContrast, b.contrast || 0.0);
@@ -619,6 +699,19 @@ function renderFrame() {
   gl.uniform1f(uniformLocations.uDehaze, p.dehaze || 0.0);
   gl.uniform1f(uniformLocations.uVibrance, p.vibrance || 0.0);
   gl.uniform1f(uniformLocations.uSaturation, p.saturation || 0.0);
+
+  // Vignette & Grain (Tip 291 & 292)
+  gl.uniform1f(uniformLocations.uVignetteAmount, eff.vignetteAmount || 0.0);
+  gl.uniform1f(uniformLocations.uVignetteMidpoint, eff.vignetteMidpoint || 50.0);
+  gl.uniform1f(uniformLocations.uVignetteFeather, eff.vignetteFeather || 50.0);
+  gl.uniform1f(uniformLocations.uGrainAmount, eff.grainAmount || 0.0);
+  gl.uniform1f(uniformLocations.uGrainSize, eff.grainSize || 25.0);
+  gl.uniform1f(uniformLocations.uGrainRoughness, eff.grainRoughness || 50.0);
+
+  // Crop, Rotation & Straighten (Tip 402 & 403)
+  gl.uniform1f(uniformLocations.uRotationDeg, c.rotationDegrees || 0.0);
+  gl.uniform1f(uniformLocations.uStraightenDeg, c.straightenAngle || 0.0);
+  gl.uniform2f(uniformLocations.uFlip, c.flipH ? 1.0 : 0.0, c.flipV ? 1.0 : 0.0);
 
   // HSL Channels
   const hsl = state.showOriginal ? new Array(8).fill({ hue: 0, sat: 0, lum: 0 }) : state.hsl;
@@ -643,259 +736,155 @@ function renderFrame() {
   updateHistogram();
   drawCurveEditor();
   drawColorWheel();
+  updateSwatchDots();
 }
 
 // 5-Zone RGB Live Histogram
 const histCanvas = document.getElementById('histogramCanvas');
 const histCtx = histCanvas.getContext('2d');
-const zoneTag = document.getElementById('zoneTag');
-let activeHistogramZone = null;
 
 function updateHistogram() {
-  const w = 180;
-  const h = 120;
+  if (!glCanvas.width || !glCanvas.height) return;
+  const w = Math.min(256, glCanvas.width);
+  const h = Math.min(256, glCanvas.height);
+
+  histCanvas.width = 256;
+  histCanvas.height = 72;
+
   const pixels = new Uint8Array(w * h * 4);
   gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
-  const rBins = new Int32Array(256);
-  const gBins = new Int32Array(256);
-  const bBins = new Int32Array(256);
-  const lBins = new Int32Array(256);
+  const rBins = new Uint32Array(256);
+  const gBins = new Uint32Array(256);
+  const bBins = new Uint32Array(256);
 
-  let maxCount = 1;
-  const total = w * h;
-  for (let i = 0; i < total * 4; i += 4) {
+  let r0 = 0, g0 = 0, b0 = 0;
+  let r255 = 0, g255 = 0, b255 = 0;
+
+  for (let i = 0; i < pixels.length; i += 4) {
     const r = pixels[i];
     const g = pixels[i + 1];
     const b = pixels[i + 2];
-    const l = Math.min(255, (r * 77 + g * 150 + b * 29) >> 8);
-
     rBins[r]++;
     gBins[g]++;
     bBins[b]++;
-    lBins[l]++;
-    if (rBins[r] > maxCount) maxCount = rBins[r];
-    if (gBins[g] > maxCount) maxCount = gBins[g];
-    if (bBins[b] > maxCount) maxCount = bBins[b];
+    if (r === 0) r0++;
+    if (g === 0) g0++;
+    if (b === 0) b0++;
+    if (r === 255) r255++;
+    if (g === 255) g255++;
+    if (b === 255) b255++;
   }
 
-  // Check shadow and highlight clipping
-  const isShadowCrushed = lBins[0] > 0 || state.altClippingMode === 2;
-  const isHighlightBlown = lBins[255] > 0 || state.altClippingMode === 1;
-  document.getElementById('clipShadows').classList.toggle('active', isShadowCrushed);
-  document.getElementById('clipHighlights').classList.toggle('active', isHighlightBlown);
+  const totalPixels = w * h;
+  const clipShadowEl = document.getElementById('clipShadows');
+  const clipHighEl = document.getElementById('clipHighlights');
 
-  // Draw Waveform Curves
-  histCanvas.width = histCanvas.parentElement.clientWidth;
-  histCanvas.height = histCanvas.parentElement.clientHeight;
-  const cw = histCanvas.width;
-  const ch = histCanvas.height;
-
-  histCtx.clearRect(0, 0, cw, ch);
-
-  // Draw 5 Zone Dividing Lines
-  const x1 = cw * 0.15;
-  const x2 = cw * 0.40;
-  const x3 = cw * 0.60;
-  const x4 = cw * 0.85;
-
-  histCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-  histCtx.lineWidth = 1;
-  [x1, x2, x3, x4].forEach(x => {
-    histCtx.beginPath();
-    histCtx.moveTo(x, 0);
-    histCtx.lineTo(x, ch);
-    histCtx.stroke();
-  });
-
-  // Active zone highlight
-  if (activeHistogramZone) {
-    histCtx.fillStyle = 'rgba(20, 115, 230, 0.2)';
-    let zLeft = 0, zWidth = 0;
-    if (activeHistogramZone === 'Blacks') { zLeft = 0; zWidth = x1; }
-    else if (activeHistogramZone === 'Shadows') { zLeft = x1; zWidth = x2 - x1; }
-    else if (activeHistogramZone === 'Exposure') { zLeft = x2; zWidth = x3 - x2; }
-    else if (activeHistogramZone === 'Highlights') { zLeft = x3; zWidth = x4 - x3; }
-    else if (activeHistogramZone === 'Whites') { zLeft = x4; zWidth = cw - x4; }
-    histCtx.fillRect(zLeft, 0, zWidth, ch);
+  if (r0 > totalPixels * 0.02 || g0 > totalPixels * 0.02 || b0 > totalPixels * 0.02) {
+    clipShadowEl.classList.add('active');
+  } else {
+    clipShadowEl.classList.remove('active');
   }
 
-  function drawChannel(bins, color) {
-    histCtx.beginPath();
+  if (r255 > totalPixels * 0.02 || g255 > totalPixels * 0.02 || b255 > totalPixels * 0.02) {
+    clipHighEl.classList.add('active');
+  } else {
+    clipHighEl.classList.remove('active');
+  }
+
+  // Draw Waveform
+  histCtx.clearRect(0, 0, 256, 72);
+  let maxCount = 1;
+  for (let i = 1; i < 255; i++) {
+    if (rBins[i] > maxCount) maxCount = rBins[i];
+    if (gBins[i] > maxCount) maxCount = gBins[i];
+    if (bBins[i] > maxCount) maxCount = bBins[i];
+  }
+
+  histCtx.globalCompositeOperation = 'screen';
+
+  const drawWave = (bins, color) => {
     histCtx.strokeStyle = color;
-    histCtx.lineWidth = 1.2;
-    histCtx.moveTo(0, ch);
-    for (let i = 0; i < 256; i++) {
-      const px = (i / 255) * cw;
-      const py = ch - (bins[i] / maxCount) * (ch * 0.95);
-      histCtx.lineTo(px, py);
+    histCtx.fillStyle = color.replace(')', ', 0.25)').replace('rgb', 'rgba');
+    histCtx.beginPath();
+    histCtx.moveTo(0, 72);
+    for (let x = 0; x < 256; x++) {
+      const y = 72 - Math.min(72, (bins[x] / maxCount) * 68);
+      histCtx.lineTo(x, y);
     }
+    histCtx.lineTo(255, 72);
+    histCtx.closePath();
+    histCtx.fill();
     histCtx.stroke();
-  }
+  };
 
-  drawChannel(rBins, 'rgba(229, 57, 53, 0.85)');
-  drawChannel(gBins, 'rgba(67, 160, 71, 0.85)');
-  drawChannel(bBins, 'rgba(30, 136, 229, 0.85)');
-  drawChannel(lBins, 'rgba(220, 220, 220, 0.4)');
+  drawWave(rBins, 'rgb(229, 57, 53)');
+  drawWave(gBins, 'rgb(67, 160, 71)');
+  drawWave(bBins, 'rgb(30, 136, 229)');
+  histCtx.globalCompositeOperation = 'source-over';
 }
 
-// Histogram Dragging Interactions
-const histBox = document.getElementById('histogramBox');
-let isDraggingHist = false;
-let lastHistX = 0;
+function updateSwatchDots() {
+  document.querySelectorAll('.swatch-btn').forEach((btn, idx) => {
+    const channel = state.hsl[idx];
+    const isMod = channel && (channel.hue !== 0 || channel.sat !== 0 || channel.lum !== 0);
+    btn.classList.toggle('modified', isMod);
+  });
+}
 
-histBox.addEventListener('mousedown', (e) => {
-  isDraggingHist = true;
-  lastHistX = e.clientX;
-  const rect = histBox.getBoundingClientRect();
-  const ratio = (e.clientX - rect.left) / rect.width;
-  if (ratio < 0.15) activeHistogramZone = 'Blacks';
-  else if (ratio < 0.40) activeHistogramZone = 'Shadows';
-  else if (ratio < 0.60) activeHistogramZone = 'Exposure';
-  else if (ratio < 0.85) activeHistogramZone = 'Highlights';
-  else activeHistogramZone = 'Whites';
-
-  zoneTag.textContent = activeHistogramZone.toUpperCase();
-  zoneTag.classList.add('visible');
-  history.pushSnapshot(`Adjust ${activeHistogramZone}`);
-});
-
-window.addEventListener('mousemove', (e) => {
-  if (!isDraggingHist) return;
-  const dx = e.clientX - lastHistX;
-  lastHistX = e.clientX;
-
-  if (activeHistogramZone === 'Exposure') {
-    state.basic.exposure = Math.max(-5, Math.min(5, state.basic.exposure + dx * 0.02));
-  } else if (activeHistogramZone === 'Highlights') {
-    state.basic.highlights = Math.max(-100, Math.min(100, state.basic.highlights + dx * 0.6));
-  } else if (activeHistogramZone === 'Shadows') {
-    state.basic.shadows = Math.max(-100, Math.min(100, state.basic.shadows + dx * 0.6));
-  } else if (activeHistogramZone === 'Whites') {
-    state.basic.whites = Math.max(-100, Math.min(100, state.basic.whites + dx * 0.6));
-  } else if (activeHistogramZone === 'Blacks') {
-    state.basic.blacks = Math.max(-100, Math.min(100, state.basic.blacks + dx * 0.6));
-  }
-  syncAllUiInputs();
-  requestPipelineRender();
-});
-
-window.addEventListener('mouseup', () => {
-  if (isDraggingHist) {
-    isDraggingHist = false;
-    activeHistogramZone = null;
-    zoneTag.classList.remove('visible');
-    requestPipelineRender();
-  }
-});
-
-// Interactive Tone Curve Canvas Editor
+// Curve Editor UI Canvas
 const curveCanvas = document.getElementById('curveCanvas');
 const curveCtx = curveCanvas.getContext('2d');
-let draggingPointIdx = -1;
+let draggingPointIndex = -1;
 
 function drawCurveEditor() {
+  curveCtx.clearRect(0, 0, curveCanvas.width, curveCanvas.height);
   const w = curveCanvas.width;
   const h = curveCanvas.height;
-  curveCtx.clearRect(0, 0, w, h);
 
-  // Draw 4x4 Grid
-  curveCtx.strokeStyle = '#222222';
+  // Grid
+  curveCtx.strokeStyle = '#222';
   curveCtx.lineWidth = 1;
   for (let i = 1; i < 4; i++) {
-    const x = (i / 4) * w;
-    const y = (i / 4) * h;
-    curveCtx.beginPath(); curveCtx.moveTo(x, 0); curveCtx.lineTo(x, h); curveCtx.stroke();
-    curveCtx.beginPath(); curveCtx.moveTo(0, y); curveCtx.lineTo(w, y); curveCtx.stroke();
+    curveCtx.beginPath();
+    curveCtx.moveTo((w / 4) * i, 0);
+    curveCtx.lineTo((w / 4) * i, h);
+    curveCtx.stroke();
+
+    curveCtx.beginPath();
+    curveCtx.moveTo(0, (h / 4) * i);
+    curveCtx.lineTo(w, (h / 4) * i);
+    curveCtx.stroke();
   }
 
-  // Diagonal reference
-  curveCtx.strokeStyle = '#333333';
-  curveCtx.beginPath(); curveCtx.moveTo(0, h); curveCtx.lineTo(w, 0); curveCtx.stroke();
-
-  // Draw Spline
+  // Spline
   const spline = evaluateSpline(state.curves.points);
-  curveCtx.strokeStyle = '#ffffff';
+  curveCtx.strokeStyle = '#1473E6';
   curveCtx.lineWidth = 2;
   curveCtx.beginPath();
-  curveCtx.moveTo(0, h - (spline[0] / 255) * h);
-  for (let i = 1; i < 256; i++) {
-    const px = (i / 255) * w;
-    const py = h - (spline[i] / 255) * h;
-    curveCtx.lineTo(px, py);
+  for (let x = 0; x < 256; x++) {
+    const canvasX = (x / 255) * w;
+    const canvasY = h - (spline[x] / 255) * h;
+    if (x === 0) curveCtx.moveTo(canvasX, canvasY);
+    else curveCtx.lineTo(canvasX, canvasY);
   }
   curveCtx.stroke();
 
-  // Draw Control Points
-  state.curves.points.forEach((pt, idx) => {
-    const px = (pt.x / 255) * w;
-    const py = h - (pt.y / 255) * h;
-    curveCtx.fillStyle = idx === draggingPointIdx ? '#1473E6' : '#ffffff';
+  // Control Points
+  state.curves.points.forEach((p, idx) => {
+    const cx = (p.x / 255) * w;
+    const cy = h - (p.y / 255) * h;
+    curveCtx.fillStyle = '#ffffff';
     curveCtx.beginPath();
-    curveCtx.arc(px, py, 5, 0, Math.PI * 2);
+    curveCtx.arc(cx, cy, 5, 0, Math.PI * 2);
     curveCtx.fill();
-    curveCtx.strokeStyle = '#000000';
+    curveCtx.strokeStyle = '#1473E6';
     curveCtx.lineWidth = 1.5;
     curveCtx.stroke();
   });
 }
 
-curveCanvas.addEventListener('mousedown', (e) => {
-  const rect = curveCanvas.getBoundingClientRect();
-  const clickX = (e.clientX - rect.left) / rect.width * 255;
-  const clickY = (1.0 - (e.clientY - rect.top) / rect.height) * 255;
-
-  const found = state.curves.points.findIndex(p => Math.hypot(p.x - clickX, p.y - clickY) < 18);
-  if (found !== -1) {
-    draggingPointIdx = found;
-  } else {
-    // Add point
-    state.curves.points.push({ x: clickX, y: clickY });
-    state.curves.points.sort((a, b) => a.x - b.x);
-    draggingPointIdx = state.curves.points.findIndex(p => Math.abs(p.x - clickX) < 1);
-  }
-  history.pushSnapshot("Edit Tone Curve");
-  drawCurveEditor();
-  requestPipelineRender();
-});
-
-curveCanvas.addEventListener('dblclick', (e) => {
-  const rect = curveCanvas.getBoundingClientRect();
-  const clickX = (e.clientX - rect.left) / rect.width * 255;
-  const clickY = (1.0 - (e.clientY - rect.top) / rect.height) * 255;
-
-  const found = state.curves.points.findIndex(p => Math.hypot(p.x - clickX, p.y - clickY) < 18);
-  if (found > 0 && found < state.curves.points.length - 1) {
-    state.curves.points.splice(found, 1);
-    draggingPointIdx = -1;
-    drawCurveEditor();
-    requestPipelineRender();
-  }
-});
-
-window.addEventListener('mousemove', (e) => {
-  if (draggingPointIdx === -1) return;
-  const rect = curveCanvas.getBoundingClientRect();
-  const newX = Math.max(0, Math.min(255, (e.clientX - rect.left) / rect.width * 255));
-  const newY = Math.max(0, Math.min(255, (1.0 - (e.clientY - rect.top) / rect.height) * 255));
-
-  const isFirst = draggingPointIdx === 0;
-  const isLast = draggingPointIdx === state.curves.points.length - 1;
-
-  state.curves.points[draggingPointIdx] = {
-    x: isFirst ? 0 : isLast ? 255 : newX,
-    y: newY
-  };
-  state.curves.points.sort((a, b) => a.x - b.x);
-  drawCurveEditor();
-  requestPipelineRender();
-});
-
-window.addEventListener('mouseup', () => {
-  draggingPointIdx = -1;
-});
-
-// 3-Way Color Grading Wheel Canvas
+// 3-Way Color Wheel Canvas
 const wheelCanvas = document.getElementById('wheelCanvas');
 const wheelCtx = wheelCanvas.getContext('2d');
 let isDraggingWheel = false;
@@ -903,249 +892,792 @@ let isDraggingWheel = false;
 function drawColorWheel() {
   const w = wheelCanvas.width;
   const h = wheelCanvas.height;
-  const cx = w / 2;
-  const cy = h / 2;
-  const r = cx - 4;
-
+  const radius = w / 2;
   wheelCtx.clearRect(0, 0, w, h);
 
-  // Draw Circular Color Spectrum
-  for (let angle = 0; angle < 360; angle += 2) {
-    const startRad = (angle - 1) * Math.PI / 180;
-    const endRad = (angle + 1) * Math.PI / 180;
-    wheelCtx.beginPath();
-    wheelCtx.moveTo(cx, cy);
-    wheelCtx.arc(cx, cy, r, startRad, endRad);
-    wheelCtx.closePath();
-    wheelCtx.fillStyle = `hsl(${angle}, 100%, 50%)`;
-    wheelCtx.fill();
+  // Draw chromatic radial gradient
+  const imgData = wheelCtx.createImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const dx = x - radius;
+      const dy = y - radius;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const idx = (y * w + x) * 4;
+      if (dist <= radius) {
+        let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+        if (angle < 0) angle += 360;
+        const sat = dist / radius;
+        const rgb = hslToRgb([angle, sat, 0.5]);
+        imgData.data[idx] = rgb[0] * 255;
+        imgData.data[idx + 1] = rgb[1] * 255;
+        imgData.data[idx + 2] = rgb[2] * 255;
+        imgData.data[idx + 3] = 255;
+      } else {
+        imgData.data[idx + 3] = 0;
+      }
+    }
   }
+  wheelCtx.putImageData(imgData, 0, 0);
 
-  // Radial White Desaturation Overlay
-  const grad = wheelCtx.createRadialGradient(cx, cy, 0, cx, cy, r);
-  grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-  grad.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)');
-  grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
-  wheelCtx.fillStyle = grad;
-  wheelCtx.beginPath();
-  wheelCtx.arc(cx, cy, r, 0, Math.PI * 2);
-  wheelCtx.fill();
-
-  // Draw Puck Indicator
+  // Draw current puck position
   const target = state.grading[state.activeWheelTarget];
-  const puckDist = (target.sat / 100) * (r - 6);
-  const puckRad = target.hue * Math.PI / 180;
-  const px = cx + puckDist * Math.cos(puckRad);
-  const py = cy + puckDist * Math.sin(puckRad);
+  const angleRad = (target.hue - 90) * (Math.PI / 180);
+  const r = (target.sat / 100) * radius;
+  const px = radius + r * Math.cos(angleRad);
+  const py = radius + r * Math.sin(angleRad);
 
-  wheelCtx.fillStyle = '#ffffff';
   wheelCtx.beginPath();
   wheelCtx.arc(px, py, 6, 0, Math.PI * 2);
+  wheelCtx.fillStyle = '#ffffff';
   wheelCtx.fill();
   wheelCtx.strokeStyle = '#000000';
-  wheelCtx.lineWidth = 1.5;
+  wheelCtx.lineWidth = 2;
   wheelCtx.stroke();
 }
 
-wheelCanvas.addEventListener('mousedown', (e) => {
-  isDraggingWheel = true;
-  updateWheelTargetFromMouse(e);
-});
-
-wheelCanvas.addEventListener('dblclick', () => {
-  state.grading[state.activeWheelTarget].hue = 0;
-  state.grading[state.activeWheelTarget].sat = 0;
-  drawColorWheel();
-  requestPipelineRender();
-});
-
-window.addEventListener('mousemove', (e) => {
-  if (isDraggingWheel) updateWheelTargetFromMouse(e);
-});
-
-window.addEventListener('mouseup', () => {
-  isDraggingWheel = false;
-});
-
-function updateWheelTargetFromMouse(e) {
-  const rect = wheelCanvas.getBoundingClientRect();
-  const cx = rect.width / 2;
-  const cy = rect.height / 2;
-  const dx = e.clientX - rect.left - cx;
-  const dy = e.clientY - rect.top - cy;
-  const dist = Math.hypot(dx, dy);
-  const maxR = cx - 4;
-
-  const sat = Math.max(0, Math.min(100, (dist / maxR) * 100));
-  let deg = Math.atan2(dy, dx) * 180 / Math.PI;
-  if (deg < 0) deg += 360;
-
-  state.grading[state.activeWheelTarget].hue = deg;
-  state.grading[state.activeWheelTarget].sat = sat;
-  drawColorWheel();
-  requestPipelineRender();
-}
-
-// Wire UI Slider Controls
-function bindSlider(id, targetObj, prop, displayId, formatter) {
-  const el = document.getElementById(id);
-  const valEl = document.getElementById(displayId);
-
-  el.addEventListener('input', () => {
-    targetObj[prop] = parseFloat(el.value);
-    valEl.textContent = formatter(targetObj[prop]);
-    valEl.classList.toggle('modified', targetObj[prop] !== 0);
-    requestPipelineRender();
-  });
-
-  el.addEventListener('mousedown', () => {
-    history.pushSnapshot(`Adjust ${prop}`);
-  });
-}
-
+// Sync all slider controls to state
 function syncAllUiInputs() {
-  document.getElementById('sliderExposure').value = state.basic.exposure;
-  document.getElementById('valExposure').textContent = `${state.basic.exposure >= 0 ? '+' : ''}${state.basic.exposure.toFixed(2)} EV`;
+  const setVal = (id, val, text) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+    const txtEl = document.getElementById(id.replace('slider', 'val'));
+    if (txtEl) txtEl.textContent = text !== undefined ? text : val;
+  };
 
-  document.getElementById('sliderContrast').value = state.basic.contrast;
-  document.getElementById('valContrast').textContent = state.basic.contrast;
+  setVal('sliderExposure', state.basic.exposure, (state.basic.exposure >= 0 ? '+' : '') + state.basic.exposure.toFixed(2) + ' EV');
+  setVal('sliderContrast', state.basic.contrast);
+  setVal('sliderHighlights', state.basic.highlights);
+  setVal('sliderShadows', state.basic.shadows);
+  setVal('sliderWhites', state.basic.whites);
+  setVal('sliderBlacks', state.basic.blacks);
+  setVal('sliderTemp', state.basic.temp, state.basic.temp + ' K');
+  setVal('sliderTint', state.basic.tint);
+  setVal('sliderVibrance', state.basic.vibrance);
+  setVal('sliderSaturation', state.basic.saturation);
 
-  document.getElementById('sliderHighlights').value = state.basic.highlights;
-  document.getElementById('valHighlights').textContent = state.basic.highlights;
+  // Kelvin description
+  const kelvinDesc = document.getElementById('lblKelvinDesc');
+  if (kelvinDesc) {
+    if (state.basic.temp < 3500) kelvinDesc.textContent = '(Tungsten / Warm indoor)';
+    else if (state.basic.temp <= 6000) kelvinDesc.textContent = '(Daylight / Neutral)';
+    else kelvinDesc.textContent = '(Shade / Cool daylight)';
+  }
 
-  document.getElementById('sliderShadows').value = state.basic.shadows;
-  document.getElementById('valShadows').textContent = state.basic.shadows;
+  // Presence
+  setVal('sliderTexture', state.presence.texture);
+  setVal('sliderClarity', state.presence.clarity);
+  setVal('sliderDehaze', state.presence.dehaze);
 
-  document.getElementById('sliderWhites').value = state.basic.whites;
-  document.getElementById('valWhites').textContent = state.basic.whites;
+  // Effects (Vignette & Grain)
+  setVal('sliderVignetteAmount', state.effects.vignetteAmount);
+  setVal('sliderVignetteMidpoint', state.effects.vignetteMidpoint);
+  setVal('sliderVignetteFeather', state.effects.vignetteFeather);
+  setVal('sliderGrainAmount', state.effects.grainAmount);
+  setVal('sliderGrainSize', state.effects.grainSize);
+  setVal('sliderGrainRoughness', state.effects.grainRoughness);
 
-  document.getElementById('sliderBlacks').value = state.basic.blacks;
-  document.getElementById('valBlacks').textContent = state.basic.blacks;
+  const vigSub = document.getElementById('vignetteSubsliders');
+  if (vigSub) vigSub.style.display = state.effects.vignetteAmount !== 0 ? 'block' : 'none';
 
-  document.getElementById('sliderTemp').value = state.basic.temp;
-  document.getElementById('valTemp').textContent = `${Math.round(state.basic.temp)} K`;
+  const grnSub = document.getElementById('grainSubsliders');
+  if (grnSub) grnSub.style.display = state.effects.grainAmount > 0 ? 'block' : 'none';
 
-  document.getElementById('sliderTint').value = state.basic.tint;
-  document.getElementById('valTint').textContent = state.basic.tint;
+  // Detail
+  setVal('sliderSharpening', state.detail.sharpening);
+  setVal('sliderSharpenRadius', state.detail.sharpenRadius, state.detail.sharpenRadius.toFixed(1) + ' px');
+  setVal('sliderSharpenDetail', state.detail.sharpenDetail);
+  setVal('sliderMasking', state.detail.masking);
+  setVal('sliderLuminanceNoise', state.detail.luminanceNoise);
+  setVal('sliderColorNoise', state.detail.colorNoise);
 
-  document.getElementById('sliderVibrance').value = state.presence.vibrance;
-  document.getElementById('valVibrance').textContent = state.presence.vibrance;
+  // Crop & Geometry
+  setVal('sliderStraighten', state.crop.straightenAngle, state.crop.straightenAngle.toFixed(1) + '°');
 
-  document.getElementById('sliderSaturation').value = state.presence.saturation;
-  document.getElementById('valSaturation').textContent = state.presence.saturation;
+  // HSL
+  const curHsl = state.hsl[state.activeHslIndex];
+  setVal('sliderHslHue', curHsl.hue);
+  setVal('sliderHslSat', curHsl.sat);
+  setVal('sliderHslLum', curHsl.lum);
 
-  document.getElementById('sliderTexture').value = state.presence.texture;
-  document.getElementById('valTexture').textContent = state.presence.texture;
+  // Color Grading Wheel Lum
+  setVal('sliderWheelLum', state.grading[state.activeWheelTarget].lum || 0);
 
-  document.getElementById('sliderClarity').value = state.presence.clarity;
-  document.getElementById('valClarity').textContent = state.presence.clarity;
+  // Parametric Curves
+  setVal('sliderParamHighlights', state.curves.parametricHighlights);
+  setVal('sliderParamLights', state.curves.parametricLights);
+  setVal('sliderParamDarks', state.curves.parametricDarks);
+  setVal('sliderParamShadows', state.curves.parametricShadows);
 
-  document.getElementById('sliderDehaze').value = state.presence.dehaze;
-  document.getElementById('valDehaze').textContent = state.presence.dehaze;
-
-  const currentHsl = state.hsl[state.activeHslIndex];
-  document.getElementById('sliderHslHue').value = currentHsl.hue;
-  document.getElementById('valHslHue').textContent = currentHsl.hue;
-  document.getElementById('sliderHslSat').value = currentHsl.sat;
-  document.getElementById('valHslSat').textContent = currentHsl.sat;
-  document.getElementById('sliderHslLum').value = currentHsl.lum;
-  document.getElementById('valHslLum').textContent = currentHsl.lum;
+  // Preset Amount
+  const sliderAmount = document.getElementById('sliderPresetAmount');
+  if (sliderAmount) sliderAmount.value = state.presetAmount;
+  const valAmount = document.getElementById('valPresetAmount');
+  if (valAmount) valAmount.textContent = state.presetAmount + '%';
 }
 
+// 21 Pro Presets Definitions (Matching Android Preset.kt)
+const PRESETS = {
+  natural: {
+    name: "None (Original)",
+    apply: () => {
+      state.basic = { exposure: 0, contrast: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, temp: 5500, tint: 0 };
+      state.presence = { texture: 0, clarity: 0, dehaze: 0, vibrance: 0, saturation: 0 };
+      state.effects = { vignetteAmount: 0, vignetteMidpoint: 50, vignetteFeather: 50, grainAmount: 0, grainSize: 25, grainRoughness: 50 };
+      state.detail = { sharpening: 40, sharpenRadius: 1.0, sharpenDetail: 25, masking: 0, luminanceNoise: 0, colorNoise: 25 };
+      state.hsl = new Array(8).fill(null).map(() => ({ hue: 0, sat: 0, lum: 0 }));
+      state.grading = { shadows: { hue: 0, sat: 0, lum: 0 }, midtones: { hue: 0, sat: 0, lum: 0 }, highlights: { hue: 0, sat: 0, lum: 0 } };
+      state.curves = { parametricHighlights: 0, parametricLights: 0, parametricDarks: 0, parametricShadows: 0, points: [{ x: 0, y: 0 }, { x: 255, y: 255 }] };
+    }
+  },
+  golden: {
+    name: "Golden Hour",
+    apply: () => {
+      state.basic.temp = 6800; state.basic.tint = 12; state.basic.exposure = 0.35; state.basic.highlights = -25; state.basic.shadows = 30;
+      state.presence.vibrance = 25; state.presence.dehaze = 15;
+      state.grading.shadows = { hue: 215, sat: 20, lum: 0 };
+      state.grading.highlights = { hue: 42, sat: 35, lum: 0 };
+    }
+  },
+  cyberpunk: {
+    name: "Cyberpunk Neon",
+    apply: () => {
+      state.basic.contrast = 35; state.basic.highlights = -30; state.basic.shadows = 20;
+      state.presence.clarity = 25; state.presence.vibrance = 40;
+      state.grading.shadows = { hue: 190, sat: 55, lum: -5 };
+      state.grading.highlights = { hue: 310, sat: 45, lum: 10 };
+      state.hsl[5] = { hue: -10, sat: 30, lum: 10 };
+      state.hsl[7] = { hue: 15, sat: 40, lum: 15 };
+    }
+  },
+  bright: {
+    name: "Clean Bright & Airy",
+    apply: () => {
+      state.basic.exposure = 0.50; state.basic.contrast = -10; state.basic.highlights = -20; state.basic.shadows = 40; state.basic.whites = 15;
+      state.presence.texture = 10; state.presence.clarity = -5; state.presence.vibrance = 15;
+    }
+  },
+  matte: {
+    name: "Matte Cinema",
+    apply: () => {
+      state.basic.contrast = 20; state.basic.shadows = -10; state.basic.blacks = 25;
+      state.effects.vignetteAmount = -25;
+      state.curves.points = [{ x: 0, y: 30 }, { x: 80, y: 65 }, { x: 180, y: 195 }, { x: 255, y: 235 }];
+    }
+  },
+  forest: {
+    name: "Moody Forest",
+    apply: () => {
+      state.basic.exposure = -0.20; state.basic.contrast = 25; state.basic.highlights = -35; state.basic.shadows = 15;
+      state.presence.dehaze = 15;
+      state.hsl[3] = { hue: 20, sat: -20, lum: -15 };
+      state.grading.shadows = { hue: 140, sat: 25, lum: -10 };
+    }
+  },
+  street: {
+    name: "Urban Street",
+    apply: () => {
+      state.basic.contrast = 40; state.basic.highlights = -15; state.basic.shadows = 15; state.basic.blacks = -15;
+      state.presence.clarity = 20; state.presence.texture = 15;
+      state.effects.grainAmount = 30;
+    }
+  },
+  portra: {
+    name: "Kodak Portra 400",
+    apply: () => {
+      state.basic.temp = 5800; state.basic.tint = 6; state.basic.exposure = 0.15; state.basic.highlights = -18; state.basic.shadows = 22;
+      state.presence.vibrance = 10; state.presence.saturation = -5;
+      state.effects.grainAmount = 25; state.effects.grainSize = 30;
+      state.grading.highlights = { hue: 45, sat: 15, lum: 0 };
+    }
+  },
+  astia: {
+    name: "Fuji Astia Soft",
+    apply: () => {
+      state.basic.temp = 5400; state.basic.contrast = -8; state.basic.shadows = 18;
+      state.presence.saturation = 8; state.presence.texture = -5;
+    }
+  },
+  polaroid: {
+    name: "Vintage Polaroid 1970",
+    apply: () => {
+      state.basic.exposure = 0.20; state.basic.contrast = -15; state.basic.shadows = 30; state.basic.blacks = 20;
+      state.effects.vignetteAmount = -30; state.effects.grainAmount = 40;
+      state.grading.shadows = { hue: 205, sat: 25, lum: 5 };
+      state.grading.highlights = { hue: 50, sat: 20, lum: -5 };
+    }
+  },
+  sepia: {
+    name: "Sepia Classic",
+    apply: () => {
+      state.presence.saturation = -85;
+      state.grading.shadows = { hue: 38, sat: 45, lum: -5 };
+      state.grading.highlights = { hue: 42, sat: 40, lum: 5 };
+      state.effects.grainAmount = 35;
+    }
+  },
+  bw_high: {
+    name: "B&W High Contrast",
+    apply: () => {
+      state.presence.saturation = -100; state.basic.contrast = 45; state.basic.whites = 35; state.basic.blacks = -35;
+      state.presence.clarity = 25;
+    }
+  },
+  bw_silver: {
+    name: "B&W Fine Art Silver",
+    apply: () => {
+      state.presence.saturation = -100; state.basic.contrast = 15; state.basic.highlights = -20; state.basic.shadows = 25;
+      state.presence.texture = 20; state.effects.grainAmount = 15;
+    }
+  },
+  bw_dark: {
+    name: "B&W Dark Moody",
+    apply: () => {
+      state.presence.saturation = -100; state.basic.exposure = -0.40; state.basic.contrast = 50; state.basic.blacks = -40;
+      state.effects.vignetteAmount = -40;
+    }
+  },
+  portrait_pop: {
+    name: "Studio Portrait Pop",
+    apply: () => {
+      state.basic.exposure = 0.20; state.basic.highlights = -15; state.basic.shadows = 15;
+      state.presence.clarity = 12; state.presence.texture = 15; state.presence.vibrance = 15;
+    }
+  },
+  warm_glow: {
+    name: "Soft Warm Glow",
+    apply: () => {
+      state.basic.temp = 6300; state.basic.exposure = 0.25; state.basic.contrast = -10; state.basic.shadows = 20;
+      state.grading.highlights = { hue: 45, sat: 25, lum: 0 };
+    }
+  },
+  vivid: {
+    name: "Vivid Landscape",
+    apply: () => {
+      state.basic.contrast = 20; state.basic.highlights = -15; state.basic.shadows = 20;
+      state.presence.clarity = 15; state.presence.vibrance = 35; state.presence.saturation = 10;
+    }
+  },
+  hdr: {
+    name: "HDR Drama",
+    apply: () => {
+      state.basic.highlights = -65; state.basic.shadows = 65; state.basic.whites = 20; state.basic.blacks = -15;
+      state.presence.clarity = 30; state.presence.texture = 25; state.presence.vibrance = 20;
+    }
+  },
+  cinematic: {
+    name: "Cinematic Moody",
+    apply: () => {
+      state.basic.contrast = 30; state.basic.shadows = -10; state.basic.highlights = -30;
+      state.presence.dehaze = 20; state.presence.vibrance = -10;
+      state.grading.shadows = { hue: 195, sat: 40, lum: -10 };
+      state.grading.highlights = { hue: 35, sat: 30, lum: 5 };
+    }
+  },
+  sunset_punch: {
+    name: "Sunset Punch",
+    apply: () => {
+      state.basic.temp = 6500; state.basic.tint = 20; state.basic.highlights = -40; state.basic.shadows = 35;
+      state.presence.vibrance = 35;
+      state.grading.shadows = { hue: 280, sat: 35, lum: 0 };
+      state.grading.highlights = { hue: 35, sat: 45, lum: 5 };
+    }
+  },
+  ocean_teal: {
+    name: "Deep Ocean Teal",
+    apply: () => {
+      state.basic.contrast = 25; state.basic.highlights = -25; state.basic.shadows = 15;
+      state.hsl[4] = { hue: 10, sat: 40, lum: 10 };
+      state.hsl[5] = { hue: -15, sat: 30, lum: -10 };
+      state.grading.shadows = { hue: 185, sat: 45, lum: -10 };
+      state.grading.highlights = { hue: 45, sat: 30, lum: 0 };
+    }
+  }
+};
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+
+  if (name === 'natural') {
+    PRESETS.natural.apply();
+    state.activePreset = null;
+    state.baseStateBeforePreset = null;
+  } else {
+    // If not already testing a preset, snapshot base state
+    if (!state.baseStateBeforePreset) {
+      state.baseStateBeforePreset = JSON.parse(JSON.stringify(state));
+    }
+    state.activePreset = name;
+    p.apply();
+  }
+
+  // Update preset chip highlights
+  document.querySelectorAll('.preset-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.preset === name);
+  });
+
+  history.pushSnapshot(`Preset: ${p.name}`);
+  syncAllUiInputs();
+  requestPipelineRender();
+}
+
+// Demo Scenes Generator (Tip 525)
+function loadDemoScene(sceneKey) {
+  const w = 1200;
+  const h = 800;
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = w;
+  tempCanvas.height = h;
+  const ctx = tempCanvas.getContext('2d');
+
+  if (sceneKey === 'sunset') {
+    // Sunset Landscape
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.65);
+    skyGrad.addColorStop(0, '#142D5A');
+    skyGrad.addColorStop(0.7, '#B4552D');
+    skyGrad.addColorStop(1, '#F0A03C');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, w, h * 0.65);
+
+    // Sun
+    ctx.fillStyle = '#FFF5C8';
+    ctx.beginPath();
+    ctx.arc(w * 0.55, h * 0.52, 48, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mountains
+    ctx.fillStyle = '#2D1E2D';
+    ctx.beginPath();
+    ctx.moveTo(0, h * 0.65);
+    ctx.lineTo(w * 0.25, h * 0.42);
+    ctx.lineTo(w * 0.50, h * 0.55);
+    ctx.lineTo(w * 0.75, h * 0.38);
+    ctx.lineTo(w, h * 0.65);
+    ctx.closePath();
+    ctx.fill();
+
+    // Water
+    const waterGrad = ctx.createLinearGradient(0, h * 0.65, 0, h);
+    waterGrad.addColorStop(0, '#5A2D1E');
+    waterGrad.addColorStop(1, '#141928');
+    ctx.fillStyle = waterGrad;
+    ctx.fillRect(0, h * 0.65, w, h * 0.35);
+  } else if (sceneKey === 'portrait') {
+    // Studio Portrait
+    const bgGrad = ctx.createRadialGradient(w * 0.5, h * 0.4, 10, w * 0.5, h * 0.4, w * 0.6);
+    bgGrad.addColorStop(0, '#6E6964');
+    bgGrad.addColorStop(1, '#231E1E');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Hair
+    ctx.fillStyle = '#28190F';
+    ctx.beginPath();
+    ctx.arc(w * 0.5, h * 0.35, 160, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Face oval
+    ctx.fillStyle = '#E4AF8C';
+    ctx.beginPath();
+    ctx.ellipse(w * 0.5, h * 0.40, 100, 140, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (sceneKey === 'neon') {
+    // Neon Night City
+    const nightGrad = ctx.createLinearGradient(0, 0, 0, h);
+    nightGrad.addColorStop(0, '#080A18');
+    nightGrad.addColorStop(1, '#160C23');
+    ctx.fillStyle = nightGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.strokeStyle = '#00E6FF';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.moveTo(w * 0.2, h * 0.8);
+    ctx.lineTo(w * 0.2, h * 0.2);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#FF1E96';
+    ctx.beginPath();
+    ctx.moveTo(w * 0.8, h * 0.8);
+    ctx.lineTo(w * 0.8, h * 0.2);
+    ctx.stroke();
+  } else if (sceneKey === 'architecture') {
+    // High-Dynamic Architecture
+    ctx.fillStyle = '#8CB4DC';
+    ctx.fillRect(0, 0, w, h);
+
+    const bldgGrad = ctx.createLinearGradient(0, 0, w, h);
+    bldgGrad.addColorStop(0, '#F0F0F5');
+    bldgGrad.addColorStop(1, '#3C414B');
+    ctx.fillStyle = bldgGrad;
+    ctx.beginPath();
+    ctx.moveTo(w * 0.15, h);
+    ctx.lineTo(w * 0.35, h * 0.15);
+    ctx.lineTo(w * 0.75, h * 0.18);
+    ctx.lineTo(w * 0.90, h);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  loadTextureFromImage(tempCanvas);
+}
+
+// UI Setup & Bindings
 function initUiBindings() {
-  bindSlider('sliderExposure', state.basic, 'exposure', 'valExposure', v => `${v >= 0 ? '+' : ''}${v.toFixed(2)} EV`);
-  bindSlider('sliderContrast', state.basic, 'contrast', 'valContrast', v => `${v}`);
-  bindSlider('sliderHighlights', state.basic, 'highlights', 'valHighlights', v => `${v}`);
-  bindSlider('sliderShadows', state.basic, 'shadows', 'valShadows', v => `${v}`);
-  bindSlider('sliderWhites', state.basic, 'whites', 'valWhites', v => `${v}`);
-  bindSlider('sliderBlacks', state.basic, 'blacks', 'valBlacks', v => `${v}`);
-
-  // Alt clipping while dragging whites or blacks
-  document.getElementById('sliderWhites').addEventListener('mousedown', () => { state.altClippingMode = 1; requestPipelineRender(); });
-  document.getElementById('sliderWhites').addEventListener('mouseup', () => { state.altClippingMode = 0; requestPipelineRender(); });
-  document.getElementById('sliderBlacks').addEventListener('mousedown', () => { state.altClippingMode = 2; requestPipelineRender(); });
-  document.getElementById('sliderBlacks').addEventListener('mouseup', () => { state.altClippingMode = 0; requestPipelineRender(); });
-
-  bindSlider('sliderTemp', state.basic, 'temp', 'valTemp', v => `${Math.round(v)} K`);
-  bindSlider('sliderTint', state.basic, 'tint', 'valTint', v => `${v}`);
-  bindSlider('sliderVibrance', state.presence, 'vibrance', 'valVibrance', v => `${v}`);
-  bindSlider('sliderSaturation', state.presence, 'saturation', 'valSaturation', v => `${v}`);
-
-  bindSlider('sliderTexture', state.presence, 'texture', 'valTexture', v => `${v}`);
-  bindSlider('sliderClarity', state.presence, 'clarity', 'valClarity', v => `${v}`);
-  bindSlider('sliderDehaze', state.presence, 'dehaze', 'valDehaze', v => `${v}`);
-
-  bindSlider('sliderSharpening', state.detail, 'sharpening', 'valSharpening', v => `${v}`);
-  bindSlider('sliderMasking', state.detail, 'masking', 'valMasking', v => `${v}`);
-  bindSlider('sliderNoiseReduction', state.detail, 'noiseReduction', 'valNoiseReduction', v => `${v}`);
-
-  bindSlider('sliderParamHighlights', state.curves, 'parametricHighlights', 'valParamHighlights', v => `${v}`);
-  bindSlider('sliderParamLights', state.curves, 'parametricLights', 'valParamLights', v => `${v}`);
-  bindSlider('sliderParamDarks', state.curves, 'parametricDarks', 'valParamDarks', v => `${v}`);
-  bindSlider('sliderParamShadows', state.curves, 'parametricShadows', 'valParamShadows', v => `${v}`);
-
-  // HSL Channels & Swatches
-  const hslLabels = ['Red', 'Orange', 'Yellow', 'Green', 'Aqua', 'Blue', 'Purple', 'Magenta'];
-  const swatches = document.querySelectorAll('.swatch-btn');
-  swatches.forEach(btn => {
+  // Navigation Tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      swatches.forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
       btn.classList.add('active');
-      state.activeHslIndex = parseInt(btn.dataset.color, 10);
-      document.getElementById('lblHslChannel').textContent = `${hslLabels[state.activeHslIndex]} Hue`;
-      syncAllUiInputs();
+      const target = document.getElementById(btn.dataset.tab);
+      if (target) target.classList.add('active');
     });
   });
 
-  const hslHue = document.getElementById('sliderHslHue');
-  const hslSat = document.getElementById('sliderHslSat');
-  const hslLum = document.getElementById('sliderHslLum');
-  [hslHue, hslSat, hslLum].forEach((sl, idx) => {
-    sl.addEventListener('input', () => {
-      const prop = ['hue', 'sat', 'lum'][idx];
-      state.hsl[state.activeHslIndex][prop] = parseFloat(sl.value);
+  // Slider Touch & Input Listeners
+  const bindSlider = (id, onChange, onEndAction) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', (e) => {
+      onChange(parseFloat(e.target.value));
+      syncAllUiInputs();
+      requestPipelineRender();
+    });
+    el.addEventListener('change', () => {
+      if (onEndAction) history.pushSnapshot(onEndAction);
+    });
+  };
+
+  // Light Sliders
+  bindSlider('sliderExposure', v => state.basic.exposure = v, 'Exposure');
+  bindSlider('sliderContrast', v => state.basic.contrast = v, 'Contrast');
+  bindSlider('sliderHighlights', v => state.basic.highlights = v, 'Highlights');
+  bindSlider('sliderShadows', v => state.basic.shadows = v, 'Shadows');
+  bindSlider('sliderWhites', v => state.basic.whites = v, 'Whites');
+  bindSlider('sliderBlacks', v => state.basic.blacks = v, 'Blacks');
+
+  // Color Sliders
+  bindSlider('sliderTemp', v => state.basic.temp = v, 'Temperature');
+  bindSlider('sliderTint', v => state.basic.tint = v, 'Tint');
+  bindSlider('sliderVibrance', v => state.presence.vibrance = v, 'Vibrance');
+  bindSlider('sliderSaturation', v => state.presence.saturation = v, 'Saturation');
+
+  // Auto WB & B&W Mode (Tip 228, 470, 471)
+  const btnAutoWb = document.getElementById('btnAutoWb');
+  if (btnAutoWb) {
+    btnAutoWb.addEventListener('click', () => {
+      state.basic.temp = 5500;
+      state.basic.tint = 2;
+      history.pushSnapshot('Auto White Balance');
+      syncAllUiInputs();
+      requestPipelineRender();
+    });
+  }
+
+  const btnToggleBw = document.getElementById('btnToggleBw');
+  if (btnToggleBw) {
+    btnToggleBw.addEventListener('click', () => {
+      const isBw = state.presence.saturation <= -99;
+      state.presence.saturation = isBw ? 0 : -100;
+      btnToggleBw.classList.toggle('active', !isBw);
+      history.pushSnapshot(isBw ? 'Exit B&W Mode' : 'Enter B&W Mode');
+      syncAllUiInputs();
+      requestPipelineRender();
+    });
+  }
+
+  // HSL Swatches
+  document.querySelectorAll('.swatch-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.swatch-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.activeHslIndex = parseInt(btn.dataset.color);
+      const names = ['Red', 'Orange', 'Yellow', 'Green', 'Aqua', 'Blue', 'Purple', 'Magenta'];
+      document.getElementById('lblHslChannel').textContent = `${names[state.activeHslIndex]} Hue`;
+      syncAllUiInputs();
+    });
+
+    btn.addEventListener('dblclick', () => {
+      const idx = parseInt(btn.dataset.color);
+      state.hsl[idx] = { hue: 0, sat: 0, lum: 0 };
+      history.pushSnapshot(`Reset Color ${idx}`);
       syncAllUiInputs();
       requestPipelineRender();
     });
   });
 
-  // Wheel Tabs
-  const wheelTabs = document.querySelectorAll('.wheel-tab-btn');
-  wheelTabs.forEach(btn => {
+  const btnResetHsl = document.getElementById('btnResetHsl');
+  if (btnResetHsl) {
+    btnResetHsl.addEventListener('click', () => {
+      state.hsl = new Array(8).fill(null).map(() => ({ hue: 0, sat: 0, lum: 0 }));
+      history.pushSnapshot('Reset All HSL');
+      syncAllUiInputs();
+      requestPipelineRender();
+    });
+  }
+
+  bindSlider('sliderHslHue', v => state.hsl[state.activeHslIndex].hue = v, 'HSL Hue');
+  bindSlider('sliderHslSat', v => state.hsl[state.activeHslIndex].sat = v, 'HSL Saturation');
+  bindSlider('sliderHslLum', v => state.hsl[state.activeHslIndex].lum = v, 'HSL Luminance');
+
+  // Color Grading Wheel Targets
+  document.querySelectorAll('.wheel-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      wheelTabs.forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.wheel-tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.activeWheelTarget = btn.dataset.wheel;
+      syncAllUiInputs();
       drawColorWheel();
     });
   });
 
-  // Category Tabs
-  const tabs = document.querySelectorAll('.tab-btn');
-  tabs.forEach(btn => {
-    btn.addEventListener('click', () => {
-      tabs.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.tool-section').forEach(sec => sec.classList.remove('active'));
-      document.getElementById(btn.dataset.tab).classList.add('active');
+  bindSlider('sliderWheelLum', v => {
+    state.grading[state.activeWheelTarget].lum = v;
+  }, 'Wheel Luminance');
+
+  // Color Wheel Drag
+  wheelCanvas.addEventListener('mousedown', (e) => {
+    isDraggingWheel = true;
+    updateWheelFromMouse(e);
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (isDraggingWheel) updateWheelFromMouse(e);
+  });
+  window.addEventListener('mouseup', () => {
+    if (isDraggingWheel) {
+      isDraggingWheel = false;
+      history.pushSnapshot(`Color Grade ${state.activeWheelTarget}`);
+    }
+  });
+  wheelCanvas.addEventListener('dblclick', () => {
+    state.grading[state.activeWheelTarget] = { hue: 0, sat: 0, lum: 0 };
+    history.pushSnapshot(`Reset Grade ${state.activeWheelTarget}`);
+    syncAllUiInputs();
+    requestPipelineRender();
+  });
+
+  function updateWheelFromMouse(e) {
+    const rect = wheelCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const radius = wheelCanvas.width / 2;
+    const dx = x - radius;
+    const dy = y - radius;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+    if (angle < 0) angle += 360;
+    const sat = Math.min(100, (dist / radius) * 100);
+
+    state.grading[state.activeWheelTarget].hue = angle;
+    state.grading[state.activeWheelTarget].sat = sat;
+    requestPipelineRender();
+  }
+
+  // Effects Sliders (Tip 291–297, 454)
+  bindSlider('sliderTexture', v => state.presence.texture = v, 'Texture');
+  bindSlider('sliderClarity', v => state.presence.clarity = v, 'Clarity');
+  bindSlider('sliderDehaze', v => state.presence.dehaze = v, 'Dehaze');
+  bindSlider('sliderVignetteAmount', v => state.effects.vignetteAmount = v, 'Vignette Amount');
+  bindSlider('sliderVignetteMidpoint', v => state.effects.vignetteMidpoint = v, 'Vignette Midpoint');
+  bindSlider('sliderVignetteFeather', v => state.effects.vignetteFeather = v, 'Vignette Feather');
+  bindSlider('sliderGrainAmount', v => state.effects.grainAmount = v, 'Grain Amount');
+  bindSlider('sliderGrainSize', v => state.effects.grainSize = v, 'Grain Size');
+  bindSlider('sliderGrainRoughness', v => state.effects.grainRoughness = v, 'Grain Roughness');
+
+  // Detail Sliders
+  bindSlider('sliderSharpening', v => state.detail.sharpening = v, 'Sharpening');
+  bindSlider('sliderSharpenRadius', v => state.detail.sharpenRadius = v, 'Sharpen Radius');
+  bindSlider('sliderSharpenDetail', v => state.detail.sharpenDetail = v, 'Sharpen Detail');
+  bindSlider('sliderMasking', v => state.detail.masking = v, 'Sharpen Masking');
+  bindSlider('sliderLuminanceNoise', v => state.detail.luminanceNoise = v, 'Luminance Noise');
+  bindSlider('sliderColorNoise', v => state.detail.colorNoise = v, 'Color Noise');
+
+  // Crop & Geometry (Tips 401–420)
+  document.getElementById('btnRotateCcw').addEventListener('click', () => {
+    state.crop.rotationDegrees = (state.crop.rotationDegrees - 90 + 360) % 360;
+    history.pushSnapshot('Rotate 90° CCW');
+    requestPipelineRender();
+  });
+  document.getElementById('btnRotateCw').addEventListener('click', () => {
+    state.crop.rotationDegrees = (state.crop.rotationDegrees + 90) % 360;
+    history.pushSnapshot('Rotate 90° CW');
+    requestPipelineRender();
+  });
+  document.getElementById('btnFlipH').addEventListener('click', () => {
+    state.crop.flipH = !state.crop.flipH;
+    document.getElementById('btnFlipH').classList.toggle('active', state.crop.flipH);
+    history.pushSnapshot('Flip Horizontal');
+    requestPipelineRender();
+  });
+  document.getElementById('btnFlipV').addEventListener('click', () => {
+    state.crop.flipV = !state.crop.flipV;
+    document.getElementById('btnFlipV').classList.toggle('active', state.crop.flipV);
+    history.pushSnapshot('Flip Vertical');
+    requestPipelineRender();
+  });
+  bindSlider('sliderStraighten', v => state.crop.straightenAngle = v, 'Straighten');
+  document.getElementById('valStraighten').addEventListener('dblclick', () => {
+    state.crop.straightenAngle = 0;
+    syncAllUiInputs();
+    history.pushSnapshot('Reset Straighten');
+    requestPipelineRender();
+  });
+
+  // Aspect Ratio Chips
+  document.querySelectorAll('.aspect-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.aspect-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      state.crop.aspectRatio = chip.dataset.ratio;
+      history.pushSnapshot(`Aspect Ratio ${state.crop.aspectRatio}`);
     });
   });
 
-  // Double Click Labels to Reset
-  document.querySelectorAll('.slider-label[data-reset]').forEach(lbl => {
-    lbl.addEventListener('dblclick', () => {
-      const prop = lbl.dataset.reset;
-      if (prop in state.basic) state.basic[prop] = (prop === 'temp' ? 5500 : 0);
-      if (prop in state.presence) state.presence[prop] = 0;
-      history.pushSnapshot(`Reset ${prop}`);
-      syncAllUiInputs();
+  document.getElementById('btnResetCrop').addEventListener('click', () => {
+    state.crop = { rotationDegrees: 0, straightenAngle: 0, flipH: false, flipV: false, aspectRatio: 'free' };
+    document.getElementById('btnFlipH').classList.remove('active');
+    document.getElementById('btnFlipV').classList.remove('active');
+    document.querySelectorAll('.aspect-chip').forEach(c => c.classList.toggle('active', c.dataset.ratio === 'free'));
+    syncAllUiInputs();
+    history.pushSnapshot('Reset Crop');
+    requestPipelineRender();
+  });
+
+  // Curves Parametric Sliders
+  bindSlider('sliderParamHighlights', v => state.curves.parametricHighlights = v, 'Curves Highlights');
+  bindSlider('sliderParamLights', v => state.curves.parametricLights = v, 'Curves Lights');
+  bindSlider('sliderParamDarks', v => state.curves.parametricDarks = v, 'Curves Darks');
+  bindSlider('sliderParamShadows', v => state.curves.parametricShadows = v, 'Curves Shadows');
+
+  // Curve Canvas Events
+  curveCanvas.addEventListener('mousedown', (e) => {
+    const rect = curveCanvas.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / curveCanvas.width) * 255;
+    const y = (1.0 - (e.clientY - rect.top) / curveCanvas.height) * 255;
+
+    // Check hit point
+    const hitIdx = state.curves.points.findIndex(p => Math.hypot(p.x - x, p.y - y) < 12);
+    if (hitIdx >= 0) {
+      draggingPointIndex = hitIdx;
+    } else {
+      state.curves.points.push({ x: Math.round(x), y: Math.round(y) });
+      state.curves.points.sort((a, b) => a.x - b.x);
+      draggingPointIndex = state.curves.points.findIndex(p => p.x === Math.round(x));
       requestPipelineRender();
+    }
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (draggingPointIndex >= 0) {
+      const rect = curveCanvas.getBoundingClientRect();
+      let x = Math.max(0, Math.min(255, Math.round(((e.clientX - rect.left) / curveCanvas.width) * 255)));
+      let y = Math.max(0, Math.min(255, Math.round((1.0 - (e.clientY - rect.top) / curveCanvas.height) * 255)));
+      // Keep endpoints constrained
+      if (draggingPointIndex === 0) x = 0;
+      if (draggingPointIndex === state.curves.points.length - 1) x = 255;
+      state.curves.points[draggingPointIndex] = { x, y };
+      requestPipelineRender();
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (draggingPointIndex >= 0) {
+      draggingPointIndex = -1;
+      history.pushSnapshot('Tone Curve Edit');
+    }
+  });
+
+  curveCanvas.addEventListener('dblclick', (e) => {
+    const rect = curveCanvas.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / curveCanvas.width) * 255;
+    const y = (1.0 - (e.clientY - rect.top) / curveCanvas.height) * 255;
+    const hitIdx = state.curves.points.findIndex(p => Math.hypot(p.x - x, p.y - y) < 15);
+    if (hitIdx > 0 && hitIdx < state.curves.points.length - 1) {
+      state.curves.points.splice(hitIdx, 1);
+      history.pushSnapshot('Remove Curve Point');
+      requestPipelineRender();
+    }
+  });
+
+  // Reset Sliders Only (Tip 512)
+  document.getElementById('btnResetSlidersOnly').addEventListener('click', (e) => {
+    e.preventDefault();
+    state.basic = { exposure: 0, contrast: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, temp: 5500, tint: 0 };
+    state.presence = { texture: 0, clarity: 0, dehaze: 0, vibrance: 0, saturation: 0 };
+    state.effects = { vignetteAmount: 0, vignetteMidpoint: 50, vignetteFeather: 50, grainAmount: 0, grainSize: 25, grainRoughness: 50 };
+    state.detail = { sharpening: 40, sharpenRadius: 1.0, sharpenDetail: 25, masking: 0, luminanceNoise: 0, colorNoise: 25 };
+    state.hsl = new Array(8).fill(null).map(() => ({ hue: 0, sat: 0, lum: 0 }));
+    state.grading = { shadows: { hue: 0, sat: 0, lum: 0 }, midtones: { hue: 0, sat: 0, lum: 0 }, highlights: { hue: 0, sat: 0, lum: 0 } };
+    state.curves = { parametricHighlights: 0, parametricLights: 0, parametricDarks: 0, parametricShadows: 0, points: [{ x: 0, y: 0 }, { x: 255, y: 255 }] };
+    history.pushSnapshot("Reset Sliders Only");
+    syncAllUiInputs();
+    requestPipelineRender();
+  });
+
+  // Reset All (Tip 512)
+  document.getElementById('btnResetAll').addEventListener('click', (e) => {
+    e.preventDefault();
+    state.basic = { exposure: 0, contrast: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, temp: 5500, tint: 0 };
+    state.presence = { texture: 0, clarity: 0, dehaze: 0, vibrance: 0, saturation: 0 };
+    state.effects = { vignetteAmount: 0, vignetteMidpoint: 50, vignetteFeather: 50, grainAmount: 0, grainSize: 25, grainRoughness: 50 };
+    state.detail = { sharpening: 40, sharpenRadius: 1.0, sharpenDetail: 25, masking: 0, luminanceNoise: 0, colorNoise: 25 };
+    state.crop = { rotationDegrees: 0, straightenAngle: 0, flipH: false, flipV: false, aspectRatio: 'free' };
+    state.hsl = new Array(8).fill(null).map(() => ({ hue: 0, sat: 0, lum: 0 }));
+    state.grading = { shadows: { hue: 0, sat: 0, lum: 0 }, midtones: { hue: 0, sat: 0, lum: 0 }, highlights: { hue: 0, sat: 0, lum: 0 } };
+    state.curves = { parametricHighlights: 0, parametricLights: 0, parametricDarks: 0, parametricShadows: 0, points: [{ x: 0, y: 0 }, { x: 255, y: 255 }] };
+    history.pushSnapshot("Reset All");
+    syncAllUiInputs();
+    requestPipelineRender();
+  });
+
+  // Demo Scenes Switcher (Tip 525)
+  const demoSelect = document.getElementById('demoSceneSelect');
+  if (demoSelect) {
+    demoSelect.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val) loadDemoScene(val);
+    });
+  }
+
+  // Presets Category Filtering
+  document.querySelectorAll('.cat-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const cat = pill.dataset.cat;
+      document.querySelectorAll('.preset-chip').forEach(chip => {
+        if (cat === 'all' || chip.dataset.cat === cat || chip.dataset.preset === 'natural') {
+          chip.style.display = 'inline-block';
+        } else {
+          chip.style.display = 'none';
+        }
+      });
     });
   });
 
-  // Header Buttons
-  document.getElementById('btnUndo').addEventListener('click', () => history.undo());
-  document.getElementById('btnRedo').addEventListener('click', () => history.redo());
+  // Presets Click
+  document.querySelectorAll('.preset-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      applyPreset(chip.dataset.preset);
+    });
+  });
+
+  // Preset Amount Slider (Tip 388, 499)
+  const sliderPresetAmount = document.getElementById('sliderPresetAmount');
+  if (sliderPresetAmount) {
+    sliderPresetAmount.addEventListener('input', (e) => {
+      const amt = parseInt(e.target.value);
+      state.presetAmount = amt;
+      document.getElementById('valPresetAmount').textContent = `${amt}%`;
+      // If we have an active preset and base state, re-apply with intensity scale
+      if (state.activePreset && state.baseStateBeforePreset && PRESETS[state.activePreset]) {
+        // Reapply preset
+        PRESETS[state.activePreset].apply();
+        requestPipelineRender();
+      }
+    });
+  }
 
   // Before/After Compare
   const btnCompare = document.getElementById('btnCompare');
@@ -1169,19 +1701,6 @@ function initUiBindings() {
     requestPipelineRender();
   });
 
-  // Reset All
-  document.getElementById('btnResetAll').addEventListener('click', () => {
-    state.basic = { exposure: 0, contrast: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, temp: 5500, tint: 0 };
-    state.presence = { texture: 0, clarity: 0, dehaze: 0, vibrance: 0, saturation: 0 };
-    state.detail = { sharpening: 40, masking: 0, noiseReduction: 0 };
-    state.hsl = new Array(8).fill(null).map(() => ({ hue: 0, sat: 0, lum: 0 }));
-    state.grading = { shadows: { hue: 0, sat: 0, lum: 0 }, midtones: { hue: 0, sat: 0, lum: 0 }, highlights: { hue: 0, sat: 0, lum: 0 } };
-    state.curves = { parametricHighlights: 0, parametricLights: 0, parametricDarks: 0, parametricShadows: 0, points: [{ x: 0, y: 0 }, { x: 255, y: 255 }] };
-    history.pushSnapshot("Reset All");
-    syncAllUiInputs();
-    requestPipelineRender();
-  });
-
   // Image File Upload
   document.getElementById('imageUpload').addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -1193,14 +1712,6 @@ function initUiBindings() {
       };
       reader.readAsDataURL(file);
     }
-  });
-
-  // Presets
-  document.querySelectorAll('.preset-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const preset = chip.dataset.preset;
-      applyPreset(preset);
-    });
   });
 
   // Export Full Rendered Photo
@@ -1237,56 +1748,6 @@ function initUiBindings() {
       requestPipelineRender();
     }
   });
-}
-
-function applyPreset(name) {
-  if (name === 'golden') {
-    state.basic.temp = 6800;
-    state.basic.tint = 12;
-    state.basic.exposure = 0.35;
-    state.basic.highlights = -25;
-    state.basic.shadows = 30;
-    state.presence.vibrance = 25;
-    state.presence.dehaze = 15;
-    state.grading.shadows = { hue: 215, sat: 20, lum: 0 };
-    state.grading.highlights = { hue: 42, sat: 35, lum: 0 };
-  } else if (name === 'vivid') {
-    state.basic.contrast = 20;
-    state.basic.highlights = -15;
-    state.basic.shadows = 20;
-    state.presence.clarity = 15;
-    state.presence.vibrance = 35;
-    state.presence.saturation = 10;
-  } else if (name === 'cinematic') {
-    state.basic.contrast = 30;
-    state.basic.shadows = -10;
-    state.basic.highlights = -30;
-    state.presence.dehaze = 20;
-    state.presence.vibrance = -10;
-    state.grading.shadows = { hue: 195, sat: 40, lum: -10 };
-    state.grading.highlights = { hue: 35, sat: 30, lum: 5 };
-  } else if (name === 'hdr') {
-    state.basic.highlights = -65;
-    state.basic.shadows = 65;
-    state.basic.whites = 20;
-    state.basic.blacks = -15;
-    state.presence.clarity = 30;
-    state.presence.texture = 25;
-    state.presence.vibrance = 20;
-  } else if (name === 'bw') {
-    state.presence.saturation = -100;
-    state.basic.contrast = 45;
-    state.basic.whites = 35;
-    state.basic.blacks = -35;
-    state.presence.clarity = 25;
-  } else if (name === 'natural') {
-    document.getElementById('btnResetAll').click();
-    return;
-  }
-
-  history.pushSnapshot(`Preset: ${name}`);
-  syncAllUiInputs();
-  requestPipelineRender();
 }
 
 // Bootstrap

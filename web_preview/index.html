@@ -11,10 +11,19 @@
   <header>
     <div class="brand">
       <div class="brand-badge">Lr</div>
-      <div class="brand-title">Lightroom Clean Web</div>
+      <div class="brand-title">Lightroom Clean Web Studio</div>
     </div>
 
     <div class="header-actions">
+      <!-- Tip 525: Built-in 4 Demo Scenes -->
+      <select id="demoSceneSelect" class="header-select" title="Load High-Dynamic Demo Scene">
+        <option value="" disabled selected>✨ Demo Scenes</option>
+        <option value="sunset">Sunset Landscape</option>
+        <option value="portrait">Studio Portrait</option>
+        <option value="neon">Neon Night City</option>
+        <option value="architecture">Architecture</option>
+      </select>
+
       <button id="btnUndo" title="Undo (Ctrl+Z)" disabled>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
@@ -43,7 +52,14 @@
         Alt Clip
       </button>
 
-      <button id="btnResetAll" title="Reset all sliders">Reset All</button>
+      <!-- Tip 512: Reset Dialog (Selective vs All) -->
+      <div class="dropdown">
+        <button id="btnResetMenu" class="dropdown-trigger" title="Reset options">Reset ▾</button>
+        <div class="dropdown-content">
+          <a href="#" id="btnResetSlidersOnly">Reset Sliders Only (Keep Crop)</a>
+          <a href="#" id="btnResetAll" class="danger">Reset All (Everything)</a>
+        </div>
+      </div>
 
       <label for="imageUpload" style="cursor: pointer;">
         <button type="button" onclick="document.getElementById('imageUpload').click()">
@@ -108,13 +124,14 @@
         </div>
       </div>
 
-      <!-- Navigation Tabs -->
+      <!-- Navigation Tabs (Tip 401 & 454) -->
       <div class="tabs-bar">
         <button class="tab-btn active" data-tab="tabLight">Light</button>
         <button class="tab-btn" data-tab="tabColor">Color</button>
         <button class="tab-btn" data-tab="tabEffects">Effects</button>
         <button class="tab-btn" data-tab="tabDetail">Detail</button>
         <button class="tab-btn" data-tab="tabCurves">Curves</button>
+        <button class="tab-btn" data-tab="tabCrop">Crop</button>
       </div>
 
       <!-- Scrollable Adjustments Panels -->
@@ -190,6 +207,12 @@
 
         <!-- 2. COLOR PANEL -->
         <div class="tool-section" id="tabColor">
+          <!-- Quick Color Actions: Auto WB & B&W Mode -->
+          <div class="quick-chips-row">
+            <button id="btnAutoWb" class="action-chip" title="Auto White Balance">⚖️ Auto WB</button>
+            <button id="btnToggleBw" class="action-chip" title="Toggle Black & White Mode">⚫ B&W Mode</button>
+          </div>
+
           <div class="slider-group">
             <div class="slider-header">
               <span class="slider-label" data-reset="temp">Temp</span>
@@ -198,6 +221,7 @@
             <div class="range-wrap">
               <input type="range" id="sliderTemp" min="2000" max="10000" step="50" value="5500">
             </div>
+            <div id="lblKelvinDesc" style="font-size: 10px; color: #777; margin-top: 2px;">(Daylight / Neutral)</div>
           </div>
 
           <div class="slider-group">
@@ -213,7 +237,7 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="vibrance">Vibrance (Skin Protect)</span>
+              <span class="slider-label" data-reset="vibrance">Vibrance <span class="badge-pill">Skin Safe</span></span>
               <span class="slider-value" id="valVibrance">0</span>
             </div>
             <div class="range-wrap">
@@ -233,16 +257,20 @@
             </div>
           </div>
 
-          <div style="margin: 14px 0 8px; font-size: 11px; font-weight: 600; color: #a0a0a0; text-transform: uppercase;">8-Channel Color Mixer</div>
+          <!-- 8-Channel Color Mixer -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin: 14px 0 8px;">
+            <span style="font-size: 11px; font-weight: 600; color: #a0a0a0; text-transform: uppercase;">8-Channel Color Mixer</span>
+            <button id="btnResetHsl" class="text-btn">Reset Colors</button>
+          </div>
           <div class="hsl-swatches">
-            <button class="swatch-btn active" data-color="0" style="background: #E53935;" title="Red"></button>
-            <button class="swatch-btn" data-color="1" style="background: #FB8C00;" title="Orange (Skin)"></button>
-            <button class="swatch-btn" data-color="2" style="background: #FDD835;" title="Yellow"></button>
-            <button class="swatch-btn" data-color="3" style="background: #43A047;" title="Green"></button>
-            <button class="swatch-btn" data-color="4" style="background: #00ACC1;" title="Aqua"></button>
-            <button class="swatch-btn" data-color="5" style="background: #1E88E5;" title="Blue"></button>
-            <button class="swatch-btn" data-color="6" style="background: #8E24AA;" title="Purple"></button>
-            <button class="swatch-btn" data-color="7" style="background: #D81B60;" title="Magenta"></button>
+            <button class="swatch-btn active" data-color="0" style="background: #E53935;" title="Red"><span class="swatch-dot"></span></button>
+            <button class="swatch-btn" data-color="1" style="background: #FB8C00;" title="Orange (Skin)"><span class="swatch-dot"></span></button>
+            <button class="swatch-btn" data-color="2" style="background: #FDD835;" title="Yellow"><span class="swatch-dot"></span></button>
+            <button class="swatch-btn" data-color="3" style="background: #43A047;" title="Green"><span class="swatch-dot"></span></button>
+            <button class="swatch-btn" data-color="4" style="background: #00ACC1;" title="Aqua"><span class="swatch-dot"></span></button>
+            <button class="swatch-btn" data-color="5" style="background: #1E88E5;" title="Blue"><span class="swatch-dot"></span></button>
+            <button class="swatch-btn" data-color="6" style="background: #8E24AA;" title="Purple"><span class="swatch-dot"></span></button>
+            <button class="swatch-btn" data-color="7" style="background: #D81B60;" title="Magenta"><span class="swatch-dot"></span></button>
           </div>
 
           <div class="slider-group">
@@ -288,7 +316,7 @@
 
           <div class="color-wheel-box">
             <canvas id="wheelCanvas" width="160" height="160"></canvas>
-            <span style="font-size: 10px; color: #777; margin-top: 6px;">Drag puck for tint, double click to reset</span>
+            <span style="font-size: 10px; color: #777; margin-top: 6px;">Drag puck for tint, double-click to reset</span>
           </div>
 
           <div class="slider-group">
@@ -303,8 +331,9 @@
           </div>
         </div>
 
-        <!-- 3. EFFECTS PANEL -->
+        <!-- 3. EFFECTS PANEL (Tip 291–297, 454) -->
         <div class="tool-section" id="tabEffects">
+          <div class="section-title">Presence</div>
           <div class="slider-group">
             <div class="slider-header">
               <span class="slider-label" data-reset="texture">Texture</span>
@@ -337,10 +366,80 @@
               <div class="zero-notch"></div>
             </div>
           </div>
+
+          <!-- Post-Crop Vignette -->
+          <div class="section-title" style="margin-top: 14px;">Post-Crop Vignette</div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="vignetteAmount">Vignette Amount</span>
+              <span class="slider-value" id="valVignetteAmount">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderVignetteAmount" min="-100" max="100" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div id="vignetteSubsliders" class="sub-slider-group">
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">Midpoint</span>
+                <span class="slider-value" id="valVignetteMidpoint">50</span>
+              </div>
+              <div class="range-wrap">
+                <input type="range" id="sliderVignetteMidpoint" min="0" max="100" step="1" value="50">
+              </div>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">Feather</span>
+                <span class="slider-value" id="valVignetteFeather">50</span>
+              </div>
+              <div class="range-wrap">
+                <input type="range" id="sliderVignetteFeather" min="0" max="100" step="1" value="50">
+              </div>
+            </div>
+          </div>
+
+          <!-- Film Grain -->
+          <div class="section-title" style="margin-top: 14px;">Film Grain</div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="grainAmount">Grain Amount</span>
+              <span class="slider-value" id="valGrainAmount">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderGrainAmount" min="0" max="100" step="1" value="0">
+            </div>
+          </div>
+
+          <div id="grainSubsliders" class="sub-slider-group">
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">Grain Size</span>
+                <span class="slider-value" id="valGrainSize">25</span>
+              </div>
+              <div class="range-wrap">
+                <input type="range" id="sliderGrainSize" min="0" max="100" step="1" value="25">
+              </div>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">Grain Roughness</span>
+                <span class="slider-value" id="valGrainRoughness">50</span>
+              </div>
+              <div class="range-wrap">
+                <input type="range" id="sliderGrainRoughness" min="0" max="100" step="1" value="50">
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- 4. DETAIL PANEL -->
+        <!-- 4. DETAIL PANEL (Tip 294, 302, 331, 332) -->
         <div class="tool-section" id="tabDetail">
+          <div class="section-title">Sharpening</div>
           <div class="slider-group">
             <div class="slider-header">
               <span class="slider-label">Sharpening</span>
@@ -353,7 +452,27 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label">Masking (Hold Alt)</span>
+              <span class="slider-label">Radius</span>
+              <span class="slider-value" id="valSharpenRadius">1.0 px</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderSharpenRadius" min="0.5" max="3.0" step="0.1" value="1.0">
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Detail</span>
+              <span class="slider-value" id="valSharpenDetail">25</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderSharpenDetail" min="0" max="100" step="1" value="25">
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Masking (Edges Only)</span>
               <span class="slider-value" id="valMasking">0</span>
             </div>
             <div class="range-wrap">
@@ -361,13 +480,24 @@
             </div>
           </div>
 
+          <div class="section-title" style="margin-top: 14px;">Noise Reduction</div>
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label">Noise Reduction</span>
-              <span class="slider-value" id="valNoiseReduction">0</span>
+              <span class="slider-label">Luminance Noise</span>
+              <span class="slider-value" id="valLuminanceNoise">0</span>
             </div>
             <div class="range-wrap">
-              <input type="range" id="sliderNoiseReduction" min="0" max="100" step="1" value="0">
+              <input type="range" id="sliderLuminanceNoise" min="0" max="100" step="1" value="0">
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Color Noise</span>
+              <span class="slider-value" id="valColorNoise">25</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderColorNoise" min="0" max="100" step="1" value="25">
             </div>
           </div>
         </div>
@@ -423,18 +553,92 @@
             </div>
           </div>
         </div>
+
+        <!-- 6. CROP & GEOMETRY PANEL (Tips 401–420) -->
+        <div class="tool-section" id="tabCrop">
+          <div class="section-title">Transform & Orientation</div>
+          <div class="crop-btn-row">
+            <button id="btnRotateCcw" class="action-btn" title="Rotate 90° CCW">⟲ 90°</button>
+            <button id="btnRotateCw" class="action-btn" title="Rotate 90° CW">⟳ 90°</button>
+            <button id="btnFlipH" class="action-btn" title="Flip Horizontal">⇄ Flip H</button>
+            <button id="btnFlipV" class="action-btn" title="Flip Vertical">⇅ Flip V</button>
+          </div>
+
+          <div class="slider-group" style="margin-top: 14px;">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="straighten">Straighten Angle</span>
+              <span class="slider-value" id="valStraighten">0.0°</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderStraighten" min="-45" max="45" step="0.1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 14px;">Aspect Ratio</div>
+          <div class="aspect-ratio-row">
+            <button class="aspect-chip active" data-ratio="free">Free</button>
+            <button class="aspect-chip" data-ratio="1:1">1:1</button>
+            <button class="aspect-chip" data-ratio="4:5">4:5</button>
+            <button class="aspect-chip" data-ratio="16:9">16:9</button>
+            <button class="aspect-chip" data-ratio="9:16">9:16</button>
+            <button class="aspect-chip" data-ratio="3:2">3:2</button>
+            <button class="aspect-chip" data-ratio="4:3">4:3</button>
+          </div>
+
+          <div style="margin-top: 20px; text-align: center;">
+            <button id="btnResetCrop" class="text-btn">Reset Crop & Geometry</button>
+          </div>
+        </div>
       </div>
 
-      <!-- Presets Footer Bar -->
+      <!-- Presets Footer Bar (Tips 388, 391, 400, 454, 499) -->
       <div class="presets-section">
-        <div class="presets-label">Quick Presets</div>
+        <div class="presets-top-bar">
+          <div class="presets-label">Presets Library (21 Pro Looks)</div>
+          <div class="preset-amount-container">
+            <span style="font-size: 10px; color: #a0a0a0;">Amount:</span>
+            <input type="range" id="sliderPresetAmount" min="0" max="200" step="1" value="100" style="width: 80px;">
+            <span id="valPresetAmount" style="font-size: 11px; font-weight: bold; color: #38A9FF; width: 36px; text-align: right;">100%</span>
+          </div>
+        </div>
+
+        <div class="preset-category-tabs">
+          <button class="cat-pill active" data-cat="all">All</button>
+          <button class="cat-pill" data-cat="creative">Creative</button>
+          <button class="cat-pill" data-cat="vintage">Vintage</button>
+          <button class="cat-pill" data-cat="bw">B&W</button>
+          <button class="cat-pill" data-cat="portrait">Portrait</button>
+          <button class="cat-pill" data-cat="landscape">Landscape</button>
+        </div>
+
         <div class="presets-list">
-          <button class="preset-chip" data-preset="golden">Golden Hour</button>
-          <button class="preset-chip" data-preset="vivid">Vivid Landscape</button>
-          <button class="preset-chip" data-preset="cinematic">Cinematic Moody</button>
-          <button class="preset-chip" data-preset="hdr">HDR Drama</button>
-          <button class="preset-chip" data-preset="bw">B&W High Contrast</button>
-          <button class="preset-chip" data-preset="natural">Natural Reset</button>
+          <button class="preset-chip active" data-preset="natural" data-cat="all">None (Original)</button>
+          <!-- Creative -->
+          <button class="preset-chip" data-preset="golden" data-cat="creative">Golden Hour</button>
+          <button class="preset-chip" data-preset="cyberpunk" data-cat="creative">Cyberpunk Neon</button>
+          <button class="preset-chip" data-preset="bright" data-cat="creative">Clean Bright & Airy</button>
+          <button class="preset-chip" data-preset="matte" data-cat="creative">Matte Cinema</button>
+          <button class="preset-chip" data-preset="forest" data-cat="creative">Moody Forest</button>
+          <button class="preset-chip" data-preset="street" data-cat="creative">Urban Street</button>
+          <!-- Vintage -->
+          <button class="preset-chip" data-preset="portra" data-cat="vintage">Kodak Portra 400</button>
+          <button class="preset-chip" data-preset="astia" data-cat="vintage">Fuji Astia Soft</button>
+          <button class="preset-chip" data-preset="polaroid" data-cat="vintage">Vintage Polaroid 1970</button>
+          <button class="preset-chip" data-preset="sepia" data-cat="vintage">Sepia Classic</button>
+          <!-- B&W -->
+          <button class="preset-chip" data-preset="bw_high" data-cat="bw">B&W High Contrast</button>
+          <button class="preset-chip" data-preset="bw_silver" data-cat="bw">B&W Fine Art Silver</button>
+          <button class="preset-chip" data-preset="bw_dark" data-cat="bw">B&W Dark Moody</button>
+          <!-- Portrait -->
+          <button class="preset-chip" data-preset="portrait_pop" data-cat="portrait">Studio Portrait Pop</button>
+          <button class="preset-chip" data-preset="warm_glow" data-cat="portrait">Soft Warm Glow</button>
+          <!-- Landscape -->
+          <button class="preset-chip" data-preset="vivid" data-cat="landscape">Vivid Landscape</button>
+          <button class="preset-chip" data-preset="hdr" data-cat="landscape">HDR Drama</button>
+          <button class="preset-chip" data-preset="cinematic" data-cat="landscape">Cinematic Moody</button>
+          <button class="preset-chip" data-preset="sunset_punch" data-cat="landscape">Sunset Punch</button>
+          <button class="preset-chip" data-preset="ocean_teal" data-cat="landscape">Deep Ocean Teal</button>
         </div>
       </div>
     </div>
