@@ -4,7 +4,7 @@ import com.cleanlr.model.*
 import kotlinx.serialization.Serializable
 
 /**
- * Task T6: Preset System (Lightroom Mobile Amount 0–200% Architecture)
+ * Task T6 & Section 10: Preset System (Lightroom Mobile Amount 0–200% Architecture) (Tips 381–400)
  *
  * Defines a curated photographic aesthetic preset with group categorization,
  * full recipe delta, and linear scaling from 0% (subtle/null) to 200% (intense).
@@ -19,12 +19,12 @@ data class Preset(
 )
 
 /**
- * Manages preset library, starter pack, and Amount (0–200%) interpolation engine.
+ * Manages preset library, 20+ starter pack, and Amount (0–200%) interpolation engine.
  */
 object PresetManager {
 
     /**
-     * Built-in Starter Pack matching Lightroom Mobile curated styles.
+     * Built-in Starter Pack matching Lightroom Mobile curated styles (20+ presets, Tip 391).
      */
     val STARTER_PACK: List<Preset> = listOf(
         // Group: Creative
@@ -67,6 +67,63 @@ object PresetManager {
                 effects = EffectsAdjustments(dehaze = 15f, clarity = 20f, vignetteAmount = -25f)
             )
         ),
+        Preset(
+            id = "preset_cyberpunk_neon",
+            name = "Cyberpunk Neon",
+            group = "Creative",
+            description = "Vibrant electric blues, hot magentas, and deep black backgrounds",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    contrast = 25.0f,
+                    highlights = 15.0f,
+                    shadows = -20.0f,
+                    whites = 20.0f,
+                    blacks = -15.0f,
+                    vibrance = 40.0f
+                ),
+                effects = EffectsAdjustments(clarity = 25f, dehaze = 20f),
+                colorGrading = ColorGrading(
+                    shadows = ColorGradingWheel(hue = 220f, saturation = 45f, luminance = -10f),
+                    highlights = ColorGradingWheel(hue = 320f, saturation = 50f, luminance = 10f)
+                )
+            )
+        ),
+        Preset(
+            id = "preset_matte_cinema",
+            name = "Matte Cinema",
+            group = "Creative",
+            description = "Lifted faded blacks, soft contrast, and muted analog roll-off",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    contrast = -15.0f,
+                    highlights = -20.0f,
+                    shadows = 25.0f,
+                    blacks = 35.0f,
+                    saturation = -10.0f
+                ),
+                effects = EffectsAdjustments(grainAmount = 20f, vignetteAmount = -15f)
+            )
+        ),
+        Preset(
+            id = "preset_golden_hour",
+            name = "Golden Hour",
+            group = "Creative",
+            description = "Warm sunlight glow with honey highlights and soft amber tones",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    exposure = 0.20f,
+                    temperature = 6400f,
+                    tint = 8f,
+                    highlights = -15.0f,
+                    shadows = 15.0f,
+                    vibrance = 25.0f
+                ),
+                effects = EffectsAdjustments(clarity = -5f, vignetteAmount = -20f),
+                colorGrading = ColorGrading(
+                    highlights = ColorGradingWheel(hue = 45f, saturation = 35f, luminance = 8f)
+                )
+            )
+        ),
 
         // Group: B&W
         Preset(
@@ -104,6 +161,44 @@ object PresetManager {
                 effects = EffectsAdjustments(texture = -5f, grainAmount = 30f, grainSize = 35f)
             )
         ),
+        Preset(
+            id = "preset_bw_dramatic",
+            name = "Dramatic Monochrome",
+            group = "B&W",
+            description = "Deep shadows, intense sky darkening, and architectural clarity",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    contrast = 50.0f,
+                    highlights = -30.0f,
+                    shadows = -25.0f,
+                    whites = 30.0f,
+                    blacks = -30.0f,
+                    saturation = -100.0f,
+                    vibrance = -100.0f
+                ),
+                effects = EffectsAdjustments(clarity = 35f, dehaze = 25f, vignetteAmount = -30f)
+            )
+        ),
+        Preset(
+            id = "preset_sepia_classic",
+            name = "Sepia Classic",
+            group = "B&W",
+            description = "Timeless sepia tone with rich chocolate shadows and cream highlights",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    contrast = 15.0f,
+                    highlights = -10.0f,
+                    shadows = 10.0f,
+                    saturation = -100.0f,
+                    vibrance = -100.0f
+                ),
+                colorGrading = ColorGrading(
+                    shadows = ColorGradingWheel(hue = 35f, saturation = 30f, luminance = -5f),
+                    highlights = ColorGradingWheel(hue = 42f, saturation = 25f, luminance = 5f)
+                ),
+                effects = EffectsAdjustments(grainAmount = 25f, vignetteAmount = -20f)
+            )
+        ),
 
         // Group: Portrait
         Preset(
@@ -122,6 +217,63 @@ object PresetManager {
                     vibrance = 10.0f
                 ),
                 effects = EffectsAdjustments(texture = -15f, clarity = -10f, vignetteAmount = -15f)
+            )
+        ),
+        Preset(
+            id = "preset_portra_400",
+            name = "Kodak Portra 400",
+            group = "Portrait",
+            description = "Iconic analog warmth, gentle pastel saturation, and natural skin glow",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    exposure = 0.15f,
+                    contrast = 10.0f,
+                    highlights = -15.0f,
+                    shadows = 18.0f,
+                    temperature = 5850f,
+                    tint = 4f,
+                    vibrance = 12.0f,
+                    saturation = -5.0f
+                ),
+                effects = EffectsAdjustments(texture = -5f, grainAmount = 22f, grainSize = 28f),
+                colorGrading = ColorGrading(
+                    shadows = ColorGradingWheel(hue = 210f, saturation = 15f),
+                    highlights = ColorGradingWheel(hue = 40f, saturation = 20f)
+                )
+            )
+        ),
+        Preset(
+            id = "preset_fuji_astia",
+            name = "Fuji Astia Soft",
+            group = "Portrait",
+            description = "Delicate skin gradation, soft highlights, and neutral organic tones",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    exposure = 0.10f,
+                    contrast = -8.0f,
+                    highlights = -25.0f,
+                    shadows = 20.0f,
+                    vibrance = 15.0f
+                ),
+                effects = EffectsAdjustments(texture = -10f, clarity = -5f)
+            )
+        ),
+        Preset(
+            id = "preset_clean_bright",
+            name = "Clean Bright Airy",
+            group = "Portrait",
+            description = "Luminous high-key tones, radiant whites, and soft airy contrast",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    exposure = 0.40f,
+                    contrast = -10.0f,
+                    highlights = -30.0f,
+                    shadows = 30.0f,
+                    whites = 20.0f,
+                    blacks = 15.0f,
+                    vibrance = 18.0f
+                ),
+                effects = EffectsAdjustments(texture = -8f, clarity = -8f)
             )
         ),
 
@@ -143,6 +295,66 @@ object PresetManager {
                 ),
                 effects = EffectsAdjustments(texture = 25f, clarity = 20f, dehaze = 20f),
                 detail = DetailAdjustments(sharpening = 60f, sharpenRadius = 1.0f, sharpenMasking = 50f)
+            )
+        ),
+        Preset(
+            id = "preset_moody_forest",
+            name = "Moody Forest",
+            group = "Landscape",
+            description = "Deep evergreen tones, cool misty highlights, and muted warm foliage",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    contrast = 15.0f,
+                    highlights = -20.0f,
+                    shadows = -15.0f,
+                    temperature = 5100f,
+                    tint = -8f,
+                    vibrance = 15.0f,
+                    saturation = -15.0f
+                ),
+                effects = EffectsAdjustments(clarity = 18f, dehaze = 10f, vignetteAmount = -25f),
+                colorGrading = ColorGrading(
+                    shadows = ColorGradingWheel(hue = 160f, saturation = 25f, luminance = -8f),
+                    highlights = ColorGradingWheel(hue = 80f, saturation = 20f)
+                )
+            )
+        ),
+        Preset(
+            id = "preset_velvia_vivid",
+            name = "Velvia Vivid",
+            group = "Landscape",
+            description = "High saturation landscape slide film with intense blues and greens",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    contrast = 30.0f,
+                    highlights = -25.0f,
+                    shadows = 15.0f,
+                    vibrance = 45.0f,
+                    saturation = 20.0f
+                ),
+                effects = EffectsAdjustments(clarity = 22f, dehaze = 25f),
+                detail = DetailAdjustments(sharpening = 70f, sharpenMasking = 40f)
+            )
+        ),
+        Preset(
+            id = "preset_sunset_glow",
+            name = "Sunset Glow",
+            group = "Landscape",
+            description = "Crimson clouds, radiant orange horizon, and deepened twilight blues",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    contrast = 20.0f,
+                    highlights = -30.0f,
+                    shadows = 20.0f,
+                    temperature = 6800f,
+                    tint = 15f,
+                    vibrance = 30.0f
+                ),
+                effects = EffectsAdjustments(dehaze = 15f, clarity = 12f),
+                colorGrading = ColorGrading(
+                    shadows = ColorGradingWheel(hue = 240f, saturation = 30f),
+                    highlights = ColorGradingWheel(hue = 25f, saturation = 45f)
+                )
             )
         ),
 
@@ -169,6 +381,60 @@ object PresetManager {
                     grainRoughness = 60f
                 )
             )
+        ),
+        Preset(
+            id = "preset_urban_street",
+            name = "Urban Street",
+            group = "Vintage",
+            description = "Gritty pavement tones, desaturated colors, and high edge definition",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    contrast = 35.0f,
+                    highlights = -20.0f,
+                    shadows = -10.0f,
+                    whites = 20.0f,
+                    blacks = -15.0f,
+                    saturation = -25.0f
+                ),
+                effects = EffectsAdjustments(texture = 30f, clarity = 35f, grainAmount = 25f)
+            )
+        ),
+        Preset(
+            id = "preset_bleach_bypass",
+            name = "Bleach Bypass",
+            group = "Vintage",
+            description = "Silver retention bleach bypass with low saturation and piercing contrast",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    contrast = 45.0f,
+                    highlights = -15.0f,
+                    shadows = -20.0f,
+                    whites = 25.0f,
+                    blacks = -25.0f,
+                    saturation = -60.0f
+                ),
+                effects = EffectsAdjustments(clarity = 40f, grainAmount = 35f)
+            )
+        ),
+        Preset(
+            id = "preset_nostalgia_90s",
+            name = "Nostalgia 90s",
+            group = "Vintage",
+            description = "Disposable camera snapshot look with bright flash and green-tinted shadows",
+            recipe = EditRecipe(
+                basic = BasicAdjustments(
+                    exposure = 0.25f,
+                    contrast = 20.0f,
+                    highlights = 15.0f,
+                    shadows = 10.0f,
+                    temperature = 5300f,
+                    tint = -5f
+                ),
+                effects = EffectsAdjustments(grainAmount = 45f, grainSize = 40f, vignetteAmount = -20f),
+                colorGrading = ColorGrading(
+                    shadows = ColorGradingWheel(hue = 135f, saturation = 20f)
+                )
+            )
         )
     )
 
@@ -187,9 +453,7 @@ object PresetManager {
      * - amount = 100%: 1.0x standard preset application
      * - amount = 200%: 2.0x intensified preset delta
      *
-     * @param base The recipe before applying the preset
-     * @param preset The target preset
-     * @param amount The scaling factor (0 to 200, default 100)
+     * Tips 381 & 392: Interpolates basic, effects, detail, color grading, and runs syncLegacyFields().
      */
     fun applyPresetWithAmount(
         base: EditRecipe,
@@ -235,10 +499,15 @@ object PresetManager {
             sharpenDetail = scaleFloat(base.detail.sharpenDetail, p.detail.sharpenDetail, 0f, 100f),
             sharpenMasking = scaleFloat(base.detail.sharpenMasking, p.detail.sharpenMasking, 0f, 100f),
             luminanceNoise = scaleFloat(base.detail.luminanceNoise, p.detail.luminanceNoise, 0f, 100f),
-            colorNoise = scaleFloat(base.detail.colorNoise, p.detail.colorNoise, 0f, 100f)
+            colorNoise = scaleFloat(base.detail.colorNoise, p.detail.colorNoise, 0f, 100f),
+            vignetteAmount = scaledEffects.vignetteAmount,
+            vignetteMidpoint = scaledEffects.vignetteMidpoint,
+            vignetteFeather = scaledEffects.vignetteFeather,
+            grainAmount = scaledEffects.grainAmount,
+            grainSize = scaledEffects.grainSize,
+            grainRoughness = scaledEffects.grainRoughness
         )
 
-        // Interpolate Color Grading if present
         val scaledColorGrading = if (scale == 0f) {
             base.colorGrading
         } else {
@@ -268,6 +537,6 @@ object PresetManager {
             effects = scaledEffects,
             detail = scaledDetail,
             colorGrading = scaledColorGrading
-        )
+        ).syncLegacyFields()
     }
 }

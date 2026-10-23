@@ -1,12 +1,19 @@
 package com.cleanlr
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
+import com.cleanlr.ui.LightroomLibraryScreen
 import com.cleanlr.ui.editor.EditorScreen
 import com.cleanlr.ui.editor.EditorViewModel
 import com.cleanlr.ui.shortcuts.KeyboardShortcutsHandler
@@ -15,6 +22,7 @@ import com.cleanlr.ui.theme.CleanLightroomTheme
 class MainActivity : ComponentActivity() {
 
     private val viewModel: EditorViewModel by viewModels()
+    private var isEditorVisible by mutableStateOf(false)
     private lateinit var shortcutsHandler: KeyboardShortcutsHandler
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,35 +34,53 @@ class MainActivity : ComponentActivity() {
         }
         shortcutsHandler = KeyboardShortcutsHandler(viewModel)
 
-        handleIncomingIntent(intent)
+        consumeIncomingIntent(intent)
 
         setContent {
             CleanLightroomTheme {
-                EditorScreen(viewModel = viewModel)
+                BackHandler(enabled = isEditorVisible) {
+                    isEditorVisible = false
+                }
+
+                if (isEditorVisible) {
+                    EditorScreen(
+                        viewModel = viewModel,
+                        onBack = { isEditorVisible = false }
+                    )
+                } else {
+                    LightroomLibraryScreen(
+                        onPhotoSelected = { uri ->
+                            viewModel.loadFromUri(uri)
+                            isEditorVisible = true
+                        }
+                    )
+                }
             }
         }
     }
 
-    override fun onNewIntent(intent: android.content.Intent) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleIncomingIntent(intent)
+        consumeIncomingIntent(intent)
     }
 
-    private fun handleIncomingIntent(intent: android.content.Intent?) {
-        if (intent == null) return
-        val uri: android.net.Uri? = when (intent.action) {
-            android.content.Intent.ACTION_VIEW -> intent.data
-            android.content.Intent.ACTION_SEND -> {
+    private fun consumeIncomingIntent(intent: Intent?) {
+        val uri: Uri? = when (intent?.action) {
+            Intent.ACTION_VIEW -> intent.data
+            Intent.ACTION_SEND -> {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM, android.net.Uri::class.java)
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
                 } else {
                     @Suppress("DEPRECATION")
-                    intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM)
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
                 }
             }
             else -> null
         }
-        uri?.let { viewModel.loadFromUri(it) }
+        uri?.let {
+            viewModel.loadFromUri(it)
+            isEditorVisible = true
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

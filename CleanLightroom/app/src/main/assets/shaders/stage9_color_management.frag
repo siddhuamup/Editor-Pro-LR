@@ -9,7 +9,8 @@ out vec4 fragColor;
 
 uniform sampler2D uInputTexture;
 uniform int uTargetGamut; // 0 = sRGB (default), 1 = Display P3
-uniform int uAltClippingMode; // 0 = Normal, 1 = Whites/Exposure (black canvas), 2 = Blacks (white canvas)
+uniform int uAltClippingMode; // 0 = Normal, 1 = Whites/Exposure (black canvas), 2 = Blacks (white canvas), 3 = Sharpen Masking
+uniform float uSharpenMasking; // 0.0 to 1.0 (Tip 302: Dynamic threshold)
 
 // Matrix: ProPhoto RGB Linear to sRGB Linear (row sum = 1.0, preserving neutral gray)
 const mat3 M_proPhoto2sRGB = mat3(
@@ -76,11 +77,11 @@ void main() {
             fragColor = vec4(1.0, 1.0, 1.0, 1.0); // White canvas
         }
         return;
-    } else if (uAltClippingMode == 3) { // Alt + Sharpen Masking (Section 4.1)
+    } else if (uAltClippingMode == 3) { // Alt + Sharpen Masking (Section 4.1 & Tip 302)
         // Black and white edge mask preview: edges white, background black
         float luma = 0.2126 * finalDisplayColor.r + 0.7152 * finalDisplayColor.g + 0.0722 * finalDisplayColor.b;
         float edge = length(vec2(dFdx(luma), dFdy(luma))) * 15.0;
-        float maskVal = step(0.12, edge);
+        float maskVal = step(max(uSharpenMasking * 0.25, 0.005), edge);
         fragColor = vec4(vec3(maskVal), 1.0);
         return;
     }

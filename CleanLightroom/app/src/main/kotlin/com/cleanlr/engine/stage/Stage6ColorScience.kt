@@ -29,6 +29,7 @@ class Stage6ColorScience(private val context: Context) {
     private var locGradeShadows = -1
     private var locGradeMidtones = -1
     private var locGradeHighlights = -1
+    private var locGradeGlobal = -1
     private var locGradeBlending = -1
     private var locGradeBalance = -1
     private var locHslRed = -1
@@ -63,6 +64,7 @@ class Stage6ColorScience(private val context: Context) {
         locGradeShadows = GLES30.glGetUniformLocation(programId, "uGradeShadows")
         locGradeMidtones = GLES30.glGetUniformLocation(programId, "uGradeMidtones")
         locGradeHighlights = GLES30.glGetUniformLocation(programId, "uGradeHighlights")
+        locGradeGlobal = GLES30.glGetUniformLocation(programId, "uGradeGlobal")
         locGradeBlending = GLES30.glGetUniformLocation(programId, "uGradeBlending")
         locGradeBalance = GLES30.glGetUniformLocation(programId, "uGradeBalance")
 
@@ -95,7 +97,12 @@ class Stage6ColorScience(private val context: Context) {
 
         if (grading.shadows.saturation > EPSILON ||
             grading.midtones.saturation > EPSILON ||
-            grading.highlights.saturation > EPSILON
+            grading.highlights.saturation > EPSILON ||
+            grading.global.saturation > EPSILON ||
+            abs(grading.shadows.luminance) > EPSILON ||
+            abs(grading.midtones.luminance) > EPSILON ||
+            abs(grading.highlights.luminance) > EPSILON ||
+            abs(grading.global.luminance) > EPSILON
         ) return false
 
         return isChannelZero(hsl.red) &&
@@ -160,6 +167,12 @@ class Stage6ColorScience(private val context: Context) {
             (grading.highlights.hue / 360.0f) % 1.0f,
             grading.highlights.saturation / 100.0f,
             grading.highlights.luminance / 100.0f
+        )
+        GLES30.glUniform3f(
+            locGradeGlobal,
+            (grading.global.hue / 360.0f) % 1.0f,
+            grading.global.saturation / 100.0f,
+            grading.global.luminance / 100.0f
         )
         GLES30.glUniform1f(locGradeBlending, (grading.blending / 100.0f).coerceIn(0f, 1f))
         GLES30.glUniform1f(locGradeBalance, (grading.balance / 100.0f).coerceIn(-1f, 1f))

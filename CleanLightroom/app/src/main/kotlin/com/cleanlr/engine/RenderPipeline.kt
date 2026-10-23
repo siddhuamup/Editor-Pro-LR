@@ -85,6 +85,7 @@ class RenderPipeline(private val context: Context) {
     val vaoId: Int get() = vaoFboId
     private var imageTextureId = 0
     private var lutTextureId = 0
+    private var maskTextureId = 0
 
     // Ping-Pong FBO chain
     private val pingPong = PingPongFbo()
@@ -494,8 +495,24 @@ class RenderPipeline(private val context: Context) {
 
             // -----------------------------------------------------------------
             // STAGE 5: Masking & Delta Composite (deltamask.fsh)
-            // Bypassed cleanly when no local masks are active
+            // (Section 2.1 Order of Operations: Step 7 Local Masking)
+            // Tip 336: Bypassed cleanly when no local masks are active (120 FPS rule)
             // -----------------------------------------------------------------
+            val activeMaskLayers = activeRecipe.masks.filter { it.enabled && it.subMasks.isNotEmpty() }
+            if (activeMaskLayers.isNotEmpty() && maskTextureId != 0) {
+                val primaryMask = activeMaskLayers.first()
+                val currentReadTex = pingPong.currentRead?.textureId ?: 0
+                if (currentReadTex != 0) {
+                    stage5DeltaMask.process(
+                        hasActiveMask = true,
+                        adjustedTextureId = currentReadTex,
+                        maskTextureId = maskTextureId,
+                        maskIntensity = primaryMask.opacity,
+                        pingPong = pingPong,
+                        vaoId = vaoFboId
+                    )
+                }
+            }
 
             // -----------------------------------------------------------------
             // STAGE 7: Curves & Creative 3D LUTs (Monotone Cubic Splines)
@@ -528,9 +545,18 @@ class RenderPipeline(private val context: Context) {
             // -----------------------------------------------------------------
             // STAGE 8: Details & Effects (Sharpening, Vignette, Film Grain)
             // (Section 2.1 Order of Operations: Step 10 Details)
+            // Tip 293: Sync effects and detail so vignette and grain work whether set in effects or detail
             // -----------------------------------------------------------------
+            val effectiveDetail = activeRecipe.detail.copy(
+                vignetteAmount = if (activeRecipe.effects.vignetteAmount != 0f) activeRecipe.effects.vignetteAmount else activeRecipe.detail.vignetteAmount,
+                vignetteMidpoint = if (activeRecipe.effects.vignetteMidpoint != 50f) activeRecipe.effects.vignetteMidpoint else activeRecipe.detail.vignetteMidpoint,
+                vignetteFeather = if (activeRecipe.effects.vignetteFeather != 50f) activeRecipe.effects.vignetteFeather else activeRecipe.detail.vignetteFeather,
+                grainAmount = if (activeRecipe.effects.grainAmount != 0f) activeRecipe.effects.grainAmount else activeRecipe.detail.grainAmount,
+                grainSize = if (activeRecipe.effects.grainSize != 25f) activeRecipe.effects.grainSize else activeRecipe.detail.grainSize,
+                grainRoughness = if (activeRecipe.effects.grainRoughness != 50f) activeRecipe.effects.grainRoughness else activeRecipe.detail.grainRoughness
+            )
             stage8Details.process(
-                detail = activeRecipe.detail,
+                detail = effectiveDetail,
                 pingPong = pingPong,
                 vaoId = vaoFboId
             )
@@ -541,6 +567,7 @@ class RenderPipeline(private val context: Context) {
         // (Section 2.1 Order of Operations: Step 12 Output Conversion)
         // Blits the high-dynamic range ProPhoto Linear buffer to the screen/target
         // Tip 81: Passes imageWidth & imageHeight for aspect-ratio fit-center viewport
+        // Tip 302: Pass dynamic sharpenMasking threshold for Alt+Masking visualization
         // ---------------------------------------------------------------------
         val finalInputTexture = pingPong.currentRead?.textureId ?: imageTextureId
         stage9ColorManagement.renderToScreen(
@@ -551,6 +578,7 @@ class RenderPipeline(private val context: Context) {
             viewportHeight = viewportHeight,
             vaoId = vaoFboId,
             altClippingMode = if (showOriginal) 0 else altClippingMode,
+            sharpenMasking = activeRecipe.detail.masking / 100f,
             imageWidth = imageWidth,
             imageHeight = imageHeight
         )
@@ -680,12 +708,50 @@ class RenderPipeline(private val context: Context) {
             GLES30.glDeleteTextures(1, intArrayOf(lutTextureId), 0)
             lutTextureId = 0
         }
+        if (maskTextureId != 0) {
+            GLES30.glDeleteTextures(1, intArrayOf(maskTextureId), 0)
+            maskTextureId = 0
+        }
         if (legacyProgramId != 0) {
             GLES30.glDeleteProgram(legacyProgramId)
             legacyProgramId = 0
         }
         gpuHistogramPass.release()
         isInitialized = false
+    }
+
+    /**
+     * Uploads a single-channel 8-bit alpha mask into GPU texture for Stage 5 Delta Masking.
+     */
+    fun uploadMaskAlpha(width: Int, height: Int, alphaData: ByteArray) {
+        if (maskTextureId == 0) {
+            val textures = IntArray(1)
+            GLES30.glGenTextures(1, textures, 0)
+            maskTextureId = textures[0]
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, maskTextureId)
+            GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
+            GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
+            GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE)
+            GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE)
+        } else {
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, maskTextureId)
+        }
+        val buffer = java.nio.ByteBuffer.allocateDirect(alphaData.size).apply {
+            put(alphaData)
+            position(0)
+        }
+        GLES30.glTexImage2D(
+            GLES30.GL_TEXTURE_2D, 0, GLES30.GL_R8, width, height, 0,
+            GLES30.GL_RED, GLES30.GL_UNSIGNED_BYTE, buffer
+        )
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0)
+    }
+
+    fun clearMaskTexture() {
+        if (maskTextureId != 0) {
+            GLES30.glDeleteTextures(1, intArrayOf(maskTextureId), 0)
+            maskTextureId = 0
+        }
     }
 
     private fun readAsset(path: String): String {

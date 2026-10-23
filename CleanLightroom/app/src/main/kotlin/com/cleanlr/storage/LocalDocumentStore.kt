@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * Implements persistent JSON Delta storage for non-destructive edit recipes.
  * Thread-safe concurrent storage supporting fast reads/writes without blocking UI thread.
  */
-class LocalDocumentStore {
+class LocalDocumentStore(private val context: android.content.Context? = null) {
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -31,6 +31,13 @@ class LocalDocumentStore {
             val serialized = json.encodeToString(recipe)
             storage[assetId] = serialized
             timestampMap[assetId] = System.currentTimeMillis()
+            context?.let { ctx ->
+                try {
+                    val dir = java.io.File(ctx.filesDir, "recipes")
+                    if (!dir.exists()) dir.mkdirs()
+                    java.io.File(dir, "$assetId.json").writeText(serialized)
+                } catch (ignored: Exception) {}
+            }
             true
         } catch (e: Exception) {
             false
@@ -38,7 +45,18 @@ class LocalDocumentStore {
     }
 
     fun loadRecipe(assetId: String): EditRecipe? {
-        val serialized = storage[assetId] ?: return null
+        val serialized = storage[assetId] ?: run {
+            context?.let { ctx ->
+                try {
+                    val file = java.io.File(ctx.filesDir, "recipes/$assetId.json")
+                    if (file.exists()) {
+                        val text = file.readText()
+                        storage[assetId] = text
+                        text
+                    } else null
+                } catch (e: Exception) { null }
+            }
+        } ?: return null
         return try {
             json.decodeFromString<EditRecipe>(serialized)
         } catch (e: Exception) {
@@ -48,6 +66,11 @@ class LocalDocumentStore {
 
     fun deleteRecipe(assetId: String): Boolean {
         timestampMap.remove(assetId)
+        context?.let { ctx ->
+            try {
+                java.io.File(ctx.filesDir, "recipes/$assetId.json").delete()
+            } catch (ignored: Exception) {}
+        }
         return storage.remove(assetId) != null
     }
 
@@ -60,6 +83,11 @@ class LocalDocumentStore {
     fun clear() {
         storage.clear()
         timestampMap.clear()
+        context?.let { ctx ->
+            try {
+                java.io.File(ctx.filesDir, "recipes").deleteRecursively()
+            } catch (ignored: Exception) {}
+        }
     }
 }
 

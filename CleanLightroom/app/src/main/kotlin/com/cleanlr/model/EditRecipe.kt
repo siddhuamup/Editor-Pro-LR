@@ -32,6 +32,7 @@ data class EditRecipe(
     val hsl: HslAdjustments = HslAdjustments.default(),
     val colorGrading: ColorGrading = ColorGrading.default(),
     val masks: List<MaskLayer> = emptyList(),
+    val crop: CropAdjustments = CropAdjustments(),
     // Backward compatibility for legacy stage access
     val presence: PresenceAdjustments = PresenceAdjustments(
         texture = effects.texture,
@@ -40,6 +41,80 @@ data class EditRecipe(
         vibrance = basic.vibrance,
         saturation = basic.saturation
     )
+) {
+    /**
+     * Tip 465: Complete Unified EditRecipe Sync Helper
+     * Keeps duplicate fields in basic, effects, presence, and detail 100% synchronized
+     * across Presets, Auto Tone, XMP Import, and the 9-Stage GPU pipeline.
+     */
+    fun syncLegacyFields(): EditRecipe {
+        val syncedVibrance = if (presence.vibrance != 0f && basic.vibrance == 0f) presence.vibrance else basic.vibrance
+        val syncedSaturation = if (presence.saturation != 0f && basic.saturation == 0f) presence.saturation else basic.saturation
+
+        val syncedTexture = if (effects.texture != 0f && presence.texture == 0f) effects.texture else presence.texture
+        val syncedClarity = if (effects.clarity != 0f && presence.clarity == 0f) effects.clarity else presence.clarity
+        val syncedDehaze = if (effects.dehaze != 0f && presence.dehaze == 0f) effects.dehaze else presence.dehaze
+
+        val syncedVignetteAmount = if (effects.vignetteAmount != 0f && detail.vignetteAmount == 0f) effects.vignetteAmount else detail.vignetteAmount
+        val syncedVignetteMidpoint = if (effects.vignetteMidpoint != 50f && detail.vignetteMidpoint == 50f) effects.vignetteMidpoint else detail.vignetteMidpoint
+        val syncedVignetteFeather = if (effects.vignetteFeather != 50f && detail.vignetteFeather == 50f) effects.vignetteFeather else detail.vignetteFeather
+
+        val syncedGrainAmount = if (effects.grainAmount != 0f && detail.grainAmount == 0f) effects.grainAmount else detail.grainAmount
+        val syncedGrainSize = if (effects.grainSize != 25f && detail.grainSize == 25f) effects.grainSize else detail.grainSize
+        val syncedGrainRoughness = if (effects.grainRoughness != 50f && detail.grainRoughness == 50f) effects.grainRoughness else detail.grainRoughness
+
+        val newBasic = basic.copy(vibrance = syncedVibrance, saturation = syncedSaturation)
+        val newPresence = PresenceAdjustments(
+            texture = syncedTexture,
+            clarity = syncedClarity,
+            dehaze = syncedDehaze,
+            vibrance = syncedVibrance,
+            saturation = syncedSaturation
+        )
+        val newEffects = effects.copy(
+            texture = syncedTexture,
+            clarity = syncedClarity,
+            dehaze = syncedDehaze,
+            vignetteAmount = syncedVignetteAmount,
+            vignetteMidpoint = syncedVignetteMidpoint,
+            vignetteFeather = syncedVignetteFeather,
+            grainAmount = syncedGrainAmount,
+            grainSize = syncedGrainSize,
+            grainRoughness = syncedGrainRoughness
+        )
+        val newDetail = detail.copy(
+            vignetteAmount = syncedVignetteAmount,
+            vignetteMidpoint = syncedVignetteMidpoint,
+            vignetteFeather = syncedVignetteFeather,
+            grainAmount = syncedGrainAmount,
+            grainSize = syncedGrainSize,
+            grainRoughness = syncedGrainRoughness
+        )
+        return copy(
+            basic = newBasic,
+            presence = newPresence,
+            effects = newEffects,
+            detail = newDetail
+        )
+    }
+}
+
+/**
+ * Tips 401–420: Non-Destructive Crop & Geometry Adjustments
+ */
+@Serializable
+data class CropAdjustments(
+    val left: Float = 0.0f,
+    val top: Float = 0.0f,
+    val right: Float = 1.0f,
+    val bottom: Float = 1.0f,
+    val rotationDegrees: Float = 0.0f,      // 0, 90, 180, 270 degrees
+    val straightenAngle: Float = 0.0f,      // -45.0f to +45.0f degrees
+    val flipHorizontal: Boolean = false,
+    val flipVertical: Boolean = false,
+    val aspectRatio: String = "Free",       // "Free", "Original", "1:1", "4:5", "16:9", "9:16", "3:2", "4:3"
+    val verticalPerspective: Float = 0.0f,  // -100f to +100f (Tip 413)
+    val horizontalPerspective: Float = 0.0f // -100f to +100f (Tip 413)
 )
 
 @Serializable

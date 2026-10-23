@@ -34,6 +34,7 @@ import com.cleanlr.version.NamedVersion
 import com.cleanlr.version.VersionManager
 
 enum class EditorToolTab(val title: String) {
+    CROP("Crop"),
     LIGHT("Light"),
     COLOR("Color"),
     EFFECTS("Effects"),
@@ -79,12 +80,18 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val versionManager = VersionManager(EditRecipe())
     val versions: StateFlow<List<NamedVersion>> = versionManager.versions
 
-    private val documentStore = LocalDocumentStore()
+    private val documentStore = LocalDocumentStore(application.applicationContext)
     private val autoSaver = DebouncedAutoSaver(documentStore, viewModelScope, 300L)
 
-    val presetGroups = listOf("All") + PresetManager.getGroups()
+    val presetGroups = listOf("All") + PresetManager.getGroups() + listOf("User Presets")
     private val _selectedPresetGroup = MutableStateFlow("All")
     val selectedPresetGroup: StateFlow<String> = _selectedPresetGroup.asStateFlow()
+
+    private val _customPresets = MutableStateFlow<List<Preset>>(emptyList())
+    val customPresets: StateFlow<List<Preset>> = _customPresets.asStateFlow()
+
+    private val _allPresets = MutableStateFlow<List<Preset>>(PresetManager.STARTER_PACK)
+    val allPresets: StateFlow<List<Preset>> = _allPresets.asStateFlow()
 
     private val _activePreset = MutableStateFlow<Preset?>(null)
     val activePreset: StateFlow<Preset?> = _activePreset.asStateFlow()
@@ -125,6 +132,13 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     // Tip 118: Zoom Lock
     private val _isZoomLocked = MutableStateFlow(false)
     val isZoomLocked: StateFlow<Boolean> = _isZoomLocked.asStateFlow()
+
+    // Tips 201 & 202: 3D Film Emulation LUTs
+    private val _activeFilm3dLut = MutableStateFlow(com.cleanlr.engine.stage.Film3dLut.NONE)
+    val activeFilm3dLut: StateFlow<com.cleanlr.engine.stage.Film3dLut> = _activeFilm3dLut.asStateFlow()
+
+    private val _film3dLutIntensity = MutableStateFlow(1.0f)
+    val film3dLutIntensity: StateFlow<Float> = _film3dLutIntensity.asStateFlow()
 
     private val _histogramData = MutableStateFlow(HistogramData())
     val histogramData: StateFlow<HistogramData> = _histogramData.asStateFlow()
@@ -520,6 +534,66 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         autoSaver.scheduleSave("current_photo", _recipe.value)
     }
 
+    // Tip 400: Revert to original before preset application
+    fun resetPreset() {
+        val base = recipeBeforePreset
+        if (base != null) {
+            _recipe.value = base
+            historyManager.commitState(base, "Reset Preset")
+            autoSaver.scheduleSave("current_photo", base)
+        }
+        _activePreset.value = null
+        _presetAmount.value = 100.0f
+    }
+
+    // Tip 383: Save current edit as custom user preset
+    fun saveCustomPreset(name: String, group: String = "User Presets") {
+        val newPreset = Preset(
+            id = "user_preset_${System.currentTimeMillis()}",
+            name = name,
+            group = group,
+            recipe = _recipe.value,
+            description = "Custom preset saved from current edit"
+        )
+        val updated = _customPresets.value + newPreset
+        _customPresets.value = updated
+        _allPresets.value = PresetManager.STARTER_PACK + updated
+        _activePreset.value = newPreset
+        _presetAmount.value = 100f
+        _exportStatus.value = "Preset \"$name\" saved!"
+    }
+
+    // Tip 384: Import Adobe Lightroom .xmp preset file
+    fun importXmpPreset(uri: Uri, context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val content = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                if (content != null) {
+                    val importedRecipe = com.cleanlr.storage.AcrXmpConverter.fromXmp(content)
+                    val fileName = uri.lastPathSegment?.substringAfterLast('/')?.removeSuffix(".xmp") ?: "Imported Preset"
+                    val newPreset = Preset(
+                        id = "xmp_${System.currentTimeMillis()}",
+                        name = fileName,
+                        group = "User Presets",
+                        recipe = importedRecipe,
+                        description = "Imported from .xmp file"
+                    )
+                    val updated = _customPresets.value + newPreset
+                    _customPresets.value = updated
+                    _allPresets.value = PresetManager.STARTER_PACK + updated
+                    withContext(Dispatchers.Main) {
+                        applyPreset(newPreset)
+                        _exportStatus.value = "Imported XMP \"$fileName\""
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _exportStatus.value = "Failed to import XMP: ${e.message}"
+                }
+            }
+        }
+    }
+
     fun createVersion(name: String) {
         versionManager.createVersion(name, _recipe.value)
     }
@@ -574,6 +648,114 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         _recipe.value = reset
     }
 
+    // Tip 512: Reset sliders only (preserves masks and crop adjustments)
+    fun resetSlidersOnly() {
+        val current = _recipe.value
+        val reset = EditRecipe(
+            crop = current.crop,
+            masks = current.masks
+        ).syncLegacyFields()
+        historyManager.commitState(reset, "Reset Sliders Only")
+        _recipe.value = reset
+        autoSaver.scheduleSave("current_photo", reset)
+    }
+
+    // Tip 525: Built-in 4 Demo Scenes
+    enum class DemoScene(val title: String) {
+        SUNSET_LANDSCAPE("Sunset Landscape"),
+        STUDIO_PORTRAIT("Studio Portrait"),
+        NEON_NIGHT("Neon Night City"),
+        ARCHITECTURE("High-Dynamic Architecture")
+    }
+
+    fun loadDemoScene(scene: DemoScene) {
+        viewModelScope.launch(Dispatchers.Default) {
+            val width = 1200
+            val height = 800
+            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bmp)
+            when (scene) {
+                DemoScene.SUNSET_LANDSCAPE -> {
+                    val skyPaint = Paint().apply {
+                        shader = LinearGradient(0f, 0f, 0f, height * 0.65f,
+                            intArrayOf(Color.rgb(20, 45, 90), Color.rgb(180, 85, 45), Color.rgb(240, 160, 60)),
+                            floatArrayOf(0f, 0.7f, 1f), Shader.TileMode.CLAMP)
+                    }
+                    canvas.drawRect(0f, 0f, width.toFloat(), height * 0.65f, skyPaint)
+                    val sunPaint = Paint().apply { color = Color.rgb(255, 245, 200); isAntiAlias = true }
+                    canvas.drawCircle(width * 0.55f, height * 0.52f, 48f, sunPaint)
+                    val mountainPaint = Paint().apply { color = Color.rgb(45, 30, 45); isAntiAlias = true }
+                    val path = Path().apply {
+                        moveTo(0f, height * 0.65f)
+                        lineTo(width * 0.25f, height * 0.42f)
+                        lineTo(width * 0.5f, height * 0.55f)
+                        lineTo(width * 0.75f, height * 0.38f)
+                        lineTo(width.toFloat(), height * 0.65f)
+                        close()
+                    }
+                    canvas.drawPath(path, mountainPaint)
+                    val waterPaint = Paint().apply {
+                        shader = LinearGradient(0f, height * 0.65f, 0f, height.toFloat(),
+                            intArrayOf(Color.rgb(90, 45, 30), Color.rgb(20, 25, 40)), null, Shader.TileMode.CLAMP)
+                    }
+                    canvas.drawRect(0f, height * 0.65f, width.toFloat(), height.toFloat(), waterPaint)
+                }
+                DemoScene.STUDIO_PORTRAIT -> {
+                    val bgPaint = Paint().apply {
+                        shader = RadialGradient(width * 0.5f, height * 0.4f, width * 0.6f,
+                            intArrayOf(Color.rgb(110, 105, 100), Color.rgb(35, 30, 30)), null, Shader.TileMode.CLAMP)
+                    }
+                    canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
+                    val hairPaint = Paint().apply { color = Color.rgb(40, 25, 15); isAntiAlias = true }
+                    canvas.drawCircle(width * 0.5f, height * 0.35f, 160f, hairPaint)
+                    val skinPaint = Paint().apply { color = Color.rgb(228, 175, 140); isAntiAlias = true }
+                    canvas.drawOval(RectF(width * 0.38f, height * 0.22f, width * 0.62f, height * 0.58f), skinPaint)
+                }
+                DemoScene.NEON_NIGHT -> {
+                    val nightPaint = Paint().apply {
+                        shader = LinearGradient(0f, 0f, 0f, height.toFloat(),
+                            intArrayOf(Color.rgb(8, 10, 24), Color.rgb(22, 12, 35)), null, Shader.TileMode.CLAMP)
+                    }
+                    canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), nightPaint)
+                    val neonCyan = Paint().apply { color = Color.rgb(0, 230, 255); strokeWidth = 14f; isAntiAlias = true }
+                    val neonMagenta = Paint().apply { color = Color.rgb(255, 30, 150); strokeWidth = 14f; isAntiAlias = true }
+                    canvas.drawLine(width * 0.2f, height * 0.8f, width * 0.2f, height * 0.2f, neonCyan)
+                    canvas.drawLine(width * 0.8f, height * 0.8f, width * 0.8f, height * 0.2f, neonMagenta)
+                }
+                DemoScene.ARCHITECTURE -> {
+                    val skyPaint = Paint().apply { color = Color.rgb(140, 180, 220) }
+                    canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), skyPaint)
+                    val bldgPaint = Paint().apply {
+                        shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(),
+                            intArrayOf(Color.rgb(240, 240, 245), Color.rgb(60, 65, 75)), null, Shader.TileMode.CLAMP)
+                    }
+                    val path = Path().apply {
+                        moveTo(width * 0.15f, height.toFloat())
+                        lineTo(width * 0.35f, height * 0.15f)
+                        lineTo(width * 0.75f, height * 0.18f)
+                        lineTo(width * 0.9f, height.toFloat())
+                        close()
+                    }
+                    canvas.drawPath(path, bldgPaint)
+                }
+            }
+            withContext(Dispatchers.Main) {
+                _bitmap.value = bmp
+                val metadata = PhotoExifInfo(
+                    fileName = "Demo: ${scene.title}",
+                    cameraModel = "CleanLR Virtual Cam",
+                    lensModel = "50mm f/1.4",
+                    shutterSpeed = "1/250s",
+                    aperture = "f/2.8",
+                    iso = "100",
+                    focalLength = "50mm"
+                )
+                _photoExif.value = metadata
+                _exportStatus.value = "Loaded: ${scene.title}"
+            }
+        }
+    }
+
     override fun setAltClippingMode(mode: Int) {
         _altClippingMode.value = mode
     }
@@ -624,6 +806,43 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     override fun toggleCropActive() {
         _isCropActive.value = !_isCropActive.value
+    }
+
+    fun rotateCrop(clockwise: Boolean) {
+        val current = _recipe.value.crop.rotationDegrees
+        val delta = if (clockwise) 90f else -90f
+        val next = (current + delta + 360f) % 360f
+        updateRecipe("Rotate ${if (clockwise) "CW" else "CCW"}") {
+            it.copy(crop = it.crop.copy(rotationDegrees = next))
+        }
+    }
+
+    fun flipCrop(horizontal: Boolean) {
+        updateRecipe(if (horizontal) "Flip Horizontal" else "Flip Vertical") {
+            if (horizontal) {
+                it.copy(crop = it.crop.copy(flipHorizontal = !it.crop.flipHorizontal))
+            } else {
+                it.copy(crop = it.crop.copy(flipVertical = !it.crop.flipVertical))
+            }
+        }
+    }
+
+    fun setStraightenAngle(angle: Float) {
+        updateRecipe {
+            it.copy(crop = it.crop.copy(straightenAngle = angle.coerceIn(-45f, 45f)))
+        }
+    }
+
+    fun setCropAspectRatio(aspectRatio: String) {
+        updateRecipe("Aspect Ratio $aspectRatio") {
+            it.copy(crop = it.crop.copy(aspectRatio = aspectRatio))
+        }
+    }
+
+    fun resetCrop() {
+        updateRecipe("Reset Crop") {
+            it.copy(crop = CropAdjustments())
+        }
     }
 
     override fun setActiveTool(tool: ActiveTool?) {
@@ -720,8 +939,33 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                 val context = getApplication<Application>()
                 val uri = _sourceUri.value
                 if (uri != null) {
-                    com.cleanlr.export.ExportManager.enqueueSingle(context, uri, current, config)
-                    _exportStatus.value = "Export task scheduled (expedited)"
+                    val workId = com.cleanlr.export.ExportManager.enqueueSingle(context, uri, current, config)
+                    _exportStatus.value = "Export scheduled (0%)..."
+                    WorkManager.getInstance(context).getWorkInfoByIdFlow(workId).collect { workInfo ->
+                        if (workInfo != null) {
+                            when (workInfo.state) {
+                                androidx.work.WorkInfo.State.RUNNING -> {
+                                    val prog = workInfo.progress.getInt("progress", 0)
+                                    _exportStatus.value = if (prog > 0) "Exporting ($prog%)..." else "Exporting..."
+                                }
+                                androidx.work.WorkInfo.State.SUCCEEDED -> {
+                                    val outUriStr = workInfo.outputData.getString(com.cleanlr.export.ExportImageWorker.KEY_OUTPUT_URI)
+                                    if (outUriStr != null) {
+                                        _lastExportedUri.value = android.net.Uri.parse(outUriStr)
+                                    }
+                                    _lastExportedFormat.value = config.format
+                                    _exportStatus.value = "Exported to Pictures/CleanLightroom"
+                                    if (config.autoShare && _lastExportedUri.value != null) {
+                                        shareLastExport(context)
+                                    }
+                                }
+                                androidx.work.WorkInfo.State.FAILED -> {
+                                    _exportStatus.value = "Export failed"
+                                }
+                                else -> {}
+                            }
+                        }
+                    }
                 } else {
                     // Export directly via Headless Renderer
                     val renderer = com.cleanlr.export.HeadlessGlRenderer(context)
@@ -888,6 +1132,11 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     fun isTabModified(tab: EditorToolTab): Boolean {
         val r = _recipe.value
         return when (tab) {
+            EditorToolTab.CROP -> {
+                r.crop.rotationDegrees != 0f || r.crop.straightenAngle != 0f ||
+                r.crop.flipHorizontal || r.crop.flipVertical ||
+                r.crop.left != 0f || r.crop.top != 0f || r.crop.right != 1f || r.crop.bottom != 1f
+            }
             EditorToolTab.LIGHT -> {
                 r.basic.exposure != 0f || r.basic.contrast != 0f ||
                 r.basic.highlights != 0f || r.basic.shadows != 0f ||
@@ -925,6 +1174,9 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     // Tip 25: Reset Single Tab on Long-Press
     fun resetTab(tab: EditorToolTab) {
         when (tab) {
+            EditorToolTab.CROP -> {
+                resetCrop()
+            }
             EditorToolTab.LIGHT -> {
                 updateRecipe("Reset Light") {
                     it.copy(basic = it.basic.copy(
@@ -985,5 +1237,15 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
             "MIXER" -> _isColorMixerExpanded.value = !_isColorMixerExpanded.value
             "GRADING" -> _isColorGradingExpanded.value = !_isColorGradingExpanded.value
         }
+    }
+
+    // Tips 201 & 202: 3D Film Emulation LUTs
+    fun setFilm3dLut(lut: com.cleanlr.engine.stage.Film3dLut) {
+        _activeFilm3dLut.value = lut
+        historyManager.commitState(_recipe.value, "Film LUT: ${lut.label}")
+    }
+
+    fun setFilm3dLutIntensity(intensity: Float) {
+        _film3dLutIntensity.value = intensity.coerceIn(0f, 1f)
     }
 }

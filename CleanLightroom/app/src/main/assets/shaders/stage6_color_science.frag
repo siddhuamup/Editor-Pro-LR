@@ -5,10 +5,12 @@ in vec2 vTexCoord;
 
 uniform sampler2D uImageTexture;
 
-// 3-Way Color Grading Wheels (hue [0..1], sat [0..1], lum [-1..1])
+// 4-Way Color Grading Wheels (hue [0..1], sat [0..1], lum [-1..1])
+// Tip 252 & 284: Added uGradeGlobal for 4th Global wheel
 uniform vec3 uGradeShadows;
 uniform vec3 uGradeMidtones;
 uniform vec3 uGradeHighlights;
+uniform vec3 uGradeGlobal;
 uniform float uGradeBlending; // [0.0 .. 1.0]
 uniform float uGradeBalance;  // [-1.0 .. 1.0]
 
@@ -30,6 +32,31 @@ out vec4 fragColor;
 
 const vec3 PROPHOTO_LUMA = vec3(0.25, 0.50, 0.25);
 const float PI = 3.14159265359;
+
+// Tip 225: ProPhoto <-> sRGB transformation matrices for accurate HSL hue angles
+const mat3 M_proPhoto2sRGB = mat3(
+    1.3459433, -0.2556075, -0.0511118,
+   -0.5445989,  1.5081673,  0.0205351,
+    0.0000000,  0.0000000,  1.2118128
+);
+
+const mat3 M_sRGB2proPhoto = mat3(
+    0.7976749,  0.1351917,  0.0313534,
+    0.2880402,  0.7118741,  0.0000857,
+    0.0000000,  0.0000000,  0.8252100
+);
+
+vec3 lin2srgb(vec3 c) {
+    vec3 a = 12.92 * c;
+    vec3 b = 1.055 * pow(max(c, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055;
+    return mix(a, b, step(0.0031308, c));
+}
+
+vec3 srgb2lin(vec3 c) {
+    vec3 a = c / 12.92;
+    vec3 b = pow((c + 0.055) / 1.055, vec3(2.4));
+    return mix(a, b, step(0.04045, c));
+}
 
 // RGB to HSL conversion
 vec3 rgbToHsl(vec3 c) {
@@ -109,8 +136,9 @@ void main() {
     vec3 col = max(src.rgb, vec3(0.0));
     float lum = dot(col, PROPHOTO_LUMA);
 
-    // 1. Convert to HSL for 8-Channel Mixer and Smart Vibrance
-    vec3 hsl = rgbToHsl(col);
+    // Tip 225: Convert Linear ProPhoto to Display sRGB gamma space before HSL evaluation
+    vec3 srgbCol = lin2srgb(clamp(M_proPhoto2sRGB * col, 0.0, 1.0));
+    vec3 hsl = rgbToHsl(srgbCol);
     float h = hsl.x;
     float s = hsl.y;
     float l = hsl.z;
@@ -119,7 +147,7 @@ void main() {
     // Centers: Red=0.0, Orange=0.0833, Yellow=0.1667, Green=0.3333,
     //          Aqua=0.5000, Blue=0.6667, Purple=0.7778, Magenta=0.8889
     const float sigma = 0.065; // ~23 degree standard deviation for smooth overlap
-    const float sigmaOrange = 0.050; // ~18 degree narrow standard deviation for skin tone protection (Part B Section 2.B)
+    const float sigmaOrange = 0.050; // ~18 degree narrow standard deviation for skin tone protection (Tip 219)
     float wRed     = gaussianHueWeight(h, 0.0000, sigma);
     float wOrange  = gaussianHueWeight(h, 0.0833, sigmaOrange);
     float wYellow  = gaussianHueWeight(h, 0.1667, sigma);
@@ -142,18 +170,19 @@ void main() {
             wMagenta * uHslMagenta
         ) / sumW;
 
-        // Apply HSL Channel Offsets
+        // Apply HSL Channel Offsets (Tip 227: Smooth Hue wrap-around)
         h = fract(h + (deltaHsl.x / 100.0) * (30.0 / 360.0));
         s = clamp(s * (1.0 + deltaHsl.y / 100.0), 0.0, 1.0);
         l = clamp(l * (1.0 + deltaHsl.z / 100.0), 0.0, 1.0);
+
+        // Tip 228: Quick B&W Color Filter Mix when Saturation is -100
+        if (uSaturation <= -99.0) {
+            float bwFilterShift = (deltaHsl.z / 100.0) * 0.40;
+            l = clamp(l + bwFilterShift, 0.0, 1.0);
+        }
     }
 
     // 3. Smart Vibrance (Skin Protection Algorithm) & Global Saturation
-    // Exact Math (Document Section 1.3):
-    // BaseBoost = (uVibrance / 100.0) * (1.0 - S_orig)
-    // SkinDist = |(H - 30°) / 25°|, SkinWeight = clamp(1.0 - SkinDist^2, 0.0, 1.0)
-    // Boost_final = BaseBoost * (1.0 - 0.75 * SkinWeight)
-    // S_new = clamp(S_orig + Boost_final, 0.0, 1.0)
     if (abs(uVibrance) > 0.001) {
         float skinDegDist = hueDistance(h, 30.0 / 360.0) * 360.0;
         float skinDist = skinDegDist / 25.0;
@@ -169,16 +198,11 @@ void main() {
         s = clamp(s * (1.0 + uSaturation / 100.0), 0.0, 1.0);
     }
 
-    // Convert back from HSL to RGB
-    col = hslToRgb(vec3(h, s, l));
+    // Convert back from HSL to sRGB, then back to Linear ProPhoto (Tips 225 & 226)
+    vec3 editedSrgb = hslToRgb(vec3(h, s, l));
+    col = max(M_sRGB2proPhoto * srgb2lin(editedSrgb), vec3(0.0));
 
-    // 4. Color Grading (Section 3.3: 3-Way Wheels: Shadows, Midtones, Highlights)
-    // - Shadows Wheel: Y < 0.33
-    // - Midtones Wheel: 0.15 < Y < 0.85
-    // - Highlights Wheel: Y > 0.66
-    // - Blending Slider (0-100, default 50): controls overlap width between the three zones
-    // - Balance Slider (-100 to +100, default 0): shifts priority (positive tilts to Highlights, negative to Shadows)
-
+    // 4. Color Grading (4-Way Wheels: Shadows, Midtones, Highlights, Global)
     float balShift = uGradeBalance * 0.20; // [-1.0..1.0] -> [-0.20..+0.20]
     float sThreshold = clamp(0.33 - balShift, 0.10, 0.55);
     float hThreshold = clamp(0.66 - balShift, 0.45, 0.90);
@@ -201,12 +225,14 @@ void main() {
     vec3 tintShadow = wheelToRgb(uGradeShadows.x, uGradeShadows.y) * wShadow;
     vec3 tintMid    = wheelToRgb(uGradeMidtones.x, uGradeMidtones.y) * wMid;
     vec3 tintHigh   = wheelToRgb(uGradeHighlights.x, uGradeHighlights.y) * wHigh;
+    vec3 tintGlobal = wheelToRgb(uGradeGlobal.x, uGradeGlobal.y);
 
-    // Apply luminance offsets from the 3 wheels
-    float lumOffset = (uGradeShadows.z * wShadow + uGradeMidtones.z * wMid + uGradeHighlights.z * wHigh) * 0.25;
+    // Apply luminance offsets from the 4 wheels
+    float lumOffset = (uGradeShadows.z * wShadow + uGradeMidtones.z * wMid + uGradeHighlights.z * wHigh + uGradeGlobal.z) * 0.25;
 
-    vec3 gradeTint = tintShadow + tintMid + tintHigh;
-    col = max(col + gradeTint + vec3(lumOffset), vec3(0.0));
+    // Tip 274: gradeTint * smoothstep(0.0, 0.08, lum) to preserve deep pure black values
+    vec3 gradeTint = (tintShadow + tintMid + tintHigh + tintGlobal) * smoothstep(0.0, 0.08, lum);
+    col = max(col + gradeTint + vec3(lumOffset * smoothstep(0.0, 0.08, lum)), vec3(0.0));
 
     fragColor = vec4(col, src.a);
 }

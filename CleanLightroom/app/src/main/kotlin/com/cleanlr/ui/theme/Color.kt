@@ -38,6 +38,9 @@ val SpectrumTextPrimary = spectrum_text_primary
 val spectrum_text_secondary = Color(0xFFA2A2A2)
 val SpectrumTextSecondary = spectrum_text_secondary
 
+val spectrum_text_tertiary = Color(0xFF757575)
+val SpectrumTextTertiary = spectrum_text_tertiary
+
 // Text Disabled (spectrum_text_disabled): #656565 (डिसेबल झालेली बटणे)
 val spectrum_text_disabled = Color(0xFF656565)
 val SpectrumTextDisabled = spectrum_text_disabled

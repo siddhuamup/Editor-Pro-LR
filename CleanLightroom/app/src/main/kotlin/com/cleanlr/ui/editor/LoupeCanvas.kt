@@ -106,6 +106,14 @@ class LoupeGLView(context: Context) : GLSurfaceView(context) {
             requestRender()
         }
     }
+
+    // Tips 201 & 202: 3D Film Emulation LUTs
+    fun setFilm3dLut(lut: com.cleanlr.engine.stage.Film3dLut, intensity: Float) {
+        queueEvent {
+            renderer.setFilm3dLut(lut, intensity)
+            requestRender()
+        }
+    }
 }
 
 class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
@@ -117,17 +125,26 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var showOriginal = false
     private var splitPosition: Float? = null
     private var isSplitHorizontal = false
+    private var film3dLut = com.cleanlr.engine.stage.Film3dLut.NONE
+    private var film3dLutIntensity = 1.0f
 
     var onHistogramUpdated: ((HistogramData) -> Unit)? = null
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         pipeline = RenderPipeline(context).apply {
             initGL()
+            setFilm3dLut(film3dLut, film3dLutIntensity)
         }
         pendingBitmap?.let {
             pipeline?.loadBitmap(it)
             pendingBitmap = null
         }
+    }
+
+    fun setFilm3dLut(lut: com.cleanlr.engine.stage.Film3dLut, intensity: Float) {
+        film3dLut = lut
+        film3dLutIntensity = intensity
+        pipeline?.setFilm3dLut(lut, intensity)
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -240,6 +257,8 @@ fun LoupeCanvas(
     photoExif: PhotoExifInfo? = null,
     showGrid: Boolean = false,
     aspectRatioGuide: String? = null,
+    film3dLut: com.cleanlr.engine.stage.Film3dLut = com.cleanlr.engine.stage.Film3dLut.NONE,
+    film3dLutIntensity: Float = 1.0f,
     onNextPhoto: (() -> Unit)? = null,
     onPrevPhoto: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -319,8 +338,9 @@ fun LoupeCanvas(
     // Brush cursor touch point
     var brushTouchPos by remember { mutableStateOf<Offset?>(null) }
 
-    // Update GLView when recipe, split view, or comparison changes
-    LaunchedEffect(recipe, altClippingMode, isComparingOriginal, isSplitView, splitPosition, isSplitHorizontal) {
+    // Update GLView when recipe, split view, comparison, or 3D LUT changes
+    LaunchedEffect(recipe, altClippingMode, isComparingOriginal, isSplitView, splitPosition, isSplitHorizontal, film3dLut, film3dLutIntensity) {
+        glView?.setFilm3dLut(film3dLut, film3dLutIntensity)
         glView?.updateRecipe(
             recipe = recipe,
             altClippingMode = altClippingMode,

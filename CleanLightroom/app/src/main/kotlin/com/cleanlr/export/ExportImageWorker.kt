@@ -124,13 +124,17 @@ class ExportImageWorker(
             setProgress(workDataOf("progress" to 80))
 
             // Save to MediaStore via MediaStoreWriter
-            val outputUri = MediaStoreWriter.saveImage(
-                context = applicationContext,
-                bitmap = renderedBitmap,
-                config = config,
-                recipe = recipe,
-                sourceUri = sourceUri
-            )
+            val outputUri = try {
+                MediaStoreWriter.saveImage(
+                    context = applicationContext,
+                    bitmap = renderedBitmap,
+                    config = config,
+                    recipe = recipe,
+                    sourceUri = sourceUri
+                )
+            } finally {
+                renderedBitmap.recycle()
+            }
 
             setProgress(workDataOf("progress" to 100))
 

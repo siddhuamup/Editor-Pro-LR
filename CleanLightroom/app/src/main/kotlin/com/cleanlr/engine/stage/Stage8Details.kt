@@ -27,12 +27,16 @@ class Stage8Details(private val context: Context) {
     private var locTexelSize = -1
     private var locSharpenAmount = -1
     private var locSharpenRadius = -1
+    private var locSharpenDetail = -1
     private var locSharpenMasking = -1
+    private var locLuminanceNoise = -1
+    private var locColorNoise = -1
     private var locVignetteAmount = -1
     private var locVignetteMidpoint = -1
     private var locVignetteFeather = -1
     private var locGrainAmount = -1
     private var locGrainSize = -1
+    private var locGrainRoughness = -1
     private var locTimeSeed = -1
 
     var isInitialized = false
@@ -56,12 +60,16 @@ class Stage8Details(private val context: Context) {
         locTexelSize = GLES30.glGetUniformLocation(programId, "uTexelSize")
         locSharpenAmount = GLES30.glGetUniformLocation(programId, "uSharpenAmount")
         locSharpenRadius = GLES30.glGetUniformLocation(programId, "uSharpenRadius")
+        locSharpenDetail = GLES30.glGetUniformLocation(programId, "uSharpenDetail")
         locSharpenMasking = GLES30.glGetUniformLocation(programId, "uSharpenMasking")
+        locLuminanceNoise = GLES30.glGetUniformLocation(programId, "uLuminanceNoise")
+        locColorNoise = GLES30.glGetUniformLocation(programId, "uColorNoise")
         locVignetteAmount = GLES30.glGetUniformLocation(programId, "uVignetteAmount")
         locVignetteMidpoint = GLES30.glGetUniformLocation(programId, "uVignetteMidpoint")
         locVignetteFeather = GLES30.glGetUniformLocation(programId, "uVignetteFeather")
         locGrainAmount = GLES30.glGetUniformLocation(programId, "uGrainAmount")
         locGrainSize = GLES30.glGetUniformLocation(programId, "uGrainSize")
+        locGrainRoughness = GLES30.glGetUniformLocation(programId, "uGrainRoughness")
         locTimeSeed = GLES30.glGetUniformLocation(programId, "uTimeSeed")
 
         isInitialized = true
@@ -70,12 +78,14 @@ class Stage8Details(private val context: Context) {
 
     /**
      * Determines whether Stage 8 has active adjustments.
-     * Skip-disabled-stages rule: Returns false if sharpening, vignette, and grain are zero.
+     * Skip-disabled-stages rule: Returns true if sharpening, vignette, grain, and noise reduction are zero (Tips 322, 323).
      */
     fun shouldSkip(detail: DetailAdjustments): Boolean {
         return abs(detail.sharpening) < EPSILON &&
                abs(detail.vignetteAmount) < EPSILON &&
-               abs(detail.grainAmount) < EPSILON
+               abs(detail.grainAmount) < EPSILON &&
+               abs(detail.noiseReduction) < EPSILON &&
+               abs(detail.colorNoise - 25.0f) < EPSILON
     }
 
     /**
@@ -116,17 +126,23 @@ class Stage8Details(private val context: Context) {
         // Sharpening uniforms (normalized)
         GLES30.glUniform1f(locSharpenAmount, detail.sharpening / 100.0f)
         GLES30.glUniform1f(locSharpenRadius, detail.sharpenRadius.coerceIn(0.5f, 3.0f))
+        GLES30.glUniform1f(locSharpenDetail, detail.sharpenDetail / 100.0f)
         GLES30.glUniform1f(locSharpenMasking, detail.masking / 100.0f)
+
+        // Noise Reduction uniforms (Tip 294)
+        GLES30.glUniform1f(locLuminanceNoise, detail.noiseReduction / 100.0f)
+        GLES30.glUniform1f(locColorNoise, detail.colorNoise / 100.0f)
 
         // Vignette uniforms
         GLES30.glUniform1f(locVignetteAmount, detail.vignetteAmount / 100.0f)
         GLES30.glUniform1f(locVignetteMidpoint, (detail.vignetteMidpoint / 100.0f).coerceIn(0.0f, 1.0f))
         GLES30.glUniform1f(locVignetteFeather, (detail.vignetteFeather / 100.0f).coerceIn(0.01f, 1.0f))
 
-        // Grain uniforms
+        // Grain uniforms (Tip 307: roughness)
         GLES30.glUniform1f(locGrainAmount, detail.grainAmount / 100.0f)
         val mappedGrainSize = 1.0f + (detail.grainSize / 100.0f) * 3.0f
         GLES30.glUniform1f(locGrainSize, mappedGrainSize)
+        GLES30.glUniform1f(locGrainRoughness, detail.grainRoughness / 100.0f)
         GLES30.glUniform1f(locTimeSeed, seed)
 
         // Draw quad

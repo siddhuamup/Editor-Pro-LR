@@ -25,6 +25,7 @@ class Stage9ColorManagement(private val context: Context) {
     private var locInputTexture = -1
     private var locTargetGamut = -1
     private var locAltClippingMode = -1
+    private var locSharpenMasking = -1
 
     var isInitialized = false
         private set
@@ -46,6 +47,7 @@ class Stage9ColorManagement(private val context: Context) {
         locInputTexture = GLES30.glGetUniformLocation(programId, "uInputTexture")
         locTargetGamut = GLES30.glGetUniformLocation(programId, "uTargetGamut")
         locAltClippingMode = GLES30.glGetUniformLocation(programId, "uAltClippingMode")
+        locSharpenMasking = GLES30.glGetUniformLocation(programId, "uSharpenMasking")
 
         isInitialized = true
         Log.d(TAG, "Stage 9 Color Management initialized successfully")
@@ -63,7 +65,8 @@ class Stage9ColorManagement(private val context: Context) {
         vaoId: Int,
         altClippingMode: Int = 0,
         imageWidth: Int = 0,
-        imageHeight: Int = 0
+        imageHeight: Int = 0,
+        sharpenMasking: Float = 0.0f
     ) {
         if (!isInitialized || inputTextureId <= 0) return
 
@@ -91,6 +94,7 @@ class Stage9ColorManagement(private val context: Context) {
         // Target Gamut (0 = sRGB, 1 = Display P3)
         GLES30.glUniform1i(locTargetGamut, targetGamut)
         GLES30.glUniform1i(locAltClippingMode, altClippingMode)
+        GLES30.glUniform1f(locSharpenMasking, sharpenMasking)
 
         // Draw quad
         GLES30.glBindVertexArray(vaoId)
@@ -105,7 +109,8 @@ class Stage9ColorManagement(private val context: Context) {
         pingPong: PingPongFbo,
         targetGamut: Int = GAMUT_SRGB,
         vaoId: Int,
-        altClippingMode: Int = 0
+        altClippingMode: Int = 0,
+        sharpenMasking: Float = 0.0f
     ): Boolean {
         if (!isInitialized) return false
 
@@ -121,6 +126,7 @@ class Stage9ColorManagement(private val context: Context) {
 
         GLES30.glUniform1i(locTargetGamut, targetGamut)
         GLES30.glUniform1i(locAltClippingMode, altClippingMode)
+        GLES30.glUniform1f(locSharpenMasking, sharpenMasking)
 
         GLES30.glBindVertexArray(vaoId)
         GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4)

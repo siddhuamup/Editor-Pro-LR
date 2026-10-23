@@ -1,41 +1,156 @@
 package com.cleanlr.ui.components
 
+import android.view.HapticFeedbackConstants
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cleanlr.engine.TatChannelWeights
 import com.cleanlr.model.HslAdjustments
 import com.cleanlr.model.HslChannel
-import com.cleanlr.ui.theme.SpectrumBorder
-import com.cleanlr.ui.theme.SpectrumTextPrimary
+import com.cleanlr.ui.theme.*
+import kotlin.math.abs
 
-enum class HslColor(val title: String, val color: Color) {
-    RED("Red", Color(0xFFE53935)),
-    ORANGE("Orange", Color(0xFFFB8C00)),
-    YELLOW("Yellow", Color(0xFFFDD835)),
-    GREEN("Green", Color(0xFF43A047)),
-    AQUA("Aqua", Color(0xFF00ACC1)),
-    BLUE("Blue", Color(0xFF1E88E5)),
-    PURPLE("Purple", Color(0xFF8E24AA)),
-    MAGENTA("Magenta", Color(0xFFD81B60))
+/**
+ * Tip 209: HSL View Modes
+ */
+enum class HslViewMode(val label: String) {
+    BY_COLOR("By Color"),
+    ALL_COLORS("All Colors")
 }
 
+enum class HslTargetProperty(val label: String) {
+    HUE("Hue"),
+    SATURATION("Saturation"),
+    LUMINANCE("Luminance")
+}
+
+/**
+ * 8 Adobe Spectrum Colors with Abbr and Hue Transitions (Tips 212–214, 222)
+ */
+enum class HslColor(
+    val title: String,
+    val abbr: String,
+    val color: Color,
+    val hueGradient: List<Color>,
+    val darkColor: Color,
+    val lightColor: Color
+) {
+    RED(
+        title = "Red",
+        abbr = "R",
+        color = Color(0xFFE53935),
+        hueGradient = listOf(Color(0xFFD81B60), Color(0xFFE53935), Color(0xFFFB8C00)),
+        darkColor = Color(0xFF5D0000),
+        lightColor = Color(0xFFFF8A80)
+    ),
+    ORANGE(
+        title = "Orange",
+        abbr = "O",
+        color = Color(0xFFFB8C00),
+        hueGradient = listOf(Color(0xFFE53935), Color(0xFFFB8C00), Color(0xFFFDD835)),
+        darkColor = Color(0xFF6B3B00),
+        lightColor = Color(0xFFFFD180)
+    ),
+    YELLOW(
+        title = "Yellow",
+        abbr = "Y",
+        color = Color(0xFFFDD835),
+        hueGradient = listOf(Color(0xFFFB8C00), Color(0xFFFDD835), Color(0xFF43A047)),
+        darkColor = Color(0xFF706000),
+        lightColor = Color(0xFFFFFF8D)
+    ),
+    GREEN(
+        title = "Green",
+        abbr = "G",
+        color = Color(0xFF43A047),
+        hueGradient = listOf(Color(0xFFFDD835), Color(0xFF43A047), Color(0xFF00ACC1)),
+        darkColor = Color(0xFF004D15),
+        lightColor = Color(0xFFB9F6CA)
+    ),
+    AQUA(
+        title = "Aqua",
+        abbr = "A",
+        color = Color(0xFF00ACC1),
+        hueGradient = listOf(Color(0xFF43A047), Color(0xFF00ACC1), Color(0xFF1E88E5)),
+        darkColor = Color(0xFF004852),
+        lightColor = Color(0xFF84FFFF)
+    ),
+    BLUE(
+        title = "Blue",
+        abbr = "B",
+        color = Color(0xFF1E88E5),
+        hueGradient = listOf(Color(0xFF00ACC1), Color(0xFF1E88E5), Color(0xFF8E24AA)),
+        darkColor = Color(0xFF002B66),
+        lightColor = Color(0xFF82B1FF)
+    ),
+    PURPLE(
+        title = "Purple",
+        abbr = "P",
+        color = Color(0xFF8E24AA),
+        hueGradient = listOf(Color(0xFF1E88E5), Color(0xFF8E24AA), Color(0xFFD81B60)),
+        darkColor = Color(0xFF420054),
+        lightColor = Color(0xFFEA80FC)
+    ),
+    MAGENTA(
+        title = "Magenta",
+        abbr = "M",
+        color = Color(0xFFD81B60),
+        hueGradient = listOf(Color(0xFF8E24AA), Color(0xFFD81B60), Color(0xFFE53935)),
+        darkColor = Color(0xFF5E0025),
+        lightColor = Color(0xFFFF80AB)
+    )
+}
+
+/**
+ * HslMixerPanel — Pro Lightroom 8-Channel Color Mixer
+ * Implements Tips 209 to 250
+ */
 @Composable
 fun HslMixerPanel(
     hsl: HslAdjustments,
     onHslChanged: (HslAdjustments) -> Unit,
+    activeTatWeights: TatChannelWeights? = null,
+    activeTatTargetName: String? = null,
+    isMonochrome: Boolean = false,
+    onTouchStart: () -> Unit = {},
+    onTouchEnd: (actionName: String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val view = LocalView.current
+    var viewMode by remember { mutableStateOf(HslViewMode.BY_COLOR) }
     var selectedColor by remember { mutableStateOf(HslColor.RED) }
+    var allColorsTargetProperty by remember { mutableStateOf(HslTargetProperty.SATURATION) }
+
+    // Tip 215: Auto-select swatch when TAT samples a color
+    LaunchedEffect(activeTatTargetName) {
+        activeTatTargetName?.let { name ->
+            HslColor.values().firstOrNull { it.title.equals(name, ignoreCase = true) }?.let {
+                selectedColor = it
+            }
+        }
+    }
 
     fun getChannel(color: HslColor): HslChannel = when (color) {
         HslColor.RED -> hsl.red
@@ -62,64 +177,292 @@ fun HslMixerPanel(
         onHslChanged(updated)
     }
 
+    fun isChannelModified(color: HslColor): Boolean {
+        val ch = getChannel(color)
+        return abs(ch.hue) > 0.01f || abs(ch.saturation) > 0.01f || abs(ch.luminance) > 0.01f
+    }
+
+    fun resetChannel(color: HslColor) {
+        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        updateChannel(color, HslChannel(0f, 0f, 0f))
+        onTouchEnd("Reset ${color.title}")
+    }
+
+    fun resetAllChannels() {
+        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        onHslChanged(HslAdjustments.default())
+        onTouchEnd("Reset All HSL")
+    }
+
     val activeChannel = getChannel(selectedColor)
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(vertical = 4.dp)
     ) {
-        // Swatches Row
+        // Mode Switcher & Header Bar
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            HslColor.values().forEach { col ->
-                val isSelected = col == selectedColor
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(col.color)
-                        .clickable { selectedColor = col }
-                        .then(
-                            if (isSelected) Modifier.border(2.dp, Color.White, CircleShape)
-                            else Modifier.border(1.dp, SpectrumBorder, CircleShape)
+            // View Mode Chips
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                HslViewMode.values().forEach { mode ->
+                    val isSelected = viewMode == mode
+                    Surface(
+                        color = if (isSelected) SpectrumBlue else SpectrumElevated,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            viewMode = mode
+                        }
+                    ) {
+                        Text(
+                            text = mode.label,
+                            color = if (isSelected) Color.White else SpectrumTextSecondary,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
+                    }
+                }
+            }
+
+            // Reset All Button (Tip 220)
+            IconButton(
+                onClick = { resetAllChannels() },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.RestartAlt,
+                    contentDescription = "Reset All 8 Colors",
+                    tint = SpectrumIconNormal,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
-        Text(
-            text = "${selectedColor.title} Color Mixer",
-            color = SpectrumTextPrimary,
-            fontSize = 13.sp,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-        )
+        if (viewMode == HslViewMode.BY_COLOR) {
+            // Tip 232: Compact 8-Color Swatches Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HslColor.values().forEach { col ->
+                    val isSelected = col == selectedColor
+                    val isModified = isChannelModified(col)
+                    val sizeAnim by animateDpAsState(
+                        targetValue = if (isSelected) 34.dp else 28.dp,
+                        animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
+                        label = "swatchSize"
+                    )
 
-        RampedSlider(
-            label = "Hue",
-            value = activeChannel.hue,
-            minVal = -100f,
-            maxVal = 100f,
-            onValueChange = { updateChannel(selectedColor, activeChannel.copy(hue = it)) }
-        )
-        RampedSlider(
-            label = "Saturation",
-            value = activeChannel.saturation,
-            minVal = -100f,
-            maxVal = 100f,
-            onValueChange = { updateChannel(selectedColor, activeChannel.copy(saturation = it)) }
-        )
-        RampedSlider(
-            label = "Luminance",
-            value = activeChannel.luminance,
-            minVal = -100f,
-            maxVal = 100f,
-            onValueChange = { updateChannel(selectedColor, activeChannel.copy(luminance = it)) }
-        )
+                    // Tip 216: Dual-Channel Weight Ring if active in TAT
+                    val isTatTarget = activeTatTargetName?.equals(col.title, ignoreCase = true) == true
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.pointerInput(col) {
+                            detectTapGestures(
+                                onTap = {
+                                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                    selectedColor = col
+                                },
+                                onDoubleTap = {
+                                    resetChannel(col)
+                                }
+                            )
+                        }
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(sizeAnim)
+                                .clip(CircleShape)
+                                .background(col.color)
+                                .then(
+                                    if (isTatTarget) {
+                                        Modifier.border(2.5.dp, SpectrumBlue, CircleShape)
+                                    } else if (isSelected) {
+                                        Modifier.border(2.dp, Color.White, CircleShape)
+                                    } else {
+                                        Modifier.border(1.dp, Color(0xFF383838), CircleShape)
+                                    }
+                                )
+                        ) {
+                            // Tip 222: Abbr Letter
+                            Text(
+                                text = col.abbr,
+                                color = if (col == HslColor.YELLOW) Color.Black else Color.White,
+                                fontSize = if (isSelected) 11.sp else 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        // Tip 210: Active Modification Dot
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 3.dp)
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(if (isModified) Color.White else Color.Transparent)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Section Title & Badges
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Tip 228: Title changes to "B&W Mix (Luminance)" when in B&W mode
+                Text(
+                    text = if (isMonochrome) "${selectedColor.title} B&W Mix" else "${selectedColor.title} Color Mixer",
+                    color = SpectrumTextPrimary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                // Tip 219: Skin-Tone Protection Badge for Orange
+                if (selectedColor == HslColor.ORANGE && !isMonochrome) {
+                    Surface(
+                        color = Color(0x33FB8C00),
+                        shape = RoundedCornerShape(4.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x66FB8C00))
+                    ) {
+                        Text(
+                            text = "Skin Safe (18° Gauss)",
+                            color = Color(0xFFFFB74D),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
+
+            // Tip 212: Dynamic Hue Track Gradient
+            val hueBrush = remember(selectedColor) {
+                Brush.horizontalGradient(selectedColor.hueGradient)
+            }
+            // Tip 213: Dynamic Saturation Track Gradient
+            val satBrush = remember(selectedColor) {
+                Brush.horizontalGradient(listOf(Color(0xFF707070), selectedColor.color))
+            }
+            // Tip 214: Dynamic Luminance Track Gradient
+            val lumBrush = remember(selectedColor) {
+                Brush.horizontalGradient(listOf(selectedColor.darkColor, selectedColor.lightColor))
+            }
+
+            if (!isMonochrome) {
+                RampedSlider(
+                    label = "Hue",
+                    value = activeChannel.hue,
+                    minVal = -100f,
+                    maxVal = 100f,
+                    trackBrush = hueBrush,
+                    formatPattern = "%+.0f°",
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = { updateChannel(selectedColor, activeChannel.copy(hue = it)) },
+                    onValueChangeEnd = { onTouchEnd("Hue ${selectedColor.title}") }
+                )
+                RampedSlider(
+                    label = "Saturation",
+                    value = activeChannel.saturation,
+                    minVal = -100f,
+                    maxVal = 100f,
+                    trackBrush = satBrush,
+                    formatPattern = "%+.0f",
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = { updateChannel(selectedColor, activeChannel.copy(saturation = it)) },
+                    onValueChangeEnd = { onTouchEnd("Saturation ${selectedColor.title}") }
+                )
+            }
+
+            RampedSlider(
+                label = if (isMonochrome) "Luminance (B&W)" else "Luminance",
+                value = activeChannel.luminance,
+                minVal = -100f,
+                maxVal = 100f,
+                trackBrush = lumBrush,
+                formatPattern = "%+.0f",
+                onValueChangeStart = onTouchStart,
+                onValueChange = { updateChannel(selectedColor, activeChannel.copy(luminance = it)) },
+                onValueChangeEnd = { onTouchEnd("Luminance ${selectedColor.title}") }
+            )
+
+        } else {
+            // ALL_COLORS mode: Sub-tabs for H / S / L (Tip 209)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                HslTargetProperty.values().forEach { prop ->
+                    val isSelected = allColorsTargetProperty == prop
+                    Surface(
+                        color = if (isSelected) SpectrumBlue else SpectrumElevated,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            allColorsTargetProperty = prop
+                        }
+                    ) {
+                        Text(
+                            text = prop.label,
+                            color = if (isSelected) Color.White else SpectrumTextSecondary,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            // 8 Sliders in a row for the selected property
+            HslColor.values().forEach { col ->
+                val ch = getChannel(col)
+                val (value, brush, label) = when (allColorsTargetProperty) {
+                    HslTargetProperty.HUE -> Triple(ch.hue, Brush.horizontalGradient(col.hueGradient), "${col.title} Hue")
+                    HslTargetProperty.SATURATION -> Triple(ch.saturation, Brush.horizontalGradient(listOf(Color(0xFF707070), col.color)), "${col.title} Saturation")
+                    HslTargetProperty.LUMINANCE -> Triple(ch.luminance, Brush.horizontalGradient(listOf(col.darkColor, col.lightColor)), "${col.title} Luminance")
+                }
+
+                RampedSlider(
+                    label = col.title,
+                    value = value,
+                    minVal = -100f,
+                    maxVal = 100f,
+                    trackBrush = brush,
+                    formatPattern = if (allColorsTargetProperty == HslTargetProperty.HUE) "%+.0f°" else "%+.0f",
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = { newVal ->
+                        val updated = when (allColorsTargetProperty) {
+                            HslTargetProperty.HUE -> ch.copy(hue = newVal)
+                            HslTargetProperty.SATURATION -> ch.copy(saturation = newVal)
+                            HslTargetProperty.LUMINANCE -> ch.copy(luminance = newVal)
+                        }
+                        updateChannel(col, updated)
+                    },
+                    onValueChangeEnd = { onTouchEnd(label) }
+                )
+            }
+        }
     }
 }

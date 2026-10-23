@@ -1,203 +1,573 @@
 package com.cleanlr.ui.components
 
+import android.view.HapticFeedbackConstants
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cleanlr.model.ColorGrading
 import com.cleanlr.model.ColorGradingWheel
-import com.cleanlr.ui.theme.SpectrumBlue
-import com.cleanlr.ui.theme.SpectrumBorder
-import com.cleanlr.ui.theme.SpectrumElevated
-import com.cleanlr.ui.theme.SpectrumTextPrimary
+import com.cleanlr.ui.theme.*
 import kotlin.math.*
 
+/**
+ * Tip 252: 4-Way Color Grading Targets (Shadows, Midtones, Highlights, Global)
+ */
 enum class GradingTarget(val label: String) {
     SHADOWS("Shadows"),
     MIDTONES("Midtones"),
-    HIGHLIGHTS("Highlights")
+    HIGHLIGHTS("Highlights"),
+    GLOBAL("Global")
 }
 
+/**
+ * ColorGradingWheelWidget — Complete Pro 3-Way & Global Color Grading Wheels
+ * Implements Tips 251 to 290
+ */
 @Composable
 fun ColorGradingWheelWidget(
     colorGrading: ColorGrading,
     onColorGradingChanged: (ColorGrading) -> Unit,
+    onTouchStart: () -> Unit = {},
+    onTouchEnd: (actionName: String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val view = LocalView.current
     var activeTarget by remember { mutableStateOf(GradingTarget.SHADOWS) }
+    var is3UpMode by remember { mutableStateOf(false) } // Tip 253: 3-Up Simultaneous view
+    var showFineSliders by remember { mutableStateOf(false) } // Tip 262: Collapsible H/S sliders
 
     val activeWheel = when (activeTarget) {
         GradingTarget.SHADOWS -> colorGrading.shadows
         GradingTarget.MIDTONES -> colorGrading.midtones
         GradingTarget.HIGHLIGHTS -> colorGrading.highlights
+        GradingTarget.GLOBAL -> colorGrading.global
     }
 
-    fun updateActiveWheel(newWheel: ColorGradingWheel) {
-        val updated = when (activeTarget) {
+    fun updateWheelForTarget(target: GradingTarget, newWheel: ColorGradingWheel) {
+        val updated = when (target) {
             GradingTarget.SHADOWS -> colorGrading.copy(shadows = newWheel)
             GradingTarget.MIDTONES -> colorGrading.copy(midtones = newWheel)
             GradingTarget.HIGHLIGHTS -> colorGrading.copy(highlights = newWheel)
+            GradingTarget.GLOBAL -> colorGrading.copy(global = newWheel)
         }
         onColorGradingChanged(updated)
+    }
+
+    fun updateActiveWheel(newWheel: ColorGradingWheel) {
+        updateWheelForTarget(activeTarget, newWheel)
+    }
+
+    // Helper to calculate Color from Hue & Saturation
+    fun getTintPreviewColor(wheel: ColorGradingWheel): Color {
+        if (wheel.saturation <= 0.01f) return Color.Transparent
+        val h = (wheel.hue % 360f) / 360f
+        val s = (wheel.saturation / 100f).coerceIn(0f, 1f)
+        return Color.hsl(h * 360f, s, 0.5f)
     }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Target tabs
+        // Target Tabs & Controls Bar
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            GradingTarget.values().forEach { target ->
-                val isSelected = target == activeTarget
-                Button(
-                    onClick = { activeTarget = target },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isSelected) SpectrumBlue else SpectrumElevated,
-                        contentColor = SpectrumTextPrimary
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier.height(32.dp)
+            // Target Selector Chips (Tip 258: Swatch preview dot on tabs)
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                GradingTarget.values().forEach { target ->
+                    val isSelected = target == activeTarget && !is3UpMode
+                    val targetWheel = when (target) {
+                        GradingTarget.SHADOWS -> colorGrading.shadows
+                        GradingTarget.MIDTONES -> colorGrading.midtones
+                        GradingTarget.HIGHLIGHTS -> colorGrading.highlights
+                        GradingTarget.GLOBAL -> colorGrading.global
+                    }
+                    val tintColor = getTintPreviewColor(targetWheel)
+
+                    Surface(
+                        color = if (isSelected) SpectrumBlue else SpectrumElevated,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            is3UpMode = false
+                            activeTarget = target
+                        }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            if (targetWheel.saturation > 0.01f) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(tintColor)
+                                        .border(1.dp, Color.White, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                            }
+                            Text(
+                                text = target.label,
+                                color = if (isSelected) Color.White else SpectrumTextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Controls: 3-Up toggle and Reset All
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Tip 253: 3-Up Grid Switcher
+                IconButton(
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        is3UpMode = !is3UpMode
+                    },
+                    modifier = Modifier.size(28.dp)
                 ) {
-                    Text(text = target.label, fontSize = 12.sp)
+                    Icon(
+                        imageVector = if (is3UpMode) Icons.Default.ViewCarousel else Icons.Default.GridOn,
+                        contentDescription = "Toggle 3-Up Wheels View",
+                        tint = if (is3UpMode) SpectrumBlue else SpectrumIconNormal,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                // Tip 285: Reset All Color Grading
+                IconButton(
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        onColorGradingChanged(ColorGrading())
+                        onTouchEnd("Reset All Color Grading")
+                    },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.RestartAlt,
+                        contentDescription = "Reset All Grading",
+                        tint = SpectrumIconNormal,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
-        // Color Disc Canvas
-        Box(
+        if (is3UpMode) {
+            // Tip 253: 3-Up Simultaneous Mini Wheels View
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                listOf(
+                    GradingTarget.SHADOWS to colorGrading.shadows,
+                    GradingTarget.MIDTONES to colorGrading.midtones,
+                    GradingTarget.HIGHLIGHTS to colorGrading.highlights
+                ).forEach { (target, wheel) ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = target.label,
+                            color = SpectrumTextSecondary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        SingleColorGradingWheelCanvas(
+                            wheel = wheel,
+                            diameterDp = 92,
+                            onWheelChanged = { updated ->
+                                updateWheelForTarget(target, updated)
+                            },
+                            onTouchStart = onTouchStart,
+                            onTouchEnd = { onTouchEnd("${target.label} Wheel") }
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (wheel.saturation > 0.01f) "${wheel.hue.toInt()}° • ${wheel.saturation.toInt()}%" else "Neutral",
+                            color = SpectrumTextTertiary,
+                            fontSize = 10.sp
+                        )
+                    }
+                }
+            }
+        } else {
+            // Tip 270 & 271: Side-by-Side Row Layout (Wheel on Left, Sliders on Right)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Left: 140dp Single Wheel Canvas with live H/S Readout
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    SingleColorGradingWheelCanvas(
+                        wheel = activeWheel,
+                        diameterDp = 140,
+                        onWheelChanged = { updated ->
+                            updateActiveWheel(updated)
+                        },
+                        onTouchStart = onTouchStart,
+                        onTouchEnd = { onTouchEnd("${activeTarget.label} Wheel") }
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Tip 261: Live H / S Readout Badge
+                    Surface(
+                        color = SpectrumElevated,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = if (activeWheel.saturation > 0.01f) {
+                                "H: ${activeWheel.hue.toInt()}°  S: ${activeWheel.saturation.toInt()}%"
+                            } else {
+                                "H: —  S: 0%"
+                            },
+                            color = SpectrumTextPrimary,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                // Right: Compact Sliders (Luminance, Blending, Balance)
+                Column(modifier = Modifier.weight(1f)) {
+                    RampedSlider(
+                        label = "${activeTarget.label} Lum",
+                        value = activeWheel.luminance,
+                        minVal = -100f,
+                        maxVal = 100f,
+                        onValueChangeStart = onTouchStart,
+                        onValueChange = { updateActiveWheel(activeWheel.copy(luminance = it)) },
+                        onValueChangeEnd = { onTouchEnd("${activeTarget.label} Luminance") }
+                    )
+
+                    if (activeTarget != GradingTarget.GLOBAL) {
+                        RampedSlider(
+                            label = "Blending",
+                            value = colorGrading.blending,
+                            minVal = 0f,
+                            maxVal = 100f,
+                            defaultValue = 50f,
+                            isBipolar = false,
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = { onColorGradingChanged(colorGrading.copy(blending = it)) },
+                            onValueChangeEnd = { onTouchEnd("Grading Blending") }
+                        )
+
+                        RampedSlider(
+                            label = "Balance",
+                            value = colorGrading.balance,
+                            minVal = -100f,
+                            maxVal = 100f,
+                            defaultValue = 0f,
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = { onColorGradingChanged(colorGrading.copy(balance = it)) },
+                            onValueChangeEnd = { onTouchEnd("Grading Balance") }
+                        )
+                    } else {
+                        // Tip 262: Collapsible Hue & Saturation Fine Sliders for Global
+                        RampedSlider(
+                            label = "Global Hue",
+                            value = activeWheel.hue,
+                            minVal = 0f,
+                            maxVal = 360f,
+                            defaultValue = 0f,
+                            isBipolar = false,
+                            formatPattern = "%.0f°",
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = { updateActiveWheel(activeWheel.copy(hue = it)) },
+                            onValueChangeEnd = { onTouchEnd("Global Hue") }
+                        )
+                        RampedSlider(
+                            label = "Global Sat",
+                            value = activeWheel.saturation,
+                            minVal = 0f,
+                            maxVal = 100f,
+                            defaultValue = 0f,
+                            isBipolar = false,
+                            formatPattern = "%.0f",
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = { updateActiveWheel(activeWheel.copy(saturation = it)) },
+                            onValueChangeEnd = { onTouchEnd("Global Saturation") }
+                        )
+                    }
+                }
+            }
+        }
+
+        // Tip 276: Quick Split-Tone Preset Chips
+        Row(
             modifier = Modifier
-                .size(160.dp)
-                .pointerInput(activeWheel) {
-                    detectTapGestures(
-                        onDoubleTap = {
-                            updateActiveWheel(activeWheel.copy(hue = 0f, saturation = 0f))
-                        }
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            val presets = listOf(
+                "Teal & Orange" to ColorGrading(
+                    shadows = ColorGradingWheel(hue = 195f, saturation = 35f, luminance = -5f),
+                    highlights = ColorGradingWheel(hue = 35f, saturation = 30f, luminance = 5f),
+                    blending = 65f, balance = 10f
+                ),
+                "Warm Gold" to ColorGrading(
+                    shadows = ColorGradingWheel(hue = 45f, saturation = 25f, luminance = 0f),
+                    highlights = ColorGradingWheel(hue = 55f, saturation = 40f, luminance = 10f),
+                    blending = 50f, balance = 0f
+                ),
+                "Cool Blue" to ColorGrading(
+                    shadows = ColorGradingWheel(hue = 220f, saturation = 35f, luminance = -10f),
+                    highlights = ColorGradingWheel(hue = 200f, saturation = 20f, luminance = 0f),
+                    blending = 55f, balance = -15f
+                ),
+                "Sepia" to ColorGrading(
+                    shadows = ColorGradingWheel(hue = 30f, saturation = 30f, luminance = -10f),
+                    midtones = ColorGradingWheel(hue = 38f, saturation = 25f, luminance = 0f),
+                    highlights = ColorGradingWheel(hue = 45f, saturation = 20f, luminance = 5f),
+                    blending = 70f, balance = 0f
+                )
+            )
+
+            presets.forEach { (name, presetGrading) ->
+                Surface(
+                    color = SpectrumElevated,
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SpectrumBorder),
+                    modifier = Modifier.clickable {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        onTouchStart()
+                        onColorGradingChanged(presetGrading)
+                        onTouchEnd("Preset: $name")
+                    }
+                ) {
+                    Text(
+                        text = name,
+                        color = SpectrumTextSecondary,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
-                .pointerInput(activeWheel) {
-                    detectDragGestures { change, _ ->
+            }
+        }
+    }
+}
+
+/**
+ * Dedicated Canvas for a Single Color Grading Wheel
+ * Implements Tips 254 (Fine-tune), 255 (Radial line), 256 (Hue lock ring), 260 (Puck fill), 264 (Crosshair)
+ */
+@Composable
+fun SingleColorGradingWheelCanvas(
+    wheel: ColorGradingWheel,
+    diameterDp: Int,
+    onWheelChanged: (ColorGradingWheel) -> Unit,
+    onTouchStart: () -> Unit = {},
+    onTouchEnd: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val view = LocalView.current
+    // Tip 281 & 282: rememberUpdatedState prevents gesture interruption on state re-emission
+    val currentWheel by rememberUpdatedState(wheel)
+    var cachedHue by remember { mutableFloatStateOf(wheel.hue) }
+
+    Box(
+        modifier = modifier
+            .size(diameterDp.dp)
+            .pointerInput(diameterDp) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        onTouchStart()
+                        // Tip 272 & 273: Double tap resets saturation but retains hue angle
+                        onWheelChanged(currentWheel.copy(saturation = 0f))
+                        onTouchEnd()
+                    }
+                )
+            }
+            .pointerInput(diameterDp) {
+                detectDragGestures(
+                    onDragStart = { onTouchStart() },
+                    onDragEnd = { onTouchEnd() },
+                    onDragCancel = { onTouchEnd() },
+                    onDrag = { change, _ ->
                         change.consume()
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
                         val cx = w / 2f
                         val cy = h / 2f
-                        val radius = min(cx, cy) - 8.dp.toPx()
+                        val radius = min(cx, cy) - 6.dp.toPx()
 
                         val dx = change.position.x - cx
                         val dy = change.position.y - cy
                         val dist = hypot(dx.toDouble(), dy.toDouble()).toFloat()
 
-                        val sat = (dist / radius * 100f).coerceIn(0f, 100f)
-                        var angleRad = atan2(dy.toDouble(), dx.toDouble())
-                        if (angleRad < 0) angleRad += 2 * Math.PI
-                        val hueDeg = Math.toDegrees(angleRad).toFloat()
+                        // Tip 265: Magnetic snap to center within 4dp
+                        if (dist < 4.dp.toPx()) {
+                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            onWheelChanged(currentWheel.copy(saturation = 0f))
+                        } else {
+                            // Tip 254: Non-linear fine tuning near center: (dist / radius)^1.3 * 100
+                            val normalizedDist = (dist / radius).coerceIn(0f, 1f)
+                            val sat = normalizedDist.pow(1.3f) * 100f
 
-                        updateActiveWheel(activeWheel.copy(hue = hueDeg, saturation = sat))
+                            var angleRad = atan2(dy.toDouble(), dx.toDouble())
+                            if (angleRad < 0) angleRad += 2 * Math.PI
+                            val hueDeg = Math.toDegrees(angleRad).toFloat()
+                            cachedHue = hueDeg
+
+                            onWheelChanged(currentWheel.copy(hue = hueDeg, saturation = sat))
+                        }
                     }
-                }
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val cx = size.width / 2f
-                val cy = size.height / 2f
-                val radius = min(cx, cy) - 8.dp.toPx()
-
-                // Circular gradient ring representing spectrum
-                val sweepColors = listOf(
-                    Color.Red, Color.Yellow, Color.Green,
-                    Color.Cyan, Color.Blue, Color.Magenta, Color.Red
-                )
-                drawCircle(
-                    brush = Brush.sweepGradient(sweepColors, Offset(cx, cy)),
-                    radius = radius,
-                    center = Offset(cx, cy)
-                )
-
-                // Radial white overlay from center to simulate saturation falloff
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color.White.copy(alpha = 0.95f), Color.Transparent),
-                        center = Offset(cx, cy),
-                        radius = radius
-                    ),
-                    radius = radius,
-                    center = Offset(cx, cy)
-                )
-
-                // Outer border
-                drawCircle(
-                    color = SpectrumBorder,
-                    radius = radius,
-                    center = Offset(cx, cy),
-                    style = Stroke(width = 2.dp.toPx())
-                )
-
-                // Draggable Puck Indicator
-                val angleRad = Math.toRadians(activeWheel.hue.toDouble())
-                val puckDist = (activeWheel.saturation / 100f) * radius
-                val puckX = cx + puckDist * cos(angleRad).toFloat()
-                val puckY = cy + puckDist * sin(angleRad).toFloat()
-
-                drawCircle(
-                    color = Color.White,
-                    radius = 6.dp.toPx(),
-                    center = Offset(puckX, puckY)
-                )
-                drawCircle(
-                    color = Color.Black,
-                    radius = 3.dp.toPx(),
-                    center = Offset(puckX, puckY)
                 )
             }
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val cx = size.width / 2f
+            val cy = size.height / 2f
+            val radius = min(cx, cy) - 6.dp.toPx()
+
+            // 1. Full Spectrum Sweep Gradient Ring
+            val sweepColors = listOf(
+                Color.Red, Color.Yellow, Color.Green,
+                Color.Cyan, Color.Blue, Color.Magenta, Color.Red
+            )
+            drawCircle(
+                brush = Brush.sweepGradient(sweepColors, Offset(cx, cy)),
+                radius = radius,
+                center = Offset(cx, cy),
+                alpha = 0.88f
+            )
+
+            // 2. Radial Gradient: neutral gray at center to transparent at rim (Tip 287)
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0xFF282828), Color(0x66282828), Color.Transparent),
+                    center = Offset(cx, cy),
+                    radius = radius
+                ),
+                radius = radius,
+                center = Offset(cx, cy)
+            )
+
+            // 3. Outer Border (Tinted if active) (Tip 280)
+            val isWheelActive = currentWheel.saturation > 0.01f
+            val rimColor = if (isWheelActive) {
+                val h = (currentWheel.hue % 360f) / 360f
+                val s = (currentWheel.saturation / 100f).coerceIn(0f, 1f)
+                Color.hsl(h * 360f, s, 0.5f).copy(alpha = 0.8f)
+            } else {
+                Color(0xFF484848)
+            }
+            drawCircle(
+                color = rimColor,
+                radius = radius,
+                center = Offset(cx, cy),
+                style = Stroke(width = if (isWheelActive) 2.dp.toPx() else 1.5.dp.toPx())
+            )
+
+            // 4. Center Crosshair (Tip 264)
+            val crossSize = 3.dp.toPx()
+            drawLine(
+                color = Color(0x88FFFFFF),
+                start = Offset(cx - crossSize, cy),
+                end = Offset(cx + crossSize, cy),
+                strokeWidth = 1.dp.toPx()
+            )
+            drawLine(
+                color = Color(0x88FFFFFF),
+                start = Offset(cx, cy - crossSize),
+                end = Offset(cx, cy + crossSize),
+                strokeWidth = 1.dp.toPx()
+            )
+
+            // 5. Puck indicator & Hue-lock radial line (Tip 255 & 260)
+            val angleRad = Math.toRadians(currentWheel.hue.toDouble())
+            val normalizedSat = (currentWheel.saturation / 100f).coerceIn(0f, 1f)
+            // Reverse pow(1.3) to find visual distance on canvas
+            val visualDist = normalizedSat.pow(1.0f / 1.3f) * radius
+            val puckX = cx + visualDist * cos(angleRad).toFloat()
+            val puckY = cy + visualDist * sin(angleRad).toFloat()
+
+            if (isWheelActive) {
+                // Radial guide line from center to puck (Tip 255)
+                drawLine(
+                    color = Color(0x66FFFFFF),
+                    start = Offset(cx, cy),
+                    end = Offset(puckX, puckY),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+
+            // Puck fill with selected Hue/Saturation (Tip 260)
+            val puckFillColor = if (isWheelActive) {
+                val h = (currentWheel.hue % 360f) / 360f
+                val s = (currentWheel.saturation / 100f).coerceIn(0f, 1f)
+                Color.hsl(h * 360f, s, 0.5f)
+            } else {
+                Color(0xFF808080)
+            }
+
+            drawCircle(
+                color = puckFillColor,
+                radius = 5.dp.toPx(),
+                center = Offset(puckX, puckY)
+            )
+            drawCircle(
+                color = Color.White,
+                radius = 5.5.dp.toPx(),
+                center = Offset(puckX, puckY),
+                style = Stroke(width = 1.5.dp.toPx())
+            )
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Luminance slider
-        RampedSlider(
-            label = "Luminance",
-            value = activeWheel.luminance,
-            minVal = -100f,
-            maxVal = 100f,
-            onValueChange = { updateActiveWheel(activeWheel.copy(luminance = it)) }
-        )
-
-        // Blending & Balance
-        RampedSlider(
-            label = "Blending",
-            value = colorGrading.blending,
-            minVal = 0f,
-            maxVal = 100f,
-            defaultValue = 50f,
-            isBipolar = false,
-            onValueChange = { onColorGradingChanged(colorGrading.copy(blending = it)) }
-        )
-        RampedSlider(
-            label = "Balance",
-            value = colorGrading.balance,
-            minVal = -100f,
-            maxVal = 100f,
-            onValueChange = { onColorGradingChanged(colorGrading.copy(balance = it)) }
-        )
     }
 }
