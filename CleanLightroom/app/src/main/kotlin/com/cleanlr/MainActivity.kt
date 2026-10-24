@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
                 } else {
                     LightroomLibraryScreen(
                         onPhotoSelected = { uri ->
+                            viewModel.setCleanScreenMode(false)
                             viewModel.loadFromUri(uri)
                             isEditorVisible = true
                         }

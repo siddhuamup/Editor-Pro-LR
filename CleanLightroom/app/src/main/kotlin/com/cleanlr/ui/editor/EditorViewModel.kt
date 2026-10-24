@@ -338,6 +338,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     fun loadFromUri(uri: Uri) {
         _sourceUri.value = uri
+        _isCleanScreenMode.value = false
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val context = getApplication<Application>()

@@ -65,7 +65,7 @@ fun Modifier.fadingEdge(
     topEdgeHeight: Dp = 12.dp,
     bottomEdgeHeight: Dp = 12.dp
 ): Modifier = this
-    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+    .graphicsLayer(compositingStrategy = CompositingStrategy.Auto)
     .drawWithContent {
         drawContent()
         val topFadingPx = topEdgeHeight.toPx()
@@ -477,34 +477,6 @@ fun EditorScreen(
                         selectedMobileTool = null
                     }
                 )
-                "Presets" -> DedicatedCommitBottomBar(
-                    title = "Presets",
-                    onCancel = {
-                        viewModel.resetPreset()
-                        selectedMobileTool = null
-                    },
-                    onConfirm = {
-                        selectedMobileTool = null
-                    }
-                )
-                "Masking" -> DedicatedCommitBottomBar(
-                    title = "Masking",
-                    onCancel = {
-                        selectedMobileTool = null
-                    },
-                    onConfirm = {
-                        selectedMobileTool = null
-                    }
-                )
-                "Remove" -> DedicatedCommitBottomBar(
-                    title = "Remove",
-                    onCancel = {
-                        selectedMobileTool = null
-                    },
-                    onConfirm = {
-                        selectedMobileTool = null
-                    }
-                )
                 else -> MobilePrimaryToolbar(
                     selectedTool = selectedMobileTool,
                     onToolSelected = { tool ->
@@ -521,9 +493,7 @@ fun EditorScreen(
                                 if (viewModel.isCropActive.value) viewModel.toggleCropActive()
                                 selectedMobileTool = tool
                                 when (tool) {
-                                    "Actions" -> {
-                                        // Actions stays selected and opens Actions panel and strip
-                                    }
+                                    "Actions" -> { }
                                     "Presets" -> viewModel.setActiveTab(EditorToolTab.PRESETS)
                                     "Edit" -> viewModel.setActiveTab(EditorToolTab.LIGHT)
                                     "Masking" -> viewModel.setActiveTab(EditorToolTab.MASKS)
@@ -692,8 +662,10 @@ fun EditorScreen(
                         isHighlightClippingActive = altClippingMode == 1
                     )
                 }
+            }
 
-                // Tip 5: 8.dp Subtle Top Shadow between Canvas & Controls Panel
+            // Tip 5: 8.dp Subtle Top Shadow between Canvas & Controls Panel
+            if (selectedMobileTool != null) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -704,10 +676,11 @@ fun EditorScreen(
                             )
                         )
                 )
+            }
 
-                // Tip 6: 3-Snap Panel Height Animation
+                // Tip 6: 3-Snap Panel Height Animation (Actions mode shows only secondary strip over photo, no upper panel)
                 val animatedPanelHeight by androidx.compose.animation.core.animateDpAsState(
-                    targetValue = if (selectedMobileTool != null) {
+                    targetValue = if (selectedMobileTool != null && selectedMobileTool != "Actions") {
                         when (panelSnapState) {
                             PanelSnapState.COLLAPSED -> 0.dp
                             PanelSnapState.COMPACT -> if (selectedMobileTool in listOf("Crop", "Presets")) 260.dp else 210.dp
@@ -730,7 +703,7 @@ fun EditorScreen(
                     }
                 )
 
-                if (animatedPanelHeight > 0.dp && selectedMobileTool != null) {
+                if (!isCleanScreenMode && animatedPanelHeight > 0.dp && selectedMobileTool != null) {
                     // Tip 7: Pill Drag Handle (32.dp x 4.dp, #484848, corner radius 2.dp)
                     Box(
                         modifier = Modifier
@@ -756,7 +729,7 @@ fun EditorScreen(
                             .background(SpectrumSurface)
                             .graphicsLayer {
                                 alpha = animatedPanelAlpha
-                                compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
+                                compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Auto
                             }
                     ) {
                         Column(
@@ -1866,23 +1839,96 @@ fun EditorScreen(
                     }
                 }
             }
+        }
 
             // Category Tool Tabs Bar — Adobe Lightroom Mobile Signature Style (Screenshots 7, 13, 20)
             // Rendered directly beneath the active controls panel, right above the primary bottom navigation
-            if (selectedMobileTool in listOf("Edit", "Actions")) {
+            if (!isCleanScreenMode && selectedMobileTool in listOf("Edit", "Actions")) {
                 HorizontalDivider(color = SpectrumBorder, thickness = 1.dp)
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(SpectrumSurface)
                         .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (selectedMobileTool == "Actions") {
-                        val actions = listOf(
-                            Triple("Auto", Icons.Default.AutoFixHigh) { viewModel.autoTone() },
-                            Triple("Enhance", Icons.Default.AutoAwesome) { viewModel.autoTone() },
+                        // Action items: Auto, Enhance, Divider, Subject, Background, Sky, Animate (Screenshot 7)
+                        item {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .clickable {
+                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                        viewModel.autoTone()
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoFixHigh,
+                                    contentDescription = "Auto",
+                                    tint = SpectrumIconNormal,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Auto",
+                                    color = SpectrumTextPrimary,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                            }
+                        }
+                        item {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .clickable {
+                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                        viewModel.updateRecipe("Enhance") {
+                                            it.copy(
+                                                presence = it.presence.copy(
+                                                    clarity = (it.presence.clarity + 15f).coerceAtMost(100f),
+                                                    vibrance = (it.presence.vibrance + 15f).coerceAtMost(100f)
+                                                ),
+                                                effects = it.effects.copy(
+                                                    texture = (it.effects.texture + 10f).coerceAtMost(100f)
+                                                )
+                                            ).syncLegacyFields()
+                                        }
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = "Enhance",
+                                    tint = SpectrumIconNormal,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Enhance",
+                                    color = SpectrumTextPrimary,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                            }
+                        }
+                        item {
+                            // Vertical separator line between Enhance and Mask quick-actions
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 4.dp)
+                                    .width(1.dp)
+                                    .height(24.dp)
+                                    .background(Color(0xFF383838))
+                            )
+                        }
+                        val maskActions = listOf(
                             Triple("Subject", Icons.Default.Person) {
                                 viewModel.setActiveTab(EditorToolTab.MASKS)
                                 selectedMobileTool = "Masking"
@@ -1895,9 +1941,11 @@ fun EditorScreen(
                                 viewModel.setActiveTab(EditorToolTab.MASKS)
                                 selectedMobileTool = "Masking"
                             },
-                            Triple("Animate", Icons.Default.Animation) { }
+                            Triple("Animate", Icons.Default.Animation) {
+                                android.widget.Toast.makeText(context, "Animation requires motion preview export pipeline", android.widget.Toast.LENGTH_SHORT).show()
+                            }
                         )
-                        items(actions) { (label, icon, action) ->
+                        items(maskActions) { (label, icon, action) ->
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier
@@ -1933,7 +1981,7 @@ fun EditorScreen(
                                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                         viewModel.autoTone()
                                     }
-                                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.AutoFixHigh,
@@ -1948,7 +1996,7 @@ fun EditorScreen(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Medium
                                 )
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Spacer(modifier = Modifier.height(7.dp))
                             }
                         }
 
@@ -1980,8 +2028,10 @@ fun EditorScreen(
                                 EditorToolTab.VERSIONS -> Icons.Default.HistoryEdu
                                 EditorToolTab.MASKS -> Icons.Default.Layers
                             }
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
+                            Surface(
+                                color = if (isSelected) Color(0xFF2C2C2C) else Color.Transparent,
+                                shape = RoundedCornerShape(8.dp),
+                                border = if (isSelected) BorderStroke(1.dp, Color(0xFF3E3E3E)) else null,
                                 modifier = Modifier
                                     .pointerInput(tab) {
                                         detectTapGestures(
@@ -2001,32 +2051,36 @@ fun EditorScreen(
                                             }
                                         )
                                     }
-                                    .padding(horizontal = 6.dp, vertical = 4.dp)
                             ) {
-                                Icon(
-                                    imageVector = tabIcon,
-                                    contentDescription = tab.title,
-                                    tint = if (isSelected) SpectrumBlue else if (isBypassed) SpectrumIconDisabled else SpectrumIconNormal,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = tab.title,
-                                    color = if (isSelected) SpectrumBlue else if (isBypassed) SpectrumIconDisabled else SpectrumTextSecondary,
-                                    fontSize = 10.sp,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                                // Tips 23 & 24: Active Modification Indicator Dot
-                                if (isModified) {
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .size(4.dp)
-                                            .clip(androidx.compose.foundation.shape.CircleShape)
-                                            .background(if (isBypassed) Color.Gray else SpectrumActiveDot)
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = tabIcon,
+                                        contentDescription = tab.title,
+                                        tint = if (isSelected) Color.White else if (isBypassed) SpectrumIconDisabled else SpectrumIconNormal,
+                                        modifier = Modifier.size(20.dp)
                                     )
-                                } else {
-                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = tab.title,
+                                        color = if (isSelected) Color.White else if (isBypassed) SpectrumIconDisabled else SpectrumTextSecondary,
+                                        fontSize = 10.sp,
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                    )
+                                    // Tips 23 & 24: Active or Modified Indicator Dot
+                                    if (isSelected || isModified) {
+                                        Spacer(modifier = Modifier.height(3.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .size(4.dp)
+                                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                                .background(if (isSelected) Color(0xFF1686FF) else if (isBypassed) Color.Gray else SpectrumActiveDot)
+                                        )
+                                    } else {
+                                        Spacer(modifier = Modifier.height(7.dp))
+                                    }
                                 }
                             }
                         }
@@ -2040,7 +2094,7 @@ fun EditorScreen(
                                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                         showResetDialog = true
                                     }
-                                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.RestartAlt,
@@ -2055,14 +2109,12 @@ fun EditorScreen(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Medium
                                 )
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Spacer(modifier = Modifier.height(7.dp))
                             }
                         }
                     }
                 }
             }
-        }
-    }
 
     if (showResetDialog) {
         AlertDialog(
@@ -2611,46 +2663,113 @@ private fun MobilePrimaryToolbar(
         "Remove" to Icons.Default.RemoveCircleOutline
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF1A1A1A))
-            .navigationBarsPadding()
-    ) {
-        HorizontalDivider(color = Color(0xFF2A2A2A))
-        Row(
+    if (selectedTool == null) {
+        // Resting Loupe Floating Pill (Reference Screenshot 4)
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)
-                .padding(horizontal = 6.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            contentAlignment = Alignment.Center
         ) {
-            tools.forEach { (label, icon) ->
-                val active = selectedTool == label
-                Column(
+            Surface(
+                color = Color(0xFF1E1E1E),
+                shape = RoundedCornerShape(28.dp),
+                border = BorderStroke(1.dp, Color(0xFF333333)),
+                shadowElevation = 8.dp
+            ) {
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { onToolSelected(label) }
-                        .padding(vertical = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = label,
-                        tint = if (active) Color(0xFF1686FF) else Color(0xFFB0B0B0),
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        text = label,
-                        color = if (active) Color(0xFF1686FF) else Color(0xFF888888),
-                        fontSize = 10.sp,
-                        fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
-                        maxLines = 1
-                    )
+                    tools.forEach { (label, icon) ->
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onToolSelected(label) }
+                                .padding(vertical = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = label,
+                                tint = Color(0xFFCCCCCC),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.height(3.dp))
+                            Text(
+                                text = label,
+                                color = Color(0xFFAAAAAA),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Normal,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        // Active Editing Docked Toolbar (Reference Screenshots 7, 8, 13, 20, 34, 35)
+        // Docked edge-to-edge, icon-only, active tool enclosed in vibrant blue rounded square
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF121212))
+                .navigationBarsPadding()
+        ) {
+            HorizontalDivider(color = Color(0xFF242424), thickness = 1.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                tools.forEach { (label, icon) ->
+                    val active = selectedTool == label
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (active) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFF1686FF))
+                                    .clickable { onToolSelected(label) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = label,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        } else {
+                            IconButton(
+                                onClick = { onToolSelected(label) },
+                                modifier = Modifier.size(42.dp)
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = label,
+                                    tint = Color(0xFF8E8E93),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

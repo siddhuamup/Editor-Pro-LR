@@ -189,17 +189,19 @@ fun LightroomLibraryScreen(
                         Icon(Icons.Default.Menu, contentDescription = "Navigation drawer", tint = Color.White)
                     }
                     Spacer(Modifier.weight(1f))
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Default.Star, contentDescription = "Premium features", tint = Color(0xFF1686FF))
-                    }
-                    IconButton(onClick = { searchOpen = !searchOpen }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
-                    }
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.White)
-                    }
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Default.Cloud, contentDescription = "Cloud sync", tint = Color.White)
+                    if (workspace == LightroomWorkspace.LIGHTROOM) {
+                        IconButton(onClick = { }) {
+                            Icon(Icons.Default.Star, contentDescription = "Premium features", tint = Color(0xFF1686FF))
+                        }
+                        IconButton(onClick = { searchOpen = !searchOpen }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
+                        }
+                        IconButton(onClick = { }) {
+                            Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.White)
+                        }
+                        IconButton(onClick = { }) {
+                            Icon(Icons.Default.Cloud, contentDescription = "Cloud sync", tint = Color.White)
+                        }
                     }
                     IconButton(onClick = { showViewOptionsSheet = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "View options and more", tint = Color.White)
@@ -679,7 +681,7 @@ private fun LibraryNavigationDrawerContent(
         }
 
         Text(
-            text = "Lightroom v10.0.1",
+            text = "CleanLightroom v10.0.1",
             color = Color(0xFF666666),
             fontSize = 11.sp,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
