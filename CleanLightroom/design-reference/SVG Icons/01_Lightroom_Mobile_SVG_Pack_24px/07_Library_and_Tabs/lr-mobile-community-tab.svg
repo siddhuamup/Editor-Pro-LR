@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_Community_24_N" data-name="Community & Remix Tab" style="--iconPrimary: currentColor;">
-  <title>Community & Remix Tab (S2_Icon_Community_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-Discover (sp-icon-discover)" data-name="Community & Remix Tab" style="--iconPrimary: currentColor;">
+  <title>Community & Remix Tab (spectrum-icon-24-Discover (sp-icon-discover))</title>
   <desc>Discover photographers, remix edits, and download free community presets</desc>
   <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><polygon points="15.5,8.5 13.2,13.2 8.5,15.5 10.8,10.8" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round" fill="none"/>
 </svg>

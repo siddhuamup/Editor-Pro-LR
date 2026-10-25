@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_ColorGrading_24_N" data-name="Color Grading" style="--iconPrimary: currentColor;">
-  <title>Color Grading (S2_Icon_ColorGrading_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-ColorPalette (sp-icon-color-palette)" data-name="Color Grading" style="--iconPrimary: currentColor;">
+  <title>Color Grading (spectrum-icon-24-ColorPalette (sp-icon-color-palette))</title>
   <desc>3-Way Color Wheels for Shadows, Midtones, Highlights, and Global Blending</desc>
   <circle cx="12" cy="7.5" r="4.2" stroke="currentColor" stroke-width="1.65" fill="none"/><circle cx="8" cy="15.2" r="4.2" stroke="currentColor" stroke-width="1.65" fill="none"/><circle cx="16" cy="15.2" r="4.2" stroke="currentColor" stroke-width="1.65" fill="none"/>
 </svg>

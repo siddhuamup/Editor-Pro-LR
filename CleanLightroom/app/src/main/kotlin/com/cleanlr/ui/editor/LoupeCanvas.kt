@@ -17,10 +17,10 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
+import androidx.compose.ui.res.painterResource
+import com.cleanlr.R
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +48,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.cleanlr.engine.HistogramData
 import com.cleanlr.engine.RenderPipeline
 import com.cleanlr.engine.SplineInterpolator
+import com.cleanlr.model.CurvePoint
 import com.cleanlr.model.EditRecipe
 import com.cleanlr.ui.theme.SpectrumBlue
 import kotlinx.coroutines.delay
@@ -275,6 +276,13 @@ fun LoupeCanvas(
     film3dLutIntensity: Float = 1.0f,
     onNextPhoto: (() -> Unit)? = null,
     onPrevPhoto: (() -> Unit)? = null,
+    isCropActive: Boolean = false,
+    isCurveActive: Boolean = false,
+    curvePoints: List<CurvePoint> = emptyList(),
+    curveChannelColor: Color = Color.White,
+    onCurvePointChanged: ((List<CurvePoint>) -> Unit)? = null,
+    onCurveTouchStart: (() -> Unit)? = null,
+    onCurveTouchEnd: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
@@ -568,6 +576,26 @@ fun LoupeCanvas(
                 drawLine(gridColor, Offset(0f, h / 3f), Offset(w, h / 3f), strokeWidth = stroke)
                 drawLine(gridColor, Offset(0f, 2 * h / 3f), Offset(w, 2 * h / 3f), strokeWidth = stroke)
             }
+        }
+
+        // ════════════════════════════════════════════════════
+        // AUTHENTIC CROP OVERLAY BRACKETS & TABS (Screenshot 083306)
+        // ════════════════════════════════════════════════════
+        if (isCropActive) {
+            CropOverlayBrackets()
+        }
+
+        // ════════════════════════════════════════════════════
+        // AUTHENTIC TONE CURVE OVERLAY (Screenshot 083443)
+        // ════════════════════════════════════════════════════
+        if (isCurveActive) {
+            ToneCurveCanvasOverlay(
+                curvePoints = curvePoints,
+                curveChannelColor = curveChannelColor,
+                onCurvePointChanged = { onCurvePointChanged?.invoke(it) },
+                onTouchStart = { onCurveTouchStart?.invoke() },
+                onTouchEnd = { onCurveTouchEnd?.invoke(it) }
+            )
         }
 
         // ════════════════════════════════════════════════════
@@ -1025,7 +1053,7 @@ fun LoupeCanvas(
                         },
                         modifier = Modifier.size(28.dp)
                     ) {
-                        Icon(imageVector = Icons.Default.Check, contentDescription = "Done", tint = SpectrumBlue, modifier = Modifier.size(18.dp))
+                        Icon(painter = painterResource(R.drawable.ic_lr_select_checkmark), contentDescription = "Done", tint = SpectrumBlue, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -1039,6 +1067,264 @@ fun LoupeCanvas(
                 featherPercent = brushFeather,
                 modifier = Modifier.fillMaxSize()
             )
+        }
+    }
+}
+
+/**
+ * Authentic Crop Overlay Brackets and Rule-of-Thirds Grid (Matching Lightroom Screenshot 083306)
+ */
+@Composable
+private fun CropOverlayBrackets(
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val w = size.width
+        val h = size.height
+
+        val padX = 20.dp.toPx()
+        val padY = 20.dp.toPx()
+        val cropLeft = padX
+        val cropTop = padY
+        val cropRight = w - padX
+        val cropBottom = h - padY
+        val cropW = cropRight - cropLeft
+        val cropH = cropBottom - cropTop
+
+        // Dim letterbox outside crop area
+        val scrimColor = Color.Black.copy(alpha = 0.45f)
+        if (cropLeft > 0f) drawRect(scrimColor, Offset(0f, 0f), Size(cropLeft, h))
+        if (cropRight < w) drawRect(scrimColor, Offset(cropRight, 0f), Size(w - cropRight, h))
+        if (cropTop > 0f) drawRect(scrimColor, Offset(cropLeft, 0f), Size(cropW, cropTop))
+        if (cropBottom < h) drawRect(scrimColor, Offset(cropLeft, cropBottom), Size(cropW, h - cropBottom))
+
+        // Subtle Rule-of-Thirds Grid inside crop
+        val gridColor = Color.White.copy(alpha = 0.22f)
+        val gridStroke = 1.dp.toPx()
+        drawLine(gridColor, Offset(cropLeft + cropW / 3f, cropTop), Offset(cropLeft + cropW / 3f, cropBottom), gridStroke)
+        drawLine(gridColor, Offset(cropLeft + 2 * cropW / 3f, cropTop), Offset(cropLeft + 2 * cropW / 3f, cropBottom), gridStroke)
+        drawLine(gridColor, Offset(cropLeft, cropTop + cropH / 3f), Offset(cropRight, cropTop + cropH / 3f), gridStroke)
+        drawLine(gridColor, Offset(cropLeft, cropTop + 2 * cropH / 3f), Offset(cropRight, cropTop + 2 * cropH / 3f), gridStroke)
+
+        // Thin outer boundary line
+        drawRect(Color.White.copy(alpha = 0.45f), Offset(cropLeft, cropTop), Size(cropW, cropH), style = Stroke(1.dp.toPx()))
+
+        // 4 Corner Brackets (24dp length, 3.5dp stroke, Color.White)
+        val bracketLen = 24.dp.toPx()
+        val bracketStroke = 3.5.dp.toPx()
+        val bracketColor = Color.White
+
+        // Top-Left: ┌
+        drawLine(bracketColor, Offset(cropLeft, cropTop), Offset(cropLeft + bracketLen, cropTop), bracketStroke)
+        drawLine(bracketColor, Offset(cropLeft, cropTop), Offset(cropLeft, cropTop + bracketLen), bracketStroke)
+
+        // Top-Right: ┐
+        drawLine(bracketColor, Offset(cropRight - bracketLen, cropTop), Offset(cropRight, cropTop), bracketStroke)
+        drawLine(bracketColor, Offset(cropRight, cropTop), Offset(cropRight, cropTop + bracketLen), bracketStroke)
+
+        // Bottom-Left: └
+        drawLine(bracketColor, Offset(cropLeft, cropBottom), Offset(cropLeft + bracketLen, cropBottom), bracketStroke)
+        drawLine(bracketColor, Offset(cropLeft, cropBottom - bracketLen), Offset(cropLeft, cropBottom), bracketStroke)
+
+        // Bottom-Right: ┘
+        drawLine(bracketColor, Offset(cropRight - bracketLen, cropBottom), Offset(cropRight, cropBottom), bracketStroke)
+        drawLine(bracketColor, Offset(cropRight, cropBottom - bracketLen), Offset(cropRight, cropBottom), bracketStroke)
+
+        // 4 Center Edge Tabs (16dp length, 3.5dp stroke)
+        val tabLen = 16.dp.toPx()
+        val midX = cropLeft + cropW / 2f
+        val midY = cropTop + cropH / 2f
+
+        // Top center ─
+        drawLine(bracketColor, Offset(midX - tabLen / 2f, cropTop), Offset(midX + tabLen / 2f, cropTop), bracketStroke)
+        // Bottom center ─
+        drawLine(bracketColor, Offset(midX - tabLen / 2f, cropBottom), Offset(midX + tabLen / 2f, cropBottom), bracketStroke)
+        // Left center │
+        drawLine(bracketColor, Offset(cropLeft, midY - tabLen / 2f), Offset(cropLeft, midY + tabLen / 2f), bracketStroke)
+        // Right center │
+        drawLine(bracketColor, Offset(cropRight, midY - tabLen / 2f), Offset(cropRight, midY + tabLen / 2f), bracketStroke)
+    }
+}
+
+/**
+ * Authentic 4x4 Tone Curve Overlay on Loupe Canvas (Matching Lightroom Screenshot 083443)
+ */
+@Composable
+private fun ToneCurveCanvasOverlay(
+    curvePoints: List<CurvePoint>,
+    curveChannelColor: Color,
+    onCurvePointChanged: (List<CurvePoint>) -> Unit,
+    onTouchStart: () -> Unit,
+    onTouchEnd: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val view = LocalView.current
+    var selectedIndex by remember { mutableStateOf(-1) }
+    var isDragging by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        val boxSizeDp = 300.dp
+        Box(
+            modifier = Modifier
+                .size(boxSizeDp)
+                .pointerInput(curvePoints) {
+                    detectTapGestures(
+                        onTap = { offset ->
+                            val w = size.width
+                            val h = size.height
+                            val normX = (offset.x / w * 255f).coerceIn(0f, 255f)
+                            val normY = ((1f - offset.y / h) * 255f).coerceIn(0f, 255f)
+
+                            val existingIdx = curvePoints.indexOfFirst { pt ->
+                                val ptPxX = (pt.x / 255f) * w
+                                val ptPxY = (1f - pt.y / 255f) * h
+                                kotlin.math.hypot((offset.x - ptPxX).toDouble(), (offset.y - ptPxY).toDouble()) < 36.0
+                            }
+
+                            if (existingIdx != -1) {
+                                selectedIndex = existingIdx
+                            } else if (curvePoints.size < 16) {
+                                val tooClose = curvePoints.any { abs(it.x - normX) < 4.0f }
+                                if (!tooClose) {
+                                    onTouchStart()
+                                    val newPoints = (curvePoints + CurvePoint(normX, normY)).sortedBy { it.x }
+                                    onCurvePointChanged(newPoints)
+                                    selectedIndex = newPoints.indexOfFirst { it.x == normX }
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    onTouchEnd("Add Curve Point")
+                                }
+                            }
+                        },
+                        onDoubleTap = { offset ->
+                            val w = size.width
+                            val h = size.height
+                            val deleteIdx = curvePoints.indexOfFirst { pt ->
+                                val ptPxX = (pt.x / 255f) * w
+                                val ptPxY = (1f - pt.y / 255f) * h
+                                kotlin.math.hypot((offset.x - ptPxX).toDouble(), (offset.y - ptPxY).toDouble()) < 36.0
+                            }
+                            if (deleteIdx > 0 && deleteIdx < curvePoints.lastIndex) {
+                                onTouchStart()
+                                val updated = curvePoints.toMutableList().apply { removeAt(deleteIdx) }
+                                onCurvePointChanged(updated)
+                                selectedIndex = -1
+                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                onTouchEnd("Delete Curve Point")
+                            }
+                        }
+                    )
+                }
+                .pointerInput(curvePoints) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val w = size.width
+                            val h = size.height
+                            selectedIndex = curvePoints.indexOfFirst { pt ->
+                                val ptPxX = (pt.x / 255f) * w
+                                val ptPxY = (1f - pt.y / 255f) * h
+                                kotlin.math.hypot((offset.x - ptPxX).toDouble(), (offset.y - ptPxY).toDouble()) < 44.0
+                            }
+                            if (selectedIndex != -1) {
+                                isDragging = true
+                                onTouchStart()
+                            }
+                        },
+                        onDragEnd = {
+                            isDragging = false
+                            onTouchEnd("Curve Drag")
+                        },
+                        onDragCancel = {
+                            isDragging = false
+                            onTouchEnd("Cancel")
+                        },
+                        onDrag = { change, _ ->
+                            change.consume()
+                            if (selectedIndex != -1 && selectedIndex in curvePoints.indices) {
+                                val w = size.width
+                                val h = size.height
+                                var newX = (change.position.x / w * 255f).coerceIn(0f, 255f)
+                                var newY = ((1f - change.position.y / h) * 255f).coerceIn(0f, 255f)
+
+                                if (selectedIndex == 0) {
+                                    val maxBoundX = maxOf(0f, if (curvePoints.size > 1) curvePoints[1].x - 1.0f else 128f)
+                                    newX = newX.coerceIn(0f, maxBoundX)
+                                } else if (selectedIndex == curvePoints.lastIndex) {
+                                    val minBoundX = minOf(255f, if (curvePoints.size > 1) curvePoints[curvePoints.size - 2].x + 1.0f else 128f)
+                                    newX = newX.coerceIn(minBoundX, 255f)
+                                } else {
+                                    val minBoundX = curvePoints[selectedIndex - 1].x + 1.0f
+                                    val maxBoundX = maxOf(minBoundX, curvePoints[selectedIndex + 1].x - 1.0f)
+                                    newX = newX.coerceIn(minBoundX, maxBoundX)
+                                }
+
+                                val updated = curvePoints.toMutableList()
+                                updated[selectedIndex] = CurvePoint(newX, newY)
+                                onCurvePointChanged(updated)
+                            }
+                        }
+                    )
+                }
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val w = size.width
+                val h = size.height
+
+                // 4x4 Grid (5 vertical, 5 horizontal lines) matching Screenshot_20261019-083443
+                val gridColor = Color.White.copy(alpha = 0.22f)
+                val gridStroke = 1.dp.toPx()
+                for (i in 0..4) {
+                    val x = (i / 4f) * w
+                    val y = (i / 4f) * h
+                    drawLine(gridColor, Offset(x, 0f), Offset(x, h), strokeWidth = gridStroke)
+                    drawLine(gridColor, Offset(0f, y), Offset(w, y), strokeWidth = gridStroke)
+                }
+
+                // Spline curve
+                if (curvePoints.isNotEmpty()) {
+                    val lut = SplineInterpolator.evaluateSpline(curvePoints)
+                    val curvePath = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(0f, h - (lut[0] / 255f) * h)
+                        for (i in 1..255) {
+                            val px = (i / 255f) * w
+                            val py = h - (lut[i] / 255f) * h
+                            lineTo(px, py)
+                        }
+                    }
+                    drawPath(
+                        path = curvePath,
+                        color = curveChannelColor,
+                        style = Stroke(width = 2.4.dp.toPx())
+                    )
+
+                    // Control Point Knots
+                    curvePoints.forEachIndexed { idx, pt ->
+                        val px = (pt.x / 255f) * w
+                        val py = h - (pt.y / 255f) * h
+                        val isSelected = idx == selectedIndex
+
+                        drawCircle(
+                            color = Color.Black.copy(alpha = 0.5f),
+                            radius = 9.dp.toPx(),
+                            center = Offset(px, py)
+                        )
+                        drawCircle(
+                            color = if (isSelected) curveChannelColor else Color.White,
+                            radius = 7.dp.toPx(),
+                            center = Offset(px, py)
+                        )
+                        if (isSelected) {
+                            drawCircle(
+                                color = Color.White,
+                                radius = 2.5.dp.toPx(),
+                                center = Offset(px, py)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

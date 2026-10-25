@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_FlipVertical_24_N" data-name="Flip Vertical" style="--iconPrimary: currentColor;">
-  <title>Flip Vertical (S2_Icon_FlipVertical_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-FlipVertical (sp-icon-flip-vertical)" data-name="Flip Vertical" style="--iconPrimary: currentColor;">
+  <title>Flip Vertical (spectrum-icon-24-FlipVertical (sp-icon-flip-vertical))</title>
   <desc>Mirrors image vertically across horizontal axis</desc>
   <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-dasharray="2.5 2.5"/><polygon points="6,9 18,3.5 18,9" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><polygon points="6,15 18,20.5 18,15" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="currentColor" fill-opacity="0.25"/>
 </svg>

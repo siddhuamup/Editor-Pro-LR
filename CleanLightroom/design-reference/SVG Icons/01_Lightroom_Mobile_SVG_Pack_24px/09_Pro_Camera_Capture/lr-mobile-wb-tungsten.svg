@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_WBTungsten_24_N" data-name="WB Preset: Incandescent (3200K)" style="--iconPrimary: currentColor;">
-  <title>WB Preset: Incandescent (3200K) (S2_Icon_WBTungsten_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-FlashlightOn (sp-icon-flashlight-on)" data-name="WB Preset: Incandescent (3200K)" style="--iconPrimary: currentColor;">
+  <title>WB Preset: Incandescent (3200K) (spectrum-icon-24-FlashlightOn (sp-icon-flashlight-on))</title>
   <desc>Indoor tungsten bulb cooling white balance preset</desc>
   <path d="M9 16.2A5.5 5.5 0 1 1 15 16.2V18a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-1.8z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><line x1="10" y1="21.5" x2="14" y2="21.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
 </svg>

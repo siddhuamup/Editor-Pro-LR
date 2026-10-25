@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_ShutterSpeed_24_N" data-name="Shutter Speed (Sec)" style="--iconPrimary: currentColor;">
-  <title>Shutter Speed (Sec) (S2_Icon_ShutterSpeed_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-Stopwatch (sp-icon-stopwatch)" data-name="Shutter Speed (Sec)" style="--iconPrimary: currentColor;">
+  <title>Shutter Speed (Sec) (spectrum-icon-24-Stopwatch (sp-icon-stopwatch))</title>
   <desc>Manual shutter speed control in Pro Camera mode</desc>
   <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="14.3" y1="8" x2="19" y2="16" stroke="currentColor" stroke-width="1.5"/><line x1="9.7" y1="8" x2="14.3" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="7.4" y1="12" x2="12" y2="4" stroke="currentColor" stroke-width="1.5"/><line x1="9.7" y1="16" x2="5" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="14.3" y1="16" x2="9.7" y2="16" stroke="currentColor" stroke-width="1.5"/><line x1="16.6" y1="12" x2="12" y2="20" stroke="currentColor" stroke-width="1.5"/>
 </svg>

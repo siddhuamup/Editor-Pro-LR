@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
+import androidx.compose.ui.res.painterResource
+import com.cleanlr.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,7 +61,7 @@ fun VersionsPanel(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Default.History,
+                    painter = painterResource(R.drawable.ic_lr_versions),
                     contentDescription = null,
                     tint = SpectrumTextSecondary,
                     modifier = Modifier.size(16.dp)
@@ -87,7 +89,7 @@ fun VersionsPanel(
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
+                        painter = painterResource(R.drawable.ic_lr_create_preset),
                         contentDescription = "New Version",
                         tint = Color.White,
                         modifier = Modifier.size(14.dp)

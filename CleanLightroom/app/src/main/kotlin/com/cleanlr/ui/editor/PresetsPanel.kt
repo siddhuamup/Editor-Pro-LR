@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.ui.res.painterResource
+import com.cleanlr.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -118,7 +120,7 @@ fun PresetsPanel(
                     modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
+                        painter = painterResource(R.drawable.ic_lr_create_preset),
                         contentDescription = "Save Preset",
                         tint = SpectrumIconNormal,
                         modifier = Modifier.size(16.dp)
@@ -133,7 +135,7 @@ fun PresetsPanel(
                     modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.FileOpen,
+                        painter = painterResource(R.drawable.ic_lr_import_add),
                         contentDescription = "Import XMP",
                         tint = SpectrumIconNormal,
                         modifier = Modifier.size(15.dp)
@@ -199,7 +201,7 @@ fun PresetsPanel(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            imageVector = Icons.Default.RestartAlt,
+                            painter = painterResource(R.drawable.ic_lr_reset_all),
                             contentDescription = "Original",
                             tint = if (activePreset == null) SpectrumBlue else SpectrumTextSecondary,
                             modifier = Modifier.size(20.dp)
@@ -238,7 +240,7 @@ fun PresetsPanel(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(
-                                imageVector = Icons.Default.AutoAwesome,
+                                painter = painterResource(R.drawable.ic_lr_presets),
                                 contentDescription = null,
                                 tint = if (isSelected) SpectrumBlue else SpectrumTextSecondary,
                                 modifier = Modifier.size(15.dp)
@@ -270,7 +272,7 @@ fun PresetsPanel(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Check,
+                                            painter = painterResource(R.drawable.ic_lr_select_checkmark),
                                             contentDescription = "Selected",
                                             tint = Color.White,
                                             modifier = Modifier.size(11.dp)

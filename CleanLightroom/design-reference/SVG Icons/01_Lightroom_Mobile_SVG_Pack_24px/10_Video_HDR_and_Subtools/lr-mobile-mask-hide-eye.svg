@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_VisibilityOff_24_N" data-name="Hide / Show Mask Overlay" style="--iconPrimary: currentColor;">
-  <title>Hide / Show Mask Overlay (S2_Icon_VisibilityOff_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-VisibilityOff (sp-icon-visibility-off)" data-name="Hide / Show Mask Overlay" style="--iconPrimary: currentColor;">
+  <title>Hide / Show Mask Overlay (spectrum-icon-24-VisibilityOff (sp-icon-visibility-off))</title>
   <desc>Temporarily disables mask layer or hides red mask overlay</desc>
   <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.65" fill="none"/><line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
 </svg>

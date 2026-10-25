@@ -6,5 +6,8 @@ CleanLightroom/app/build/
 CleanLightroom/.gradle/
 CleanLightroom/local.properties
 rea/
+*.png
+CleanLightroom/*.png
+CleanLightroom/dump.xml
 
 

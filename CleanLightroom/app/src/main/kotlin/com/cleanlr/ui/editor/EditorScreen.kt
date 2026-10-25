@@ -37,6 +37,8 @@ import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.res.painterResource
+import com.cleanlr.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -181,6 +183,7 @@ fun EditorScreen(
     var showSavePresetDialog by remember { mutableStateOf(false) }
     var newPresetName by remember { mutableStateOf("") }
     var colorSubTab by remember { mutableStateOf("WB") }
+    var selectedCurveChannel by remember { mutableStateOf(com.cleanlr.ui.components.CurveChannel.RGB) }
     val isDedicatedSubMode = (activeTab == EditorToolTab.COLOR && colorSubTab in listOf("MIXER", "GRADING")) || activeTab == EditorToolTab.CURVES
     var effectsSubTab by remember { mutableStateOf("Effects") }
     var detailSubTab by remember { mutableStateOf("Sharpening") }
@@ -226,27 +229,65 @@ fun EditorScreen(
         containerColor = canvasBackground.color,
         topBar = {
             if (!isCleanScreenMode) {
-                TopAppBar(
-                    modifier = Modifier.height(50.dp),
-                    navigationIcon = {
-                        IconButton(onClick = { onBack?.invoke() }) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Back to library",
-                                tint = SpectrumTextPrimary
+                if (selectedMobileTool == "Crop") {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .background(SpectrumSurface)
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Spacer(modifier = Modifier.size(36.dp))
+                        Surface(
+                            color = Color(0xFF262628),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, Color(0xFF3A3A3C)),
+                            modifier = Modifier.clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                viewModel.resetCrop()
+                            }
+                        ) {
+                            Text(
+                                text = "Original",
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp)
                             )
                         }
-                    },
-                    title = { },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = SpectrumSurface
-                    ),
+                        IconButton(onClick = { }, modifier = Modifier.size(36.dp)) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_lr_context_help),
+                                contentDescription = "Help",
+                                tint = SpectrumTextSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                } else {
+                    TopAppBar(
+                        modifier = Modifier.height(50.dp),
+                        navigationIcon = {
+                            IconButton(onClick = { onBack?.invoke() }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_lr_back_chevron),
+                                    contentDescription = "Back to library",
+                                    tint = SpectrumTextPrimary
+                                )
+                            }
+                        },
+                        title = { },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = SpectrumSurface
+                        ),
                     actions = {
                         // Mask overlay toggle in Masking mode (Screenshot 34)
                         if (selectedMobileTool == "Masking") {
                             IconButton(onClick = { viewModel.toggleMaskOverlay() }) {
                                 Icon(
-                                    imageVector = if (isMaskOverlayVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    painter = painterResource(R.drawable.ic_lr_mask_hide_eye),
                                     contentDescription = "Toggle mask overlay",
                                     tint = if (isMaskOverlayVisible) SpectrumBlue else SpectrumIconDisabled
                                 )
@@ -289,7 +330,7 @@ fun EditorScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.Undo,
+                                        painter = painterResource(R.drawable.ic_lr_undo),
                                         contentDescription = "Undo (Tap) / History (Long-Press)",
                                         tint = SpectrumTextPrimary,
                                         modifier = Modifier.size(20.dp)
@@ -341,7 +382,7 @@ fun EditorScreen(
                         // Share / Export Icon (Screenshots 4, 6)
                         IconButton(onClick = { showShareSheet = true }) {
                             Icon(
-                                imageVector = Icons.Default.Share,
+                                painter = painterResource(R.drawable.ic_lr_share_export),
                                 contentDescription = "Share and Export",
                                 tint = SpectrumTextPrimary
                             )
@@ -351,7 +392,7 @@ fun EditorScreen(
                         Box {
                             IconButton(onClick = { showEditorOverflowMenu = true }) {
                                 Icon(
-                                    imageVector = Icons.Default.MoreVert,
+                                    painter = painterResource(R.drawable.ic_lr_more_menu),
                                     contentDescription = "More options",
                                     tint = SpectrumTextPrimary
                                 )
@@ -367,7 +408,7 @@ fun EditorScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.SaveAlt, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Icon(painter = painterResource(R.drawable.ic_lr_save_to_device), contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(12.dp))
                                             Text("Save copy to device", color = SpectrumTextPrimary, fontSize = 14.sp)
                                         }
@@ -380,7 +421,7 @@ fun EditorScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.Tune, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Icon(painter = painterResource(R.drawable.ic_lr_slider_exposure), contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(12.dp))
                                             Text("View options", color = SpectrumTextPrimary, fontSize = 14.sp)
                                         }
@@ -393,7 +434,7 @@ fun EditorScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.AddBox, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Icon(painter = painterResource(R.drawable.ic_lr_create_preset), contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(12.dp))
                                             Text("Create Preset", color = SpectrumTextPrimary, fontSize = 14.sp)
                                         }
@@ -406,7 +447,7 @@ fun EditorScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.ContentCopy, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Icon(painter = painterResource(R.drawable.ic_lr_copy_settings), contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(12.dp))
                                             Text("Copy Settings", color = SpectrumTextPrimary, fontSize = 14.sp)
                                         }
@@ -419,7 +460,7 @@ fun EditorScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.ContentPaste, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Icon(painter = painterResource(R.drawable.ic_lr_paste_settings), contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(12.dp))
                                             Text("Paste Settings", color = SpectrumTextPrimary, fontSize = 14.sp)
                                         }
@@ -432,7 +473,7 @@ fun EditorScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.History, contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
+                                            Icon(painter = painterResource(R.drawable.ic_lr_versions), contentDescription = null, tint = SpectrumTextPrimary, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(12.dp))
                                             Text("Apply from previous", color = SpectrumTextPrimary, fontSize = 14.sp)
                                         }
@@ -446,7 +487,7 @@ fun EditorScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.Help, contentDescription = null, tint = SpectrumTextSecondary, modifier = Modifier.size(18.dp))
+                                            Icon(painter = painterResource(R.drawable.ic_lr_context_help), contentDescription = null, tint = SpectrumTextSecondary, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(12.dp))
                                             Text("Help", color = SpectrumTextSecondary, fontSize = 14.sp)
                                         }
@@ -467,6 +508,7 @@ fun EditorScreen(
                         }
                     }
                 )
+                }
             }
         },
     bottomBar = {
@@ -566,6 +608,26 @@ fun EditorScreen(
                     photoExif = photoExif,
                     showGrid = showGrid,
                     aspectRatioGuide = aspectRatioGuide,
+                    isCropActive = (selectedMobileTool == "Crop" || isCropActive),
+                    isCurveActive = (activeTab == EditorToolTab.CURVES),
+                    curvePoints = when (selectedCurveChannel) {
+                        com.cleanlr.ui.components.CurveChannel.RGB -> recipe.curves.composite
+                        com.cleanlr.ui.components.CurveChannel.RED -> recipe.curves.red
+                        com.cleanlr.ui.components.CurveChannel.GREEN -> recipe.curves.green
+                        com.cleanlr.ui.components.CurveChannel.BLUE -> recipe.curves.blue
+                    },
+                    curveChannelColor = selectedCurveChannel.color,
+                    onCurvePointChanged = { updated ->
+                        val updatedCurves = when (selectedCurveChannel) {
+                            com.cleanlr.ui.components.CurveChannel.RGB -> recipe.curves.copy(composite = updated, pointCurve = updated)
+                            com.cleanlr.ui.components.CurveChannel.RED -> recipe.curves.copy(red = updated)
+                            com.cleanlr.ui.components.CurveChannel.GREEN -> recipe.curves.copy(green = updated)
+                            com.cleanlr.ui.components.CurveChannel.BLUE -> recipe.curves.copy(blue = updated)
+                        }
+                        viewModel.updateRecipe("Tone Curve") { it.copy(curves = updatedCurves) }
+                    },
+                    onCurveTouchStart = { viewModel.onSliderTouchStart() },
+                    onCurveTouchEnd = { viewModel.onSliderTouchEnd(it) },
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -603,7 +665,7 @@ fun EditorScreen(
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Share,
+                                        painter = painterResource(R.drawable.ic_lr_share_export),
                                         contentDescription = "Share",
                                         tint = Color.White,
                                         modifier = Modifier.size(13.dp)
@@ -689,7 +751,7 @@ fun EditorScreen(
                 val animatedPanelHeight by androidx.compose.animation.core.animateDpAsState(
                     targetValue = if (selectedMobileTool != null && selectedMobileTool != "Actions") {
                         if (isDedicatedSubMode) {
-                            360.dp
+                            if (activeTab == EditorToolTab.CURVES) 130.dp else 360.dp
                         } else {
                             when (panelSnapState) {
                                 PanelSnapState.COLLAPSED -> 0.dp
@@ -812,7 +874,7 @@ fun EditorScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Timeline,
+                                            painter = painterResource(R.drawable.ic_lr_curve),
                                             contentDescription = "Tone Curve",
                                             tint = SpectrumBlue,
                                             modifier = Modifier.size(16.dp)
@@ -1230,7 +1292,7 @@ fun EditorScreen(
                                             modifier = Modifier.size(32.dp)
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.Colorize,
+                                                painter = painterResource(R.drawable.ic_lr_wb_eyedropper),
                                                 contentDescription = "White Balance Eyedropper",
                                                 tint = SpectrumIconNormal,
                                                 modifier = Modifier.size(20.dp)
@@ -1781,7 +1843,7 @@ fun EditorScreen(
                                                 it.copy(detail = com.cleanlr.model.DetailAdjustments()).syncLegacyFields()
                                             }
                                         }) {
-                                            Icon(Icons.Default.RestartAlt, contentDescription = null, tint = SpectrumIconNormal, modifier = Modifier.size(16.dp))
+                                            Icon(painter = painterResource(R.drawable.ic_lr_reset_all), contentDescription = null, tint = SpectrumIconNormal, modifier = Modifier.size(16.dp))
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text("Reset Detail to Default", color = SpectrumTextSecondary, fontSize = 11.sp)
                                         }
@@ -1791,6 +1853,7 @@ fun EditorScreen(
                         }
 
                         EditorToolTab.CURVES -> {
+                            // Authentic Tone Curve Header (Screenshot 083443)
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1807,6 +1870,7 @@ fun EditorScreen(
                                 Surface(
                                     color = SpectrumElevated,
                                     shape = RoundedCornerShape(6.dp),
+                                    border = BorderStroke(1.dp, SpectrumInnerBorder),
                                     modifier = Modifier.clickable {
                                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                         viewModel.setActiveTab(EditorToolTab.LIGHT)
@@ -1821,12 +1885,68 @@ fun EditorScreen(
                                     )
                                 }
                             }
-                            ToneCurveWidget(
-                                curves = recipe.curves,
-                                onCurveChanged = { updated ->
-                                    viewModel.updateRecipe("Tone Curve") { it.copy(curves = updated) }
+
+                            // Authentic 5-Channel Selector Buttons Row (RGB, Red, Green, Blue, Parametric)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                com.cleanlr.ui.components.CurveChannel.entries.forEach { ch ->
+                                    val isSelected = selectedCurveChannel == ch
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(horizontal = 14.dp)
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .clickable {
+                                                selectedCurveChannel = ch
+                                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (isSelected) {
+                                            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                                                drawCircle(ch.color)
+                                                drawCircle(if (ch == com.cleanlr.ui.components.CurveChannel.RGB) Color.Black else Color.White, radius = 3.dp.toPx())
+                                            }
+                                        } else {
+                                            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                                                drawCircle(
+                                                    color = ch.color,
+                                                    style = Stroke(width = 1.8.dp.toPx())
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
-                            )
+
+                                // 5th Button: Parametric Curve Icon Button
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 14.dp)
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .clickable {
+                                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                                        val p = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(size.width * 0.25f, size.height * 0.75f)
+                                            cubicTo(
+                                                size.width * 0.45f, size.height * 0.75f,
+                                                size.width * 0.55f, size.height * 0.25f,
+                                                size.width * 0.75f, size.height * 0.25f
+                                            )
+                                        }
+                                        drawPath(p, color = Color(0xFFAAAAAA), style = Stroke(width = 2.dp.toPx()))
+                                    }
+                                }
+                            }
                         }
 
                         EditorToolTab.BLUR -> {
@@ -1942,7 +2062,7 @@ fun EditorScreen(
                                     .padding(horizontal = 6.dp, vertical = 4.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.AutoFixHigh,
+                                    painter = painterResource(R.drawable.ic_lr_auto),
                                     contentDescription = "Auto",
                                     tint = SpectrumIconNormal,
                                     modifier = Modifier.size(20.dp)
@@ -1978,7 +2098,7 @@ fun EditorScreen(
                                     .padding(horizontal = 6.dp, vertical = 4.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.AutoAwesome,
+                                    painter = painterResource(R.drawable.ic_lr_quick_actions),
                                     contentDescription = "Enhance",
                                     tint = SpectrumIconNormal,
                                     modifier = Modifier.size(20.dp)
@@ -2004,23 +2124,23 @@ fun EditorScreen(
                             )
                         }
                         val maskActions = listOf(
-                            Triple("Subject", Icons.Default.Person) {
+                            Triple("Subject", R.drawable.ic_lr_mask_subject) {
                                 viewModel.setActiveTab(EditorToolTab.MASKS)
                                 selectedMobileTool = "Masking"
                             },
-                            Triple("Background", Icons.Default.Wallpaper) {
+                            Triple("Background", R.drawable.ic_lr_mask_background) {
                                 viewModel.setActiveTab(EditorToolTab.MASKS)
                                 selectedMobileTool = "Masking"
                             },
-                            Triple("Sky", Icons.Default.Cloud) {
+                            Triple("Sky", R.drawable.ic_lr_mask_sky) {
                                 viewModel.setActiveTab(EditorToolTab.MASKS)
                                 selectedMobileTool = "Masking"
                             },
-                            Triple("Animate", Icons.Default.Animation) {
+                            Triple("Animate", R.drawable.ic_lr_edit_replay_video) {
                                 android.widget.Toast.makeText(context, "Animation requires motion preview export pipeline", android.widget.Toast.LENGTH_SHORT).show()
                             }
                         )
-                        items(maskActions) { (label, icon, action) ->
+                        items(maskActions) { (label, iconRes, action) ->
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier
@@ -2031,7 +2151,7 @@ fun EditorScreen(
                                     .padding(horizontal = 6.dp, vertical = 4.dp)
                             ) {
                                 Icon(
-                                    imageVector = icon,
+                                    painter = painterResource(iconRes),
                                     contentDescription = label,
                                     tint = SpectrumIconNormal,
                                     modifier = Modifier.size(20.dp)
@@ -2059,7 +2179,7 @@ fun EditorScreen(
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.AutoFixHigh,
+                                    painter = painterResource(R.drawable.ic_lr_auto),
                                     contentDescription = "Auto Tone",
                                     tint = SpectrumIconNormal,
                                     modifier = Modifier.size(20.dp)
@@ -2089,19 +2209,19 @@ fun EditorScreen(
                             val isSelected = tab == activeTab
                             val isModified = viewModel.isTabModified(tab)
                             val isBypassed = bypassedTabs.contains(tab)
-                            val tabIcon = when (tab) {
-                                EditorToolTab.CROP -> Icons.Default.Crop
-                                EditorToolTab.LIGHT -> Icons.Default.Brightness6
-                                EditorToolTab.COLOR -> Icons.Default.Palette
-                                EditorToolTab.BLUR -> Icons.Default.BlurOn
-                                EditorToolTab.EFFECTS -> Icons.Default.AutoAwesome
-                                EditorToolTab.DETAIL -> Icons.Default.Tune
-                                EditorToolTab.OPTICS -> Icons.Default.CameraAlt
-                                EditorToolTab.PROFILES -> Icons.Default.ColorLens
-                                EditorToolTab.CURVES -> Icons.Default.Timeline
-                                EditorToolTab.PRESETS -> Icons.Default.Style
-                                EditorToolTab.VERSIONS -> Icons.Default.HistoryEdu
-                                EditorToolTab.MASKS -> Icons.Default.Layers
+                            val tabIconRes = when (tab) {
+                                EditorToolTab.CROP -> R.drawable.ic_lr_crop
+                                EditorToolTab.LIGHT -> R.drawable.ic_lr_light
+                                EditorToolTab.COLOR -> R.drawable.ic_lr_color
+                                EditorToolTab.BLUR -> R.drawable.ic_lr_lens_blur
+                                EditorToolTab.EFFECTS -> R.drawable.ic_lr_effects
+                                EditorToolTab.DETAIL -> R.drawable.ic_lr_detail
+                                EditorToolTab.OPTICS -> R.drawable.ic_lr_optics
+                                EditorToolTab.PROFILES -> R.drawable.ic_lr_profiles
+                                EditorToolTab.CURVES -> R.drawable.ic_lr_curve
+                                EditorToolTab.PRESETS -> R.drawable.ic_lr_presets
+                                EditorToolTab.VERSIONS -> R.drawable.ic_lr_versions
+                                EditorToolTab.MASKS -> R.drawable.ic_lr_masking
                             }
                             Surface(
                                 color = if (isSelected) Color(0xFF2C2C2C) else Color.Transparent,
@@ -2131,30 +2251,12 @@ fun EditorScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                 ) {
-                                    if (tab == EditorToolTab.COLOR) {
-                                        Canvas(modifier = Modifier.size(20.dp)) {
-                                            val strokeColor = if (isSelected) Color.White else if (isBypassed) SpectrumIconDisabled else SpectrumIconNormal
-                                            val cx = size.width / 2f
-                                            val bulbR = 3.5.dp.toPx()
-                                            val tubeW = 3.5.dp.toPx()
-                                            val tubeTop = 2.dp.toPx()
-                                            val bulbY = size.height - bulbR - 2.dp.toPx()
-                                            drawCircle(color = strokeColor, radius = bulbR, center = Offset(cx, bulbY))
-                                            drawRoundRect(
-                                                color = strokeColor,
-                                                topLeft = Offset(cx - tubeW / 2f, tubeTop),
-                                                size = Size(tubeW, bulbY - tubeTop + 2.dp.toPx()),
-                                                cornerRadius = CornerRadius(tubeW / 2f, tubeW / 2f)
-                                            )
-                                        }
-                                    } else {
-                                        Icon(
-                                            imageVector = tabIcon,
-                                            contentDescription = tab.title,
-                                            tint = if (isSelected) Color.White else if (isBypassed) SpectrumIconDisabled else SpectrumIconNormal,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
+                                    Icon(
+                                        painter = painterResource(id = tabIconRes),
+                                        contentDescription = tab.title,
+                                        tint = if (isSelected) Color.White else if (isBypassed) SpectrumIconDisabled else SpectrumIconNormal,
+                                        modifier = Modifier.size(20.dp)
+                                    )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = tab.title,
@@ -2190,7 +2292,7 @@ fun EditorScreen(
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.RestartAlt,
+                                    painter = painterResource(R.drawable.ic_lr_reset_all),
                                     contentDescription = "Reset All",
                                     tint = SpectrumIconNormal,
                                     modifier = Modifier.size(20.dp)
@@ -2417,7 +2519,7 @@ fun EditorScreen(
                                     .background(Color(0xFF2C2C2C)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White, modifier = Modifier.size(24.dp))
+                                Icon(painter = painterResource(R.drawable.ic_lr_share_export), contentDescription = "Share", tint = Color.White, modifier = Modifier.size(24.dp))
                             }
                             Spacer(Modifier.height(8.dp))
                             Text("Share", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
@@ -2440,7 +2542,7 @@ fun EditorScreen(
                                     .background(Color(0xFF2C2C2C)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Tune, contentDescription = "Export as...", tint = Color.White, modifier = Modifier.size(24.dp))
+                                Icon(painter = painterResource(R.drawable.ic_lr_save_to_device), contentDescription = "Export as...", tint = Color.White, modifier = Modifier.size(24.dp))
                             }
                             Spacer(Modifier.height(8.dp))
                             Text("Export as...", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
@@ -2460,7 +2562,7 @@ fun EditorScreen(
                             .padding(vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.SaveAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        Icon(painter = painterResource(R.drawable.ic_lr_save_to_device), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(16.dp))
                         Text("Save copy to device", color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
                         IconButton(
@@ -2470,7 +2572,7 @@ fun EditorScreen(
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(Icons.Default.Settings, contentDescription = "Export settings", tint = Color(0xFF888888), modifier = Modifier.size(18.dp))
+                            Icon(painter = painterResource(R.drawable.ic_lr_more_menu), contentDescription = "Export settings", tint = Color(0xFF888888), modifier = Modifier.size(18.dp))
                         }
                     }
 
@@ -2481,7 +2583,7 @@ fun EditorScreen(
                             .padding(vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Link, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        Icon(painter = painterResource(R.drawable.ic_lr_shared_tab), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(16.dp))
                         Text("Get link", color = Color.White, fontSize = 15.sp)
                     }
@@ -2493,7 +2595,7 @@ fun EditorScreen(
                             .padding(vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.PlayCircleOutline, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        Icon(painter = painterResource(R.drawable.ic_lr_edit_replay_video), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(16.dp))
                         Text("Create edit replay", color = Color.White, fontSize = 15.sp)
                     }
@@ -2505,7 +2607,7 @@ fun EditorScreen(
                             .padding(vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Public, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        Icon(painter = painterResource(R.drawable.ic_lr_community_tab), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(16.dp))
                         Text("Post to Community", color = Color.White, fontSize = 15.sp)
                     }
@@ -2517,7 +2619,7 @@ fun EditorScreen(
                             .padding(vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.PersonAdd, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        Icon(painter = painterResource(R.drawable.ic_lr_add_to_album), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(16.dp))
                         Text("Invite to edit", color = Color.White, fontSize = 15.sp)
                     }
@@ -2641,7 +2743,7 @@ private fun DedicatedCommitBottomBar(
             )
             IconButton(onClick = onConfirm) {
                 Icon(
-                    imageVector = Icons.Default.Check,
+                    painter = painterResource(R.drawable.ic_lr_select_checkmark),
                     contentDescription = "Apply",
                     tint = Color(0xFF1686FF),
                     modifier = Modifier.size(24.dp)
@@ -2717,11 +2819,11 @@ private fun ActionsPanel(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             listOf(
-                "Enhance Details" to Icons.Default.AutoAwesome,
-                "Select Subject" to Icons.Default.Person,
-                "Select Sky" to Icons.Default.Cloud,
-                "Select Background" to Icons.Default.Wallpaper
-            ).forEach { (label, icon) ->
+                "Enhance Details" to R.drawable.ic_lr_slider_clarity,
+                "Select Subject" to R.drawable.ic_lr_mask_subject,
+                "Select Sky" to R.drawable.ic_lr_mask_sky,
+                "Select Background" to R.drawable.ic_lr_mask_background
+            ).forEach { (label, iconRes) ->
                 Surface(
                     color = Color(0xFF262626),
                     shape = RoundedCornerShape(8.dp),
@@ -2732,7 +2834,7 @@ private fun ActionsPanel(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(icon, contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(16.dp))
+                        Icon(painter = painterResource(iconRes), contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(label, color = Color.White, fontSize = 12.sp)
                     }
@@ -2748,12 +2850,12 @@ private fun MobilePrimaryToolbar(
     onToolSelected: (String) -> Unit
 ) {
     val tools = listOf(
-        "Actions" to Icons.Default.AutoFixHigh,
-        "Presets" to Icons.Default.Style,
-        "Crop" to Icons.Default.Crop,
-        "Edit" to Icons.Default.Tune,
-        "Masking" to Icons.Default.Layers,
-        "Remove" to Icons.Default.RemoveCircleOutline
+        "Actions" to R.drawable.ic_lr_quick_actions,
+        "Presets" to R.drawable.ic_lr_presets,
+        "Crop" to R.drawable.ic_lr_crop,
+        "Edit" to R.drawable.ic_lr_slider_exposure,
+        "Masking" to R.drawable.ic_lr_masking,
+        "Remove" to R.drawable.ic_lr_heal
     )
 
     if (selectedTool == null) {
@@ -2778,7 +2880,7 @@ private fun MobilePrimaryToolbar(
                         .padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    tools.forEach { (label, icon) ->
+                    tools.forEach { (label, iconRes) ->
                         Column(
                             modifier = Modifier
                                 .weight(1f)
@@ -2790,7 +2892,7 @@ private fun MobilePrimaryToolbar(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                imageVector = icon,
+                                painter = painterResource(iconRes),
                                 contentDescription = label,
                                 tint = Color(0xFFCCCCCC),
                                 modifier = Modifier.size(20.dp)
@@ -2825,7 +2927,7 @@ private fun MobilePrimaryToolbar(
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                tools.forEach { (label, icon) ->
+                tools.forEach { (label, iconRes) ->
                     val active = selectedTool == label
                     Box(
                         modifier = Modifier
@@ -2843,7 +2945,7 @@ private fun MobilePrimaryToolbar(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = icon,
+                                    painter = painterResource(iconRes),
                                     contentDescription = label,
                                     tint = Color.White,
                                     modifier = Modifier.size(22.dp)
@@ -2855,7 +2957,7 @@ private fun MobilePrimaryToolbar(
                                 modifier = Modifier.size(42.dp)
                             ) {
                                 Icon(
-                                    imageVector = icon,
+                                    painter = painterResource(iconRes),
                                     contentDescription = label,
                                     tint = Color(0xFF8E8E93),
                                     modifier = Modifier.size(22.dp)
@@ -2896,31 +2998,32 @@ private fun CurvedStraightenDial(
             val width = size.width
             val height = size.height
             val centerX = width / 2f
-            val arcY = height * 0.85f
+            val arcY = height * 0.35f
+            val arcDip = 18f
 
-            // Draw curved subtle arc base line
+            // Draw curved subtle downward arc base line (smile arc)
             val path = androidx.compose.ui.graphics.Path().apply {
-                moveTo(width * 0.08f, arcY)
-                quadraticBezierTo(centerX, arcY - 14f, width * 0.92f, arcY)
+                moveTo(width * 0.12f, arcY)
+                quadraticBezierTo(centerX, arcY + arcDip, width * 0.88f, arcY)
             }
             drawPath(path, color = Color(0xFF444444), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f))
 
-            // Draw ticks along the dial
+            // Draw ticks along the downward dial
             val tickCount = 41
             for (i in 0 until tickCount) {
                 val tickFraction = i / (tickCount - 1).toFloat()
-                val tickX = width * 0.08f + tickFraction * (width * 0.84f)
-                val curveOffset = 14f * (1f - ((tickX - centerX) / (width * 0.42f)).let { it * it }.coerceIn(0f, 1f))
-                val currentY = arcY - curveOffset
+                val tickX = width * 0.12f + tickFraction * (width * 0.76f)
+                val curveOffset = arcDip * (1f - ((tickX - centerX) / (width * 0.38f)).let { it * it }.coerceIn(0f, 1f))
+                val currentY = arcY + curveOffset
                 val isMajor = i % 5 == 0
-                val tickHeight = if (isMajor) 12f else 6f
+                val tickHeight = if (isMajor) 10f else 5f
                 val isCenter = i == tickCount / 2
                 val tickColor = if (isCenter) Color(0xFF1686FF) else if (isMajor) Color(0xFFAAAAAA) else Color(0xFF555555)
 
                 drawLine(
                     color = tickColor,
-                    start = androidx.compose.ui.geometry.Offset(tickX, currentY - tickHeight),
-                    end = androidx.compose.ui.geometry.Offset(tickX, currentY),
+                    start = androidx.compose.ui.geometry.Offset(tickX, currentY),
+                    end = androidx.compose.ui.geometry.Offset(tickX, currentY + tickHeight),
                     strokeWidth = if (isCenter) 2.5f else 1.2f
                 )
             }
@@ -3034,7 +3137,7 @@ private fun CropAndExpandPanel(
                         }
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.RotateRight, contentDescription = "Rotate 90 degrees", tint = Color.White, modifier = Modifier.size(20.dp))
+                        Icon(painter = painterResource(R.drawable.ic_lr_rotate_right), contentDescription = "Rotate 90 degrees", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
                 Box {
@@ -3049,7 +3152,7 @@ private fun CropAndExpandPanel(
                             }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.MoreHoriz, contentDescription = "More crop tools", tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(painter = painterResource(R.drawable.ic_lr_more_menu), contentDescription = "More crop tools", tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }
                     DropdownMenu(
@@ -3163,7 +3266,7 @@ private fun RemoveToolPanel(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.PersonRemove, contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(16.dp))
+                Icon(painter = painterResource(R.drawable.ic_lr_distracting_people), contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
                 Text("Remove extra people", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             }
@@ -3244,7 +3347,7 @@ private fun LensBlurPanel(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(16.dp))
+                Icon(painter = painterResource(R.drawable.ic_lr_select_checkmark), contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Depth map detected", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             }
@@ -3533,7 +3636,7 @@ private fun CropToolsPanel(
                             onRotate(false)
                         }
                     ) {
-                        Icon(Icons.Default.RotateLeft, contentDescription = "Rotate 90° CCW", tint = SpectrumIconNormal)
+                        Icon(painter = painterResource(R.drawable.ic_lr_rotate_left), contentDescription = "Rotate 90° CCW", tint = SpectrumIconNormal)
                     }
                     IconButton(
                         onClick = {
@@ -3541,7 +3644,7 @@ private fun CropToolsPanel(
                             onRotate(true)
                         }
                     ) {
-                        Icon(Icons.Default.RotateRight, contentDescription = "Rotate 90° CW", tint = SpectrumIconNormal)
+                        Icon(painter = painterResource(R.drawable.ic_lr_rotate_right), contentDescription = "Rotate 90° CW", tint = SpectrumIconNormal)
                     }
                     IconButton(
                         onClick = {
@@ -3549,7 +3652,7 @@ private fun CropToolsPanel(
                             onFlip(true)
                         }
                     ) {
-                        Icon(Icons.Default.Flip, contentDescription = "Flip Horizontal", tint = if (crop.flipHorizontal) SpectrumBlue else SpectrumIconNormal)
+                        Icon(painter = painterResource(R.drawable.ic_lr_flip_horizontal), contentDescription = "Flip Horizontal", tint = if (crop.flipHorizontal) SpectrumBlue else SpectrumIconNormal)
                     }
                     IconButton(
                         onClick = {
@@ -3557,7 +3660,7 @@ private fun CropToolsPanel(
                             onFlip(false)
                         }
                     ) {
-                        Icon(Icons.Default.SwapVert, contentDescription = "Flip Vertical", tint = if (crop.flipVertical) SpectrumBlue else SpectrumIconNormal)
+                        Icon(painter = painterResource(R.drawable.ic_lr_flip_vertical), contentDescription = "Flip Vertical", tint = if (crop.flipVertical) SpectrumBlue else SpectrumIconNormal)
                     }
                 }
 
@@ -3709,7 +3812,7 @@ private fun CropToolsPanel(
                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     onResetCrop()
                 }) {
-                    Icon(Icons.Default.RestartAlt, contentDescription = null, tint = SpectrumIconNormal, modifier = Modifier.size(16.dp))
+                    Icon(painter = painterResource(R.drawable.ic_lr_reset_all), contentDescription = null, tint = SpectrumIconNormal, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Reset Crop & Geometry", color = SpectrumTextSecondary, fontSize = 11.sp)
                 }

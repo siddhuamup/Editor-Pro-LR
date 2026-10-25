@@ -14,6 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.ui.res.painterResource
+import com.cleanlr.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -238,17 +240,12 @@ fun HslMixerPanel(
                         modifier = Modifier.size(32.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Canvas(modifier = Modifier.size(16.dp)) {
-                            val cx = size.width / 2f
-                            val cy = size.height / 2f
-                            drawCircle(Color.White, radius = 2.dp.toPx(), center = Offset(cx, cy))
-                            val lineLen = 4.dp.toPx()
-                            val gap = 3.dp.toPx()
-                            drawLine(Color.White, Offset(cx, cy - gap), Offset(cx, cy - gap - lineLen), strokeWidth = 1.5.dp.toPx())
-                            drawLine(Color.White, Offset(cx, cy + gap), Offset(cx, cy + gap + lineLen), strokeWidth = 1.5.dp.toPx())
-                            drawLine(Color.White, Offset(cx - gap, cy), Offset(cx - gap - lineLen, cy), strokeWidth = 1.5.dp.toPx())
-                            drawLine(Color.White, Offset(cx + gap, cy), Offset(cx + gap + lineLen, cy), strokeWidth = 1.5.dp.toPx())
-                        }
+                        Icon(
+                            painter = painterResource(R.drawable.ic_lr_color_target_tool),
+                            contentDescription = "Targeted Adjustment Tool",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
 

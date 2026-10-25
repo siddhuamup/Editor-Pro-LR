@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_SelectSky_24_N" data-name="Select Sky (AI)" style="--iconPrimary: currentColor;">
-  <title>Select Sky (AI) (S2_Icon_SelectSky_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-CloudOutline (sp-icon-cloud-outline)" data-name="Select Sky (AI)" style="--iconPrimary: currentColor;">
+  <title>Select Sky (AI) (spectrum-icon-24-CloudOutline (sp-icon-cloud-outline))</title>
   <desc>AI sky segmentation for dramatic horizon and cloud grading</desc>
   <path d="M6.5 15.5h11a3.5 3.5 0 0 0 .4-6.98A5 5 0 0 0 8.2 7.2a4 4 0 0 0-1.7 8.3z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M3.5 19.5h17" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-dasharray="3 2.5"/>
 </svg>

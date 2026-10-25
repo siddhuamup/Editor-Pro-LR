@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_ColorRangeMask_24_N" data-name="Color Range Mask" style="--iconPrimary: currentColor;">
-  <title>Color Range Mask (S2_Icon_ColorRangeMask_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-RangeMask (sp-icon-range-mask)" data-name="Color Range Mask" style="--iconPrimary: currentColor;">
+  <title>Color Range Mask (spectrum-icon-24-RangeMask (sp-icon-range-mask))</title>
   <desc>Creates a precision mask based on sampled target colors in the photo</desc>
   <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M14 20l2.2-.5 4.3-4.3a1.2 1.2 0 0 0-1.7-1.7l-4.3 4.3L14 20z" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round" fill="none"/>
 </svg>

@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.ViewCarousel
+import androidx.compose.ui.res.painterResource
+import com.cleanlr.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -144,6 +146,12 @@ fun ColorGradingWheelWidget(
 
             threeTargets.forEach { target ->
                 val isSelected = target == activeTarget && !is3UpMode
+                val iconRes = when (target) {
+                    GradingTarget.SHADOWS -> R.drawable.ic_lr_cg_shadows_wheel
+                    GradingTarget.MIDTONES -> R.drawable.ic_lr_cg_midtones_wheel
+                    GradingTarget.HIGHLIGHTS -> R.drawable.ic_lr_cg_highlights_wheel
+                    else -> R.drawable.ic_lr_cg_global_wheel
+                }
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 12.dp)
@@ -155,47 +163,12 @@ fun ColorGradingWheelWidget(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Canvas(modifier = Modifier.size(18.dp)) {
-                        val cx = size.width / 2f
-                        val cy = size.height / 2f
-                        val strokeColor = if (isSelected) Color.White else Color(0xFF727272)
-                        val strokeW = if (isSelected) 2.2.dp.toPx() else 1.5.dp.toPx()
-
-                        when (target) {
-                            GradingTarget.SHADOWS -> {
-                                // Hollow circle ○
-                                drawCircle(
-                                    color = strokeColor,
-                                    radius = 7.5.dp.toPx(),
-                                    center = Offset(cx, cy),
-                                    style = Stroke(strokeW)
-                                )
-                            }
-                            GradingTarget.MIDTONES -> {
-                                // Inner-filled circle ◎
-                                drawCircle(
-                                    color = strokeColor,
-                                    radius = 7.5.dp.toPx(),
-                                    center = Offset(cx, cy),
-                                    style = Stroke(strokeW)
-                                )
-                                drawCircle(
-                                    color = strokeColor,
-                                    radius = 3.dp.toPx(),
-                                    center = Offset(cx, cy)
-                                )
-                            }
-                            GradingTarget.HIGHLIGHTS -> {
-                                // Solid filled circle ●
-                                drawCircle(
-                                    color = strokeColor,
-                                    radius = 7.5.dp.toPx(),
-                                    center = Offset(cx, cy)
-                                )
-                            }
-                            else -> {}
-                        }
-                    }
+                    Icon(
+                        painter = painterResource(iconRes),
+                        contentDescription = target.label,
+                        tint = if (isSelected) Color.White else Color(0xFF727272),
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
 
@@ -221,28 +194,12 @@ fun ColorGradingWheelWidget(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Canvas(modifier = Modifier.size(18.dp)) {
-                    val cx = size.width / 2f
-                    val cy = size.height / 2f
-                    val strokeColor = if (isGlobalSelected) Color.White else Color(0xFF727272)
-                    val strokeW = if (isGlobalSelected) 2.2.dp.toPx() else 1.5.dp.toPx()
-
-                    drawCircle(
-                        color = strokeColor,
-                        radius = 7.5.dp.toPx(),
-                        center = Offset(cx, cy),
-                        style = Stroke(strokeW)
-                    )
-                    // Left half filled
-                    drawArc(
-                        color = strokeColor,
-                        startAngle = 90f,
-                        sweepAngle = 180f,
-                        useCenter = true,
-                        topLeft = Offset(cx - 7.5.dp.toPx(), cy - 7.5.dp.toPx()),
-                        size = Size(15.dp.toPx(), 15.dp.toPx())
-                    )
-                }
+                Icon(
+                    painter = painterResource(R.drawable.ic_lr_cg_global_wheel),
+                    contentDescription = "Global",
+                    tint = if (isGlobalSelected) Color.White else Color(0xFF727272),
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
 
@@ -327,7 +284,7 @@ fun ColorGradingWheelWidget(
                         fontWeight = FontWeight.Normal
                     )
                     Icon(
-                        imageVector = Icons.Default.ChevronLeft,
+                        painter = painterResource(R.drawable.ic_lr_back_chevron),
                         contentDescription = "Previous / More",
                         tint = Color(0xFFA2A2A2),
                         modifier = Modifier.size(18.dp)

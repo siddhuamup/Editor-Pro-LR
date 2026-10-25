@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_SelectPeople_24_N" data-name="Select People (AI)" style="--iconPrimary: currentColor;">
-  <title>Select People (AI) (S2_Icon_SelectPeople_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-User (sp-icon-user)" data-name="Select People (AI)" style="--iconPrimary: currentColor;">
+  <title>Select People (AI) (spectrum-icon-24-User (sp-icon-user))</title>
   <desc>Detects face skin, body skin, eyebrows, iris, lips, teeth, and hair</desc>
   <circle cx="12" cy="8.5" r="3.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M5.5 19.5c0-3.3 2.9-5.8 6.5-5.8s6.5 2.5 6.5 5.8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/>
 </svg>

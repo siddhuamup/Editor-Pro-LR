@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_Compare_24_N" data-name="Before / After Compare" style="--iconPrimary: currentColor;">
-  <title>Before / After Compare (S2_Icon_Compare_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-SplitView (sp-icon-split-view)" data-name="Before / After Compare" style="--iconPrimary: currentColor;">
+  <title>Before / After Compare (spectrum-icon-24-SplitView (sp-icon-split-view))</title>
   <desc>Toggle between edited photo and original unedited capture</desc>
   <rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="12" y1="3" x2="12" y2="21" stroke="currentColor" stroke-width="1.85" stroke-linecap="round"/><path d="M12 4.5h8.5v15H12z" fill="currentColor" fill-opacity="0.22"/>
 </svg>

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_Temperature_24_N" data-name="Color / White Balance" style="--iconPrimary: currentColor;">
-  <title>Color / White Balance (S2_Icon_Temperature_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-Temperature (sp-icon-temperature)" data-name="Color / White Balance" style="--iconPrimary: currentColor;">
+  <title>Color / White Balance (spectrum-icon-24-Temperature (sp-icon-temperature))</title>
   <desc>White Balance (Temp, Tint), Vibrance, and Saturation controls</desc>
   <path d="M14 14.26V5.5a2 2 0 1 0-4 0v8.76a4 4 0 1 0 4 0z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="12" cy="17.5" r="1.75" fill="currentColor"/><path d="M16.5 6h2M16.5 9h1.5M16.5 12h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
 </svg>

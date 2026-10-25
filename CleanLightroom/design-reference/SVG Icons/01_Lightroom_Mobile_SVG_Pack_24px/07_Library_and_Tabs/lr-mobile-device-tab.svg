@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_DevicePhone_24_N" data-name="Device Gallery Tab" style="--iconPrimary: currentColor;">
-  <title>Device Gallery Tab (S2_Icon_DevicePhone_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-DevicePhone (sp-icon-device-phone)" data-name="Device Gallery Tab" style="--iconPrimary: currentColor;">
+  <title>Device Gallery Tab (spectrum-icon-24-DevicePhone (sp-icon-device-phone))</title>
   <desc>Browses local smartphone camera roll directly without importing first</desc>
   <rect x="6.5" y="2.5" width="11" height="19" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="10" y1="18.5" x2="14" y2="18.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
 </svg>

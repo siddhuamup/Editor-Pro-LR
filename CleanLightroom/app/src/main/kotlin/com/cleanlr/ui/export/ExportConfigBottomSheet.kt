@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.ui.res.painterResource
+import com.cleanlr.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -80,7 +82,7 @@ fun ExportConfigBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Tune,
+                        painter = painterResource(R.drawable.ic_lr_slider_exposure),
                         contentDescription = null,
                         tint = SpectrumBlue,
                         modifier = Modifier.size(22.dp)
@@ -391,7 +393,7 @@ fun ExportConfigBottomSheet(
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.FileDownload,
+                            painter = painterResource(R.drawable.ic_lr_save_to_device),
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
@@ -440,7 +442,7 @@ fun ExportConfigBottomSheet(
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.FileDownload,
+                            painter = painterResource(R.drawable.ic_lr_save_to_device),
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )

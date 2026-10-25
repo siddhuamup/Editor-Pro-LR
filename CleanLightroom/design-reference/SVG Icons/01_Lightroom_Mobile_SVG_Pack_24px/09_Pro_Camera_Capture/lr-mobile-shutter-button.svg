@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_ShutterRelease_24_N" data-name="Camera Shutter Button" style="--iconPrimary: currentColor;">
-  <title>Camera Shutter Button (S2_Icon_ShutterRelease_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-CircleFilled (sp-icon-circle-filled)" data-name="Camera Shutter Button" style="--iconPrimary: currentColor;">
+  <title>Camera Shutter Button (spectrum-icon-24-CircleFilled (sp-icon-circle-filled))</title>
   <desc>Primary capture trigger in Auto, Pro, and HDR DNG modes</desc>
   <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="12" cy="12" r="6" fill="currentColor"/>
 </svg>

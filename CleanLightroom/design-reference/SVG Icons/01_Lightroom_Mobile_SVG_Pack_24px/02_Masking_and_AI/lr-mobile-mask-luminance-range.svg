@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_LuminanceRange_24_N" data-name="Luminance Range Mask" style="--iconPrimary: currentColor;">
-  <title>Luminance Range Mask (S2_Icon_LuminanceRange_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-Gradient (sp-icon-gradient)" data-name="Luminance Range Mask" style="--iconPrimary: currentColor;">
+  <title>Luminance Range Mask (spectrum-icon-24-Gradient (sp-icon-gradient))</title>
   <desc>Isolates adjustments to specific brightness levels (highlights, midtones, shadows)</desc>
   <rect x="3.5" y="6" width="17" height="12" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="9" y1="6" x2="9" y2="18" stroke="currentColor" stroke-width="1.5"/><line x1="15" y1="6" x2="15" y2="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2"/><path d="M9 3.5l2 2.5H7l2-2.5zM15 20.5l2-2.5h-4l2 2.5z" fill="currentColor"/>
 </svg>

@@ -267,10 +267,6 @@
     <title>Content Credentials (CR)</title>
     <path d="M12 3a9 9 0 1 0 9 9c0-1.5-.4-2.9-1-4.1" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><path d="M9.5 14a2.2 2.2 0 1 1 0-4M13 10v4m0-2.5c.5-.9 1.3-1.5 2.3-1.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18.5" cy="5.5" r="2" fill="currentColor"/>
   </symbol>
-  <symbol id="lr-mobile-export-as-dng" viewBox="0 0 24 24">
-    <title>Export as DNG Raw</title>
-    <path d="M6 3.5h8.5L19 8v12.5H6a1.5 1.5 0 0 1-1.5-1.5V5A1.5 1.5 0 0 1 6 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M14 3.5V8h4.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/><text x="7.2" y="16.5" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">DNG</text>
-  </symbol>
   <symbol id="lr-mobile-save-to-device" viewBox="0 0 24 24">
     <title>Save Copy to Device</title>
     <path d="M12 4v11.5M8 11.5l4 4 4-4" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M4.5 15.5v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" fill="none"/>
@@ -299,14 +295,6 @@
     <title>Flash Off</title>
     <path d="M13 2.5l-2.5 3.7M7.8 10L5.5 13.5H12l-1 8 4.2-6.2M14.5 10.5h4L16 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="3.5" y1="3.5" x2="20.5" y2="20.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
   </symbol>
-  <symbol id="lr-mobile-hdr-capture" viewBox="0 0 24 24">
-    <title>HDR DNG Capture Mode</title>
-    <rect x="2.5" y="6" width="19" height="12" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><text x="5.2" y="14.2" fill="currentColor" font-size="6.5" font-family="monospace" font-weight="bold">HDR</text>
-  </symbol>
-  <symbol id="lr-mobile-dng-raw-badge" viewBox="0 0 24 24">
-    <title>DNG / JPG Format Selector</title>
-    <rect x="2.5" y="6" width="19" height="12" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><text x="5.2" y="14.2" fill="currentColor" font-size="6.5" font-family="monospace" font-weight="bold">RAW</text>
-  </symbol>
   <symbol id="lr-mobile-exposure-comp" viewBox="0 0 24 24">
     <title>Exposure Compensation (+/- EV)</title>
     <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="4.5" y1="19.5" x2="19.5" y2="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M8.5 6.5v4M6.5 8.5h4M13.5 16h4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
@@ -314,10 +302,6 @@
   <symbol id="lr-mobile-shutter-speed-sec" viewBox="0 0 24 24">
     <title>Shutter Speed (Sec)</title>
     <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="14.3" y1="8" x2="19" y2="16" stroke="currentColor" stroke-width="1.5"/><line x1="9.7" y1="8" x2="14.3" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="7.4" y1="12" x2="12" y2="4" stroke="currentColor" stroke-width="1.5"/><line x1="9.7" y1="16" x2="5" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="14.3" y1="16" x2="9.7" y2="16" stroke="currentColor" stroke-width="1.5"/><line x1="16.6" y1="12" x2="12" y2="20" stroke="currentColor" stroke-width="1.5"/>
-  </symbol>
-  <symbol id="lr-mobile-iso-sensitivity" viewBox="0 0 24 24">
-    <title>ISO Sensor Sensitivity</title>
-    <rect x="2.5" y="6" width="19" height="12" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><text x="5.5" y="14.2" fill="currentColor" font-size="6.5" font-family="monospace" font-weight="bold">ISO</text>
   </symbol>
   <symbol id="lr-mobile-manual-focus" viewBox="0 0 24 24">
     <title>Manual Focus & Peaking ([MF])</title>
@@ -514,18 +498,6 @@
   <symbol id="lr-mobile-curve-point-rgb" viewBox="0 0 24 24">
     <title>Tone Curve: Master RGB Point</title>
     <path d="M4 19.5C8.5 19 15.5 5 20 4.5" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" fill="none"/><circle cx="8" cy="15.5" r="2" fill="currentColor"/><circle cx="16" cy="8.5" r="2" fill="currentColor"/>
-  </symbol>
-  <symbol id="lr-mobile-curve-red-channel" viewBox="0 0 24 24">
-    <title>Tone Curve: Red Channel (R)</title>
-    <path d="M4 19.5C9 18 15 6 20 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6" fill="none"/><text x="10.2" y="14" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">R</text>
-  </symbol>
-  <symbol id="lr-mobile-curve-green-channel" viewBox="0 0 24 24">
-    <title>Tone Curve: Green Channel (G)</title>
-    <path d="M4 19.5C9 18 15 6 20 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6" fill="none"/><text x="10.2" y="14" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">G</text>
-  </symbol>
-  <symbol id="lr-mobile-curve-blue-channel" viewBox="0 0 24 24">
-    <title>Tone Curve: Blue Channel (B)</title>
-    <path d="M4 19.5C9 18 15 6 20 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6" fill="none"/><text x="10.2" y="14" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">B</text>
   </symbol>
   <symbol id="lr-mobile-wb-eyedropper" viewBox="0 0 24 24">
     <title>White Balance Eyedropper</title>
@@ -987,10 +959,6 @@
     <title>Enhance Raw Details</title>
     <rect x="3" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.45" fill="none"/><rect x="11" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.45" fill="currentColor" fill-opacity="0.3"/><rect x="3" y="11" width="6" height="6" stroke="currentColor" stroke-width="1.45" fill="currentColor" fill-opacity="0.3"/><rect x="11" y="11" width="6" height="6" stroke="currentColor" stroke-width="1.45" fill="none"/>
   </symbol>
-  <symbol id="lr-pc-edit-in-photoshop" viewBox="0 0 20 20">
-    <title>Edit in Photoshop (Ctrl+E)</title>
-    <rect x="2.8" y="2.8" width="14.4" height="14.4" rx="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="5.2" y="13" fill="currentColor" font-size="7.5" font-family="sans-serif" font-weight="bold">Ps</text>
-  </symbol>
   <symbol id="lr-pc-copy-settings" viewBox="0 0 20 20">
     <title>Copy Edit Settings (Ctrl+C)</title>
     <rect x="6.5" y="6.5" width="10.5" height="10.5" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3.5 13.5V4.5a1.5 1.5 0 0 1 1.5-1.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
@@ -1042,10 +1010,6 @@
   <symbol id="lr-pc-visualize-depth" viewBox="0 0 20 20">
     <title>Visualize Depth Map Overlay</title>
     <rect x="3" y="3" width="14" height="14" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 13l14-6" stroke="currentColor" stroke-width="1.4"/><path d="M3 13h14v4H3z" fill="currentColor" fill-opacity="0.28"/>
-  </symbol>
-  <symbol id="lr-pc-hdr-toggle-button" viewBox="0 0 20 20">
-    <title>HDR Edit Mode Button</title>
-    <rect x="2" y="5" width="16" height="10" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.2" y="12" fill="currentColor" font-size="5.8" font-family="monospace" font-weight="bold">HDR</text>
   </symbol>
   <symbol id="lr-pc-bw-toggle" viewBox="0 0 20 20">
     <title>B&W Mode Toggle (V)</title>
@@ -1167,10 +1131,6 @@
     <title>Thumbnail Badge: Masked</title>
     <rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="10" r="4.5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 1.6" fill="none"/><circle cx="10" cy="10" r="1.8" fill="currentColor"/>
   </symbol>
-  <symbol id="lr-pc-badge-hdr-photo" viewBox="0 0 20 20">
-    <title>Thumbnail Badge: HDR</title>
-    <rect x="2" y="4.5" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.2" y="12.2" fill="currentColor" font-size="5.8" font-family="monospace" font-weight="bold">HDR</text>
-  </symbol>
   <symbol id="lr-pc-badge-pano-photo" viewBox="0 0 20 20">
     <title>Thumbnail Badge: Panorama</title>
     <path d="M2.5 5.5c4.2 1.5 10.8 1.5 15 0v9c-4.2-1.5-10.8-1.5-15 0v-9z" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -1251,14 +1211,6 @@
     <title>Copy Local Photo to Cloud</title>
     <path d="M5.5 14.5h9a3 3 0 0 0 .3-6A4.2 4.2 0 0 0 6.5 7.2 3.4 3.4 0 0 0 5.5 14.5z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 12.8V8.8M8.2 10.5L10 8.7l1.8 1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
   </symbol>
-  <symbol id="lr-pc-connection-behance" viewBox="0 0 20 20">
-    <title>Connection: Adobe Behance</title>
-    <rect x="2.5" y="3.5" width="15" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.5" y="12.5" fill="currentColor" font-size="6.8" font-family="sans-serif" font-weight="bold">Be</text>
-  </symbol>
-  <symbol id="lr-pc-connection-portfolio" viewBox="0 0 20 20">
-    <title>Connection: Adobe Portfolio</title>
-    <rect x="2.5" y="3.5" width="15" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="5.2" y="12.5" fill="currentColor" font-size="6.8" font-family="sans-serif" font-weight="bold">Pf</text>
-  </symbol>
   <symbol id="lr-pc-invite-collaborator" viewBox="0 0 20 20">
     <title>Invite People to Album (User +)</title>
     <circle cx="8" cy="7" r="2.8" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 16c0-2.6 2.2-4.5 5-4.5s5 1.9 5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M15.5 6.5v4.5M13.2 8.8h4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
@@ -1298,22 +1250,6 @@
   <symbol id="lr-pc-reset-to-open" viewBox="0 0 20 20">
     <title>Reset to Original (Shift+R)</title>
     <path d="M3.8 10a6.2 6.2 0 1 0 1.8-4.4L3.8 7.5M3.8 3.8v3.7h3.7" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  </symbol>
-  <symbol id="lr-pc-export-jpg" viewBox="0 0 20 20">
-    <title>Export Format: JPEG (.JPG)</title>
-    <rect x="3" y="2.5" width="14" height="15" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.5" y="12.2" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">JPG</text>
-  </symbol>
-  <symbol id="lr-pc-export-tif" viewBox="0 0 20 20">
-    <title>Export Format: TIFF 16-Bit (.TIF)</title>
-    <rect x="3" y="2.5" width="14" height="15" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.8" y="12.2" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">TIF</text>
-  </symbol>
-  <symbol id="lr-pc-export-avif-hdr" viewBox="0 0 20 20">
-    <title>Export Format: AVIF (HDR)</title>
-    <rect x="2.5" y="2.5" width="15" height="15" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="3.5" y="12" fill="currentColor" font-size="5" font-family="monospace" font-weight="bold">AVIF</text>
-  </symbol>
-  <symbol id="lr-pc-export-jxl-hdr" viewBox="0 0 20 20">
-    <title>Export Format: JPEG XL (.JXL)</title>
-    <rect x="3" y="2.5" width="14" height="15" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.8" y="12.2" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">JXL</text>
   </symbol>
   <symbol id="lr-pc-export-original-xmp" viewBox="0 0 20 20">
     <title>Export Format: Original + Settings</title>
@@ -1371,14 +1307,6 @@
     <title>Lightroom Monochrome Vector Icon</title>
     <rect x="2.5" y="2.5" width="19" height="19" rx="4" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M6.8 7.2v9.2h4.4M14.2 16.4v-6.2m0 1.8c.6-1.2 1.6-1.8 2.8-1.8" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
   </symbol>
-  <symbol id="adobe-dng-raw-file-badge" viewBox="0 0 240 234">
-    <title>Adobe DNG (Digital Negative) Badge</title>
-    <rect width="240" height="234" rx="42.5" fill="#141923" stroke="#31A8FF" stroke-width="8"/><text x="38" y="142" fill="#31A8FF" font-size="74" font-family="sans-serif" font-weight="bold">DNG</text>
-  </symbol>
-  <symbol id="adobe-xmp-preset-file-badge" viewBox="0 0 240 234">
-    <title>Lightroom XMP Preset File Badge</title>
-    <rect width="240" height="234" rx="42.5" fill="#001E36" stroke="#38BDF8" stroke-width="8"/><text x="36" y="142" fill="#38BDF8" font-size="74" font-family="sans-serif" font-weight="bold">XMP</text>
-  </symbol>
   <symbol id="adobe-camera-raw-acr-badge" viewBox="0 0 240 234">
     <title>Adobe Camera Raw (ACR) Engine Badge</title>
     <rect width="240" height="234" rx="42.5" fill="#0B1726" stroke="#38BDF8" stroke-width="8"/><circle cx="120" cy="117" r="56" stroke="#31A8FF" stroke-width="10" fill="none"/><circle cx="120" cy="117" r="22" fill="#31A8FF"/>
@@ -1390,9 +1318,5 @@
   <symbol id="adobe-sensei-ai-badge" viewBox="0 0 240 234">
     <title>Adobe Sensei AI Masking & Culling Badge</title>
     <rect width="240" height="234" rx="42.5" fill="#0F172A" stroke="#60A5FA" stroke-width="8"/><polygon points="120,48 184,117 120,186 56,117" stroke="#60A5FA" stroke-width="10" fill="none"/><circle cx="120" cy="117" r="18" fill="#60A5FA"/>
-  </symbol>
-  <symbol id="adobe-c2pa-content-credentials-badge" viewBox="0 0 240 234">
-    <title>Content Credentials (CR / C2PA) Official Pin</title>
-    <rect width="240" height="234" rx="42.5" fill="#001E36" stroke="#FFFFFF" stroke-width="8"/><text x="52" y="148" fill="#FFFFFF" font-size="88" font-family="sans-serif" font-weight="bold">cr</text>
   </symbol>
 </svg>

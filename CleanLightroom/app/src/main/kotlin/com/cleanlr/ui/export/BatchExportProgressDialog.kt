@@ -15,6 +15,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material3.*
+import androidx.compose.ui.res.painterResource
+import com.cleanlr.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -239,7 +241,7 @@ private fun BatchItemRow(
         ) {
             when (item.status) {
                 BatchItemStatus.COMPLETED -> Icon(
-                    imageVector = Icons.Default.Check,
+                    painter = painterResource(R.drawable.ic_lr_select_checkmark),
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(14.dp)

@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_ISOSensor_24_N" data-name="ISO Sensor Sensitivity" style="--iconPrimary: currentColor;">
-  <title>ISO Sensor Sensitivity (S2_Icon_ISOSensor_24_N)</title>
-  <desc>Manual sensor gain control from ISO 25 to ISO 6400</desc>
-  <rect x="2.5" y="6" width="19" height="12" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><text x="5.5" y="14.2" fill="currentColor" font-size="6.5" font-family="monospace" font-weight="bold">ISO</text>
-</svg>

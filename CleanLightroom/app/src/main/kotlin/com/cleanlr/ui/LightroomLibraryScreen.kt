@@ -25,6 +25,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.res.painterResource
+import com.cleanlr.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -148,21 +150,21 @@ fun LightroomLibraryScreen(
                     NavigationBarItem(
                         selected = workspace == LightroomWorkspace.GALLERY,
                         onClick = { workspace = LightroomWorkspace.GALLERY },
-                        icon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
+                        icon = { Icon(painter = painterResource(R.drawable.ic_lr_device_tab), contentDescription = null, modifier = Modifier.size(24.dp)) },
                         label = { Text("Gallery", fontSize = 11.sp) },
                         colors = libraryNavigationColors()
                     )
                     NavigationBarItem(
                         selected = workspace == LightroomWorkspace.LIGHTROOM,
                         onClick = { workspace = LightroomWorkspace.LIGHTROOM },
-                        icon = { Icon(Icons.Default.Cloud, contentDescription = null) },
+                        icon = { Icon(painter = painterResource(R.drawable.ic_lr_lightroom_cloud_tab), contentDescription = null, modifier = Modifier.size(24.dp)) },
                         label = { Text("Lightroom", fontSize = 11.sp) },
                         colors = libraryNavigationColors()
                     )
                     NavigationBarItem(
                         selected = workspace == LightroomWorkspace.COMMUNITY,
                         onClick = { workspace = LightroomWorkspace.COMMUNITY },
-                        icon = { Icon(Icons.Default.Public, contentDescription = null) },
+                        icon = { Icon(painter = painterResource(R.drawable.ic_lr_community_tab), contentDescription = null, modifier = Modifier.size(24.dp)) },
                         label = { Text("Community", fontSize = 11.sp) },
                         colors = libraryNavigationColors()
                     )
@@ -191,20 +193,20 @@ fun LightroomLibraryScreen(
                     Spacer(Modifier.weight(1f))
                     if (workspace == LightroomWorkspace.LIGHTROOM) {
                         IconButton(onClick = { }) {
-                            Icon(Icons.Default.Star, contentDescription = "Premium features", tint = Color(0xFF1686FF))
+                            Icon(painter = painterResource(R.drawable.ic_lr_star_filled), contentDescription = "Premium features", tint = Color(0xFF1686FF), modifier = Modifier.size(22.dp))
                         }
                         IconButton(onClick = { searchOpen = !searchOpen }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
+                            Icon(painter = painterResource(R.drawable.ic_lr_search_bar), contentDescription = "Search", tint = Color.White, modifier = Modifier.size(22.dp))
                         }
                         IconButton(onClick = { }) {
-                            Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.White)
+                            Icon(painter = painterResource(R.drawable.ic_lr_notifications_bell), contentDescription = "Notifications", tint = Color.White, modifier = Modifier.size(22.dp))
                         }
                         IconButton(onClick = { }) {
-                            Icon(Icons.Default.Cloud, contentDescription = "Cloud sync", tint = Color.White)
+                            Icon(painter = painterResource(R.drawable.ic_lr_cloud_uploading), contentDescription = "Cloud sync", tint = Color.White, modifier = Modifier.size(22.dp))
                         }
                     }
                     IconButton(onClick = { showViewOptionsSheet = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "View options and more", tint = Color.White)
+                        Icon(painter = painterResource(R.drawable.ic_lr_more_menu), contentDescription = "View options and more", tint = Color.White, modifier = Modifier.size(22.dp))
                     }
                 }
 
@@ -288,7 +290,7 @@ fun LightroomLibraryScreen(
                         // Filter Button
                         Box {
                             IconButton(onClick = { showFilterMenu = true }) {
-                                Icon(Icons.Default.FilterList, contentDescription = "Filter photos", tint = Color.White)
+                                Icon(painter = painterResource(R.drawable.ic_lr_filter_funnel), contentDescription = "Filter photos", tint = Color.White, modifier = Modifier.size(20.dp))
                             }
                             DropdownMenu(
                                 expanded = showFilterMenu,
@@ -306,7 +308,7 @@ fun LightroomLibraryScreen(
 
                         // Sort Button (Screenshot 1)
                         IconButton(onClick = { }) {
-                            Icon(Icons.Default.Sort, contentDescription = "Sort photos", tint = Color.White)
+                            Icon(painter = painterResource(R.drawable.ic_lr_sort_order), contentDescription = "Sort photos", tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }
 
@@ -420,7 +422,7 @@ fun LightroomLibraryScreen(
                                         onClick = { importLauncher.launch("image/*") },
                                         modifier = Modifier.padding(start = 4.dp)
                                     ) {
-                                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = "Add photos", tint = Color.White)
+                                        Icon(painter = painterResource(R.drawable.ic_lr_import_add), contentDescription = "Add photos", tint = Color.White, modifier = Modifier.size(22.dp))
                                     }
                                     Box(
                                         Modifier
@@ -432,7 +434,7 @@ fun LightroomLibraryScreen(
                                         onClick = { importLauncher.launch("image/*") },
                                         modifier = Modifier.padding(end = 4.dp)
                                     ) {
-                                        Icon(Icons.Default.CameraAlt, contentDescription = "Camera", tint = Color.White)
+                                        Icon(painter = painterResource(R.drawable.ic_lr_camera_pro), contentDescription = "Camera", tint = Color.White, modifier = Modifier.size(22.dp))
                                     }
                                 }
                             }
@@ -481,7 +483,7 @@ fun LightroomLibraryScreen(
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Checklist, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    Icon(painter = painterResource(R.drawable.ic_lr_select_all), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(16.dp))
                     Text("Select", color = Color.White, fontSize = 15.sp)
                 }
@@ -504,11 +506,11 @@ fun LightroomLibraryScreen(
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.GridOn, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    Icon(painter = painterResource(R.drawable.ic_lr_grid_level_overlay), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(16.dp))
                     Text("Square grid", color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
                     if (!isJustifiedGrid) {
-                        Icon(Icons.Default.Check, contentDescription = "Active", tint = Color(0xFF1686FF))
+                        Icon(painter = painterResource(R.drawable.ic_lr_select_checkmark), contentDescription = "Active", tint = Color(0xFF1686FF), modifier = Modifier.size(18.dp))
                     }
                 }
                 Row(
@@ -518,11 +520,11 @@ fun LightroomLibraryScreen(
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Dashboard, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    Icon(painter = painterResource(R.drawable.ic_lr_grid_segmentation), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(16.dp))
                     Text("Justified grid", color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
                     if (isJustifiedGrid) {
-                        Icon(Icons.Default.Check, contentDescription = "Active", tint = Color(0xFF1686FF))
+                        Icon(painter = painterResource(R.drawable.ic_lr_select_checkmark), contentDescription = "Active", tint = Color(0xFF1686FF), modifier = Modifier.size(18.dp))
                     }
                 }
                 Row(
@@ -531,7 +533,7 @@ fun LightroomLibraryScreen(
                         .padding(vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Segment, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    Icon(painter = painterResource(R.drawable.ic_lr_grid_segmentation), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(16.dp))
                     Text("Grid segmentation", color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
                     Switch(
@@ -552,11 +554,11 @@ fun LightroomLibraryScreen(
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.DateRange, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    Icon(painter = painterResource(R.drawable.ic_lr_grid_segmentation), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(16.dp))
                     Text("Segment by", color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
                     Text(segmentBy, color = Color(0xFF999999), fontSize = 14.sp)
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF999999))
+                    Icon(painter = painterResource(R.drawable.ic_lr_variation_next), contentDescription = null, tint = Color(0xFF999999), modifier = Modifier.size(16.dp))
                 }
                 Row(
                     modifier = Modifier
@@ -565,7 +567,7 @@ fun LightroomLibraryScreen(
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    Icon(painter = painterResource(R.drawable.ic_lr_slideshow), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(16.dp))
                     Text("Slideshow", color = Color.White, fontSize = 15.sp)
                 }
@@ -582,7 +584,7 @@ fun LightroomLibraryScreen(
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(22.dp))
+                    Icon(painter = painterResource(R.drawable.ic_lr_import_add), contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(16.dp))
                     Text("Add photos", color = Color(0xFF1686FF), fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 }
@@ -650,7 +652,7 @@ private fun LibraryNavigationDrawerContent(
         // Navigation Items
         DrawerItem(icon = Icons.Default.AccountCircle, label = "Account", onClick = onCloseDrawer)
         DrawerItem(
-            icon = Icons.Default.Star,
+            painter = painterResource(R.drawable.ic_lr_star_filled),
             label = "Premium Features",
             tint = Color(0xFF1686FF),
             labelColor = Color(0xFF1686FF),
@@ -659,9 +661,9 @@ private fun LibraryNavigationDrawerContent(
         DrawerItem(icon = Icons.Default.Science, label = "Early access", onClick = onCloseDrawer)
         DrawerItem(icon = Icons.Default.Settings, label = "Preferences", onClick = onCloseDrawer)
         DrawerItem(icon = Icons.Default.NewReleases, label = "What's New", onClick = onCloseDrawer)
-        DrawerItem(icon = Icons.Default.Info, label = "About CleanLightroom", onClick = onCloseDrawer)
-        DrawerItem(icon = Icons.Default.Storage, label = "Local storage", onClick = onCloseDrawer)
-        DrawerItem(icon = Icons.AutoMirrored.Filled.Help, label = "Help & Support", onClick = onCloseDrawer)
+        DrawerItem(painter = painterResource(R.drawable.ic_lr_info_rating_overlay), label = "About CleanLightroom", onClick = onCloseDrawer)
+        DrawerItem(painter = painterResource(R.drawable.ic_lr_store_locally_offline), label = "Local storage", onClick = onCloseDrawer)
+        DrawerItem(painter = painterResource(R.drawable.ic_lr_context_help), label = "Help & Support", onClick = onCloseDrawer)
         DrawerItem(icon = Icons.Default.ThumbUp, label = "Rate CleanLightroom", onClick = onCloseDrawer)
 
         HorizontalDivider(color = Color(0xFF2C2C2C), modifier = Modifier.padding(vertical = 8.dp))
@@ -674,10 +676,10 @@ private fun LibraryNavigationDrawerContent(
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Share, contentDescription = "Share", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
-            Icon(Icons.Default.Public, contentDescription = "Web", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
-            Icon(Icons.Default.OndemandVideo, contentDescription = "Video", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
-            Icon(Icons.Default.Forum, contentDescription = "Forum", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
+            Icon(painter = painterResource(R.drawable.ic_lr_share_export), contentDescription = "Share", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
+            Icon(painter = painterResource(R.drawable.ic_lr_community_tab), contentDescription = "Web", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
+            Icon(painter = painterResource(R.drawable.ic_lr_learn_tab), contentDescription = "Video", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
+            Icon(painter = painterResource(R.drawable.ic_lr_shared_tab), contentDescription = "Forum", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
         }
 
         Text(
@@ -691,7 +693,8 @@ private fun LibraryNavigationDrawerContent(
 
 @Composable
 private fun DrawerItem(
-    icon: ImageVector,
+    icon: ImageVector? = null,
+    painter: androidx.compose.ui.graphics.painter.Painter? = null,
     label: String,
     tint: Color = Color(0xFFCCCCCC),
     labelColor: Color = Color.White,
@@ -704,12 +707,21 @@ private fun DrawerItem(
             .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = tint,
-            modifier = Modifier.size(22.dp)
-        )
+        if (painter != null) {
+            Icon(
+                painter = painter,
+                contentDescription = label,
+                tint = tint,
+                modifier = Modifier.size(22.dp)
+            )
+        } else if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = tint,
+                modifier = Modifier.size(22.dp)
+            )
+        }
         Spacer(Modifier.width(18.dp))
         Text(
             text = label,
@@ -730,7 +742,7 @@ private fun CommunityWorkspace() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(Icons.Default.Public, contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(48.dp))
+        Icon(painter = painterResource(R.drawable.ic_lr_community_tab), contentDescription = null, tint = Color(0xFF1686FF), modifier = Modifier.size(48.dp))
         Spacer(Modifier.height(16.dp))
         Text("Discover the community", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(8.dp))

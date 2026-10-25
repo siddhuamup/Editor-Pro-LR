@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.ui.res.painterResource
+import com.cleanlr.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -148,15 +150,27 @@ fun ToneCurveWidget(
                                 selectedSubMode = mode
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             }
-                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = mode.label,
-                            color = if (isSelected) Color.White else SpectrumTextSecondary,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(
+                                    if (mode == CurveSubMode.PARAMETRIC) R.drawable.ic_lr_curve_parametric
+                                    else R.drawable.ic_lr_curve_point_rgb
+                                ),
+                                contentDescription = null,
+                                tint = if (isSelected) Color.White else SpectrumTextSecondary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = mode.label,
+                                color = if (isSelected) Color.White else SpectrumTextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
                     }
                 }
             }
@@ -172,7 +186,7 @@ fun ToneCurveWidget(
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Adjust,
+                        painter = painterResource(R.drawable.ic_lr_color_target_tool),
                         contentDescription = "Curve Targeted Adjustment Tool",
                         tint = if (isTatActive) SpectrumBlue else SpectrumTextSecondary,
                         modifier = Modifier.size(18.dp)
@@ -199,7 +213,7 @@ fun ToneCurveWidget(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = if (isBypassed) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        painter = painterResource(R.drawable.ic_lr_mask_hide_eye),
                         contentDescription = "Bypass Curve Preview (Hold)",
                         tint = if (isBypassed) SpectrumBlue else SpectrumTextSecondary,
                         modifier = Modifier.size(18.dp)

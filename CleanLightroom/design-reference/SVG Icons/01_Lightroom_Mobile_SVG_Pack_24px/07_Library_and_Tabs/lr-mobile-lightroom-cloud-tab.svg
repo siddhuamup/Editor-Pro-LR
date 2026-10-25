@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_CloudLibrary_24_N" data-name="Lightroom Cloud Tab" style="--iconPrimary: currentColor;">
-  <title>Lightroom Cloud Tab (S2_Icon_CloudLibrary_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-CCLibrary (sp-icon-cclibrary)" data-name="Lightroom Cloud Tab" style="--iconPrimary: currentColor;">
+  <title>Lightroom Cloud Tab (spectrum-icon-24-CCLibrary (sp-icon-cclibrary))</title>
   <desc>Displays all cloud-synced albums, folders, and smart collections</desc>
   <rect x="3.5" y="4.5" width="17" height="15" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M8 14.5h7.5a2.5 2.5 0 0 0 .2-5 3.6 3.6 0 0 0-6.8-1 2.8 2.8 0 0 0-.9 6z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/>
 </svg>

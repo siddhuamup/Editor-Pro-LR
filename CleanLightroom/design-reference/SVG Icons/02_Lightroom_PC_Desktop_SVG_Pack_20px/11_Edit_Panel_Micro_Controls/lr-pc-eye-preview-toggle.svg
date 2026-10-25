@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_PanelEye_20_N" data-name="Panel Eye Toggle (Before/After Section)" style="--iconPrimary: currentColor;">
-  <title>Panel Eye Toggle (Before/After Section) (S2_Icon_PanelEye_20_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="spectrum-icon-18-Visibility (sp-icon-visibility)" data-name="Panel Eye Toggle (Before/After Section)" style="--iconPrimary: currentColor;">
+  <title>Panel Eye Toggle (Before/After Section) (spectrum-icon-18-Visibility (sp-icon-visibility))</title>
   <desc>Click and hold the eye icon on Light, Color, Effects, Detail, or Optics to preview without that panel</desc>
   <path d="M2 10s3-4.8 8-4.8 8 4.8 8 4.8-3 4.8-8 4.8-8-4.8-8-4.8z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="10" r="2.2" fill="currentColor"/>
 </svg>

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_Calendar_20_N" data-name="By Date" style="--iconPrimary: currentColor;">
-  <title>By Date (S2_Icon_Calendar_20_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="spectrum-icon-18-Calendar (sp-icon-calendar)" data-name="By Date" style="--iconPrimary: currentColor;">
+  <title>By Date (spectrum-icon-18-Calendar (sp-icon-calendar))</title>
   <desc>Organizes library automatically by Year, Month, and Day</desc>
   <rect x="2.8" y="4.2" width="14.4" height="13" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="2.8" y1="8.2" x2="17.2" y2="8.2" stroke="currentColor" stroke-width="1.4"/><line x1="6.5" y1="2.5" x2="6.5" y2="5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="13.5" y1="2.5" x2="13.5" y2="5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 </svg>

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_RotateCW_24_N" data-name="Rotate Right (90° CW)" style="--iconPrimary: currentColor;">
-  <title>Rotate Right (90° CW) (S2_Icon_RotateCW_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-RotateCWBold (sp-icon-rotate-cw-bold)" data-name="Rotate Right (90° CW)" style="--iconPrimary: currentColor;">
+  <title>Rotate Right (90° CW) (spectrum-icon-24-RotateCWBold (sp-icon-rotate-cw-bold))</title>
   <desc>Rotates photo 90 degrees clockwise</desc>
   <rect x="4.5" y="9" width="10.5" height="10.5" rx="1.8" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M19.5 10.5A6.5 6.5 0 0 0 13 4h-2m5.5 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>

@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.res.painterResource
+import com.cleanlr.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -81,7 +83,7 @@ fun MaskingPanel(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Layers,
+                    painter = painterResource(R.drawable.ic_lr_masking),
                     contentDescription = null,
                     tint = SpectrumBlue,
                     modifier = Modifier.size(18.dp)
@@ -105,7 +107,7 @@ fun MaskingPanel(
                     modifier = Modifier.size(30.dp)
                 ) {
                     Icon(
-                        imageVector = if (isOverlayVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        painter = painterResource(R.drawable.ic_lr_mask_hide_eye),
                         contentDescription = "Toggle Mask Overlay",
                         tint = if (isOverlayVisible) Color(0xFFE02B2B) else SpectrumTextSecondary,
                         modifier = Modifier.size(18.dp)
@@ -123,7 +125,11 @@ fun MaskingPanel(
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                     modifier = Modifier.height(30.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Icon(
+                        painter = painterResource(R.drawable.ic_lr_import_add),
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("New Mask", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
@@ -150,27 +156,27 @@ fun MaskingPanel(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     item {
-                        QuickMaskCard("Subject (AI)", Icons.Default.Person, Color(0xFF2680EB)) {
+                        QuickMaskCard("Subject (AI)", R.drawable.ic_lr_mask_subject, Color(0xFF2680EB)) {
                             onAddLayer(SubMask.AISubject(id = UUID.randomUUID().toString()))
                         }
                     }
                     item {
-                        QuickMaskCard("Sky (AI)", Icons.Default.Cloud, Color(0xFF2680EB)) {
+                        QuickMaskCard("Sky (AI)", R.drawable.ic_lr_mask_sky, Color(0xFF2680EB)) {
                             onAddLayer(SubMask.AISky(id = UUID.randomUUID().toString()))
                         }
                     }
                     item {
-                        QuickMaskCard("Brush", Icons.Default.Brush, Color(0xFFE02B2B)) {
+                        QuickMaskCard("Brush", R.drawable.ic_lr_mask_brush, Color(0xFFE02B2B)) {
                             onAddLayer(SubMask.Brush(id = UUID.randomUUID().toString()))
                         }
                     }
                     item {
-                        QuickMaskCard("Linear", Icons.Default.LinearScale, Color(0xFFFF9800)) {
+                        QuickMaskCard("Linear", R.drawable.ic_lr_mask_linear_gradient, Color(0xFFFF9800)) {
                             onAddLayer(SubMask.LinearGradient(id = UUID.randomUUID().toString(), startX = 0f, startY = 0f, endX = 0f, endY = 1f))
                         }
                     }
                     item {
-                        QuickMaskCard("Radial", Icons.Default.Lens, Color(0xFF9C27B0)) {
+                        QuickMaskCard("Radial", R.drawable.ic_lr_mask_radial_gradient, Color(0xFF9C27B0)) {
                             onAddLayer(SubMask.RadialGradient(id = UUID.randomUUID().toString()))
                         }
                     }
@@ -230,7 +236,7 @@ fun MaskingPanel(
                     ) {
                         // Eye icon to toggle layer enabled/disabled (Tip 346)
                         Icon(
-                            imageVector = if (layer.enabled) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            painter = painterResource(R.drawable.ic_lr_mask_hide_eye),
                             contentDescription = "Toggle Layer",
                             tint = if (layer.enabled) Color(0xFFE02B2B) else SpectrumTextDisabled,
                             modifier = Modifier
@@ -309,7 +315,7 @@ fun MaskingPanel(
                             modifier = Modifier.size(26.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.RestartAlt,
+                                painter = painterResource(R.drawable.ic_lr_reset_all),
                                 contentDescription = "Reset Adjustments",
                                 tint = SpectrumIconNormal,
                                 modifier = Modifier.size(15.dp)
@@ -543,37 +549,37 @@ fun MaskingPanel(
                         Spacer(modifier = Modifier.height(4.dp))
                     }
 
-                    MaskTypeOption("Select Subject (AI)", Icons.Default.Person) {
+                    MaskTypeOption("Select Subject (AI)", R.drawable.ic_lr_mask_subject) {
                         val sub = SubMask.AISubject(id = UUID.randomUUID().toString(), combineMode = combineMode)
                         if (isSubMaskAction) onAddSubMaskToActive(sub) else onAddLayer(sub)
                         showAddMenu = false; showSubMaskMenu = false
                     }
-                    MaskTypeOption("Select Sky (AI)", Icons.Default.Cloud) {
+                    MaskTypeOption("Select Sky (AI)", R.drawable.ic_lr_mask_sky) {
                         val sub = SubMask.AISky(id = UUID.randomUUID().toString(), combineMode = combineMode)
                         if (isSubMaskAction) onAddSubMaskToActive(sub) else onAddLayer(sub)
                         showAddMenu = false; showSubMaskMenu = false
                     }
-                    MaskTypeOption("Brush", Icons.Default.Brush) {
+                    MaskTypeOption("Brush", R.drawable.ic_lr_mask_brush) {
                         val sub = SubMask.Brush(id = UUID.randomUUID().toString(), combineMode = combineMode)
                         if (isSubMaskAction) onAddSubMaskToActive(sub) else onAddLayer(sub)
                         showAddMenu = false; showSubMaskMenu = false
                     }
-                    MaskTypeOption("Linear Gradient", Icons.Default.LinearScale) {
+                    MaskTypeOption("Linear Gradient", R.drawable.ic_lr_mask_linear_gradient) {
                         val sub = SubMask.LinearGradient(id = UUID.randomUUID().toString(), startX = 0f, startY = 0f, endX = 0f, endY = 1f, combineMode = combineMode)
                         if (isSubMaskAction) onAddSubMaskToActive(sub) else onAddLayer(sub)
                         showAddMenu = false; showSubMaskMenu = false
                     }
-                    MaskTypeOption("Radial Gradient", Icons.Default.Lens) {
+                    MaskTypeOption("Radial Gradient", R.drawable.ic_lr_mask_radial_gradient) {
                         val sub = SubMask.RadialGradient(id = UUID.randomUUID().toString(), combineMode = combineMode)
                         if (isSubMaskAction) onAddSubMaskToActive(sub) else onAddLayer(sub)
                         showAddMenu = false; showSubMaskMenu = false
                     }
-                    MaskTypeOption("Color Range", Icons.Default.ColorLens) {
+                    MaskTypeOption("Color Range", R.drawable.ic_lr_mask_color_range) {
                         val sub = SubMask.ColorRange(id = UUID.randomUUID().toString(), combineMode = combineMode)
                         if (isSubMaskAction) onAddSubMaskToActive(sub) else onAddLayer(sub)
                         showAddMenu = false; showSubMaskMenu = false
                     }
-                    MaskTypeOption("Luminance Range", Icons.Default.BrightnessMedium) {
+                    MaskTypeOption("Luminance Range", R.drawable.ic_lr_mask_luminance_range) {
                         val sub = SubMask.LuminanceRange(id = UUID.randomUUID().toString(), combineMode = combineMode)
                         if (isSubMaskAction) onAddSubMaskToActive(sub) else onAddLayer(sub)
                         showAddMenu = false; showSubMaskMenu = false
@@ -594,7 +600,7 @@ fun MaskingPanel(
 @Composable
 private fun QuickMaskCard(
     title: String,
-    icon: ImageVector,
+    iconRes: Int,
     color: Color,
     onClick: () -> Unit
 ) {
@@ -612,7 +618,7 @@ private fun QuickMaskCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(imageVector = icon, contentDescription = title, tint = color, modifier = Modifier.size(22.dp))
+            Icon(painter = painterResource(iconRes), contentDescription = title, tint = color, modifier = Modifier.size(22.dp))
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = title, color = SpectrumTextPrimary, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
         }
@@ -644,7 +650,7 @@ private fun OneTapAiChip(
 @Composable
 private fun MaskTypeOption(
     title: String,
-    icon: ImageVector,
+    iconRes: Int,
     onClick: () -> Unit
 ) {
     Row(
@@ -656,7 +662,7 @@ private fun MaskTypeOption(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = SpectrumBlue, modifier = Modifier.size(18.dp))
+        Icon(painter = painterResource(iconRes), contentDescription = null, tint = SpectrumBlue, modifier = Modifier.size(18.dp))
         Text(text = title, color = SpectrumTextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }

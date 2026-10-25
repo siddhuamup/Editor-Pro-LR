@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_SliderTint_24_N" data-name="Slider: Tint (G/M)" style="--iconPrimary: currentColor;">
-  <title>Slider: Tint (G/M) (S2_Icon_SliderTint_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-ColorFill (sp-icon-color-fill)" data-name="Slider: Tint (G/M)" style="--iconPrimary: currentColor;">
+  <title>Slider: Tint (G/M) (spectrum-icon-24-ColorFill (sp-icon-color-fill))</title>
   <desc>Green-to-Magenta white balance tint compensation</desc>
   <path d="M12 3.5s6.5 6.8 6.5 11.2a6.5 6.5 0 1 1-13 0C5.5 10.3 12 3.5 12 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M9.5 15.5a3 3 0 0 0 3 2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>
 </svg>

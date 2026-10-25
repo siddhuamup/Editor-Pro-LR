@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_SliderTemp_24_N" data-name="Slider: Temperature (K)" style="--iconPrimary: currentColor;">
-  <title>Slider: Temperature (K) (S2_Icon_SliderTemp_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-Temperature (sp-icon-temperature)" data-name="Slider: Temperature (K)" style="--iconPrimary: currentColor;">
+  <title>Slider: Temperature (K) (spectrum-icon-24-Temperature (sp-icon-temperature))</title>
   <desc>Blue-to-Amber Kelvin color temperature balance</desc>
   <path d="M14 14.5V5.5a2 2 0 1 0-4 0v9a4 4 0 1 0 4 0z" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="17.5" r="1.8" fill="currentColor"/>
 </svg>

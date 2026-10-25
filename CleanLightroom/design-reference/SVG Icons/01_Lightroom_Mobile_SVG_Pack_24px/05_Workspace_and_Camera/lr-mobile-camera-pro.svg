@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_Camera_24_N" data-name="In-App Pro Camera (DNG)" style="--iconPrimary: currentColor;">
-  <title>In-App Pro Camera (DNG) (S2_Icon_Camera_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-Camera (sp-icon-camera)" data-name="In-App Pro Camera (DNG)" style="--iconPrimary: currentColor;">
+  <title>In-App Pro Camera (DNG) (spectrum-icon-24-Camera (sp-icon-camera))</title>
   <desc>Built-in Lightroom Mobile DNG Raw & HDR Pro Camera</desc>
   <path d="M3.5 8.5A2 2 0 0 1 5.5 6.5h2.2l1.6-2h5.4l1.6 2h2.2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-9z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><circle cx="12" cy="13" r="3.5" stroke="currentColor" stroke-width="1.75" fill="none"/>
 </svg>

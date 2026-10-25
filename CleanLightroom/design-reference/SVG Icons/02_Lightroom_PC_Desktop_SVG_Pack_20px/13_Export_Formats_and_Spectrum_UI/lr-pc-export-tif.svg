@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_FileTIFF_20_N" data-name="Export Format: TIFF 16-Bit (.TIF)" style="--iconPrimary: currentColor;">
-  <title>Export Format: TIFF 16-Bit (.TIF) (S2_Icon_FileTIFF_20_N)</title>
-  <desc>Exports lossless 8-bit or 16-bit TIFF with ZIP/LZW compression</desc>
-  <rect x="3" y="2.5" width="14" height="15" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.8" y="12.2" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">TIF</text>
-</svg>

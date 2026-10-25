@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_AIStatusUpdate_24_N" data-name="Manage AI Edits Status" style="--iconPrimary: currentColor;">
-  <title>Manage AI Edits Status (S2_Icon_AIStatusUpdate_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-Refresh (sp-icon-refresh)" data-name="Manage AI Edits Status" style="--iconPrimary: currentColor;">
+  <title>Manage AI Edits Status (spectrum-icon-24-Refresh (sp-icon-refresh))</title>
   <desc>Updates AI Masks, Denoise, Lens Blur, and Generative Remove when underlying layers change</desc>
   <path d="M11 3.5l1.8 4.6 4.6 1.8-4.6 1.8L11 16.3 9.2 11.7 4.6 9.9l4.6-1.8L11 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><circle cx="18" cy="18" r="3" fill="currentColor"/>
 </svg>

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_ColorMix_24_N" data-name="Color Mix (HSL)" style="--iconPrimary: currentColor;">
-  <title>Color Mix (HSL) (S2_Icon_ColorMix_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-ColorWheel (sp-icon-color-wheel)" data-name="Color Mix (HSL)" style="--iconPrimary: currentColor;">
+  <title>Color Mix (HSL) (spectrum-icon-24-ColorWheel (sp-icon-color-wheel))</title>
   <desc>8-channel Hue, Saturation, and Luminance color mixer</desc>
   <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" stroke-dasharray="3.2 2.2" fill="none"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/>
 </svg>

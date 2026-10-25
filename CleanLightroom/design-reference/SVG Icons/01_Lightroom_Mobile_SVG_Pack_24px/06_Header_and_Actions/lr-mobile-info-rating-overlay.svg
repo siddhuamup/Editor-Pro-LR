@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_InfoRating_24_N" data-name="Info & Rating Mode Switcher" style="--iconPrimary: currentColor;">
-  <title>Info & Rating Mode Switcher (S2_Icon_InfoRating_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-StarOutline (sp-icon-star-outline)" data-name="Info & Rating Mode Switcher" style="--iconPrimary: currentColor;">
+  <title>Info & Rating Mode Switcher (spectrum-icon-24-StarOutline (sp-icon-star-outline))</title>
   <desc>Switches workspace mode between Edit, Info, Rating & Review, Keywords, and Activity</desc>
   <polygon points="12,3.5 14.4,8.4 19.8,9.2 15.9,13 16.8,18.4 12,15.8 7.2,18.4 8.1,13 4.2,9.2 9.6,8.4" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" fill="none"/><path d="M8 21h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
 </svg>

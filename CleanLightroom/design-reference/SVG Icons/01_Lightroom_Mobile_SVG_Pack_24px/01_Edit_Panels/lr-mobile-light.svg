@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_Exposure_24_N" data-name="Light" style="--iconPrimary: currentColor;">
-  <title>Light (S2_Icon_Exposure_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-Exposure (sp-icon-exposure)" data-name="Light" style="--iconPrimary: currentColor;">
+  <title>Light (spectrum-icon-24-Exposure (sp-icon-exposure))</title>
   <desc>Exposure, Contrast, Highlights, Shadows, Whites, and Blacks sliders</desc>
   <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M12 2.75v2.5M12 18.75v2.5M2.75 12h2.5M18.75 12h2.5M5.46 5.46l1.77 1.77M16.77 16.77l1.77 1.77M18.54 5.46l-1.77 1.77M7.23 16.77l-1.77 1.77" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
 </svg>

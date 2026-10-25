@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_LocationPin_20_N" data-name="GPS Location Map Pin" style="--iconPrimary: currentColor;">
-  <title>GPS Location Map Pin (S2_Icon_LocationPin_20_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="spectrum-icon-18-Location (sp-icon-location)" data-name="GPS Location Map Pin" style="--iconPrimary: currentColor;">
+  <title>GPS Location Map Pin (spectrum-icon-18-Location (sp-icon-location))</title>
   <desc>Displays GPS coordinates and interactive map inside the Info (I) panel</desc>
   <path d="M10 17.5s5.5-5.2 5.5-9.5a5.5 5.5 0 1 0-11 0c0 4.3 5.5 9.5 5.5 9.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.4" fill="none"/>
 </svg>

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_ExposureLock_24_N" data-name="AE / Exposure Lock" style="--iconPrimary: currentColor;">
-  <title>AE / Exposure Lock (S2_Icon_ExposureLock_24_N)</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="spectrum-icon-24-LockClosed (sp-icon-lock-closed)" data-name="AE / Exposure Lock" style="--iconPrimary: currentColor;">
+  <title>AE / Exposure Lock (spectrum-icon-24-LockClosed (sp-icon-lock-closed))</title>
   <desc>Locks current auto-exposure metering across multiple shots</desc>
   <rect x="5.5" y="10.5" width="13" height="10" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/>
 </svg>
