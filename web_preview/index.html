@@ -11,11 +11,18 @@
   <header>
     <div class="brand">
       <div class="brand-badge">Lr</div>
-      <div class="brand-title">Lightroom Clean Web Studio</div>
+      <div class="brand-title">Clean Lightroom Web Studio</div>
+      <div class="brand-tag">PRO 2.5</div>
     </div>
 
     <div class="header-actions">
-      <!-- Tip 525: Built-in 4 Demo Scenes -->
+      <!-- Layout Mode Switcher (Desktop Studio vs Mobile Android UI) -->
+      <div class="view-mode-pill">
+        <button id="btnViewStudio" class="active" title="Desktop Studio Layout">🖥️ Studio</button>
+        <button id="btnViewMobile" title="Mobile Lightroom Emulation">📱 Mobile</button>
+      </div>
+
+      <!-- Demo Scenes -->
       <select id="demoSceneSelect" class="header-select" title="Load High-Dynamic Demo Scene">
         <option value="" disabled selected>✨ Demo Scenes</option>
         <option value="sunset">Sunset Landscape</option>
@@ -24,87 +31,127 @@
         <option value="architecture">Architecture</option>
       </select>
 
-      <button id="btnUndo" title="Undo (Ctrl+Z)" disabled>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
-        </svg>
-        Undo
+      <!-- Undo / Redo -->
+      <button id="btnUndo" class="btn-icon-only" title="Undo (Ctrl+Z)" disabled>
+        <img src="icons/06_Header_and_Actions/lr-mobile-undo.svg" width="16" height="16" alt="Undo">
       </button>
 
-      <button id="btnRedo" title="Redo (Ctrl+Y)" disabled>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/>
-        </svg>
-        Redo
+      <button id="btnRedo" class="btn-icon-only" title="Redo (Ctrl+Y)" disabled>
+        <img src="icons/06_Header_and_Actions/lr-mobile-redo.svg" width="16" height="16" alt="Redo">
       </button>
 
+      <!-- Before / After Compare -->
       <button id="btnCompare" title="Hold \ for Before/After">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M9.01 14H2v2h7.01v3L13 15l-3.99-4v3zm5.98-1v-3H22V8h-7.01V5L11 9l3.99 4z"/>
-        </svg>
-        Before/After (\)
+        <img src="icons/05_Workspace_and_Camera/lr-mobile-compare-before-after.svg" width="16" height="16" alt="Compare">
+        <span>Before/After (\)</span>
       </button>
 
-      <button id="btnAltClipping" title="Toggle Alt Clipping Mode">
+      <!-- Alt-Clipping Toggle -->
+      <button id="btnAltClipping" title="Toggle Alt Clipping Mode (Hold Alt)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
         </svg>
-        Alt Clip
+        <span>Alt Clip</span>
       </button>
 
-      <!-- Tip 512: Reset Dialog (Selective vs All) -->
+      <!-- Eyedropper White Balance Neutral Picker -->
+      <button id="btnEyedropperTop" title="Pick Neutral White Balance (Sample Canvas)">
+        <img src="icons/12_Color_Grading_and_Curves/lr-mobile-wb-eyedropper.svg" width="16" height="16" alt="Eyedropper">
+        <span>WB Picker</span>
+      </button>
+
+      <!-- Reset Options Menu -->
       <div class="dropdown">
         <button id="btnResetMenu" class="dropdown-trigger" title="Reset options">Reset ▾</button>
         <div class="dropdown-content">
-          <a href="#" id="btnResetSlidersOnly">Reset Sliders Only (Keep Crop)</a>
-          <a href="#" id="btnResetAll" class="danger">Reset All (Everything)</a>
+          <a href="#" id="btnResetSlidersOnly">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+            Reset Sliders Only (Keep Crop)
+          </a>
+          <a href="#" id="btnResetAll" class="danger">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            Reset All (Everything)
+          </a>
         </div>
       </div>
 
+      <!-- Open Image File -->
       <label for="imageUpload" style="cursor: pointer;">
         <button type="button" onclick="document.getElementById('imageUpload').click()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
-          </svg>
-          Open Image
+          <img src="icons/05_Workspace_and_Camera/lr-mobile-import-add.svg" width="16" height="16" alt="Import">
+          <span>Open Image</span>
         </button>
       </label>
       <input type="file" id="imageUpload" accept="image/*" style="display: none;">
 
-      <button id="btnExport" class="primary-btn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
-        </svg>
-        Export Photo
-      </button>
+      <!-- Export Dropdown -->
+      <div class="dropdown">
+        <button id="btnExportMenu" class="primary-btn">
+          <img src="icons/05_Workspace_and_Camera/lr-mobile-share-export.svg" width="16" height="16" alt="Export">
+          <span>Export ▾</span>
+        </button>
+        <div class="dropdown-content">
+          <a href="#" id="btnExportJpgHigh">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            Export JPEG (High 95%)
+          </a>
+          <a href="#" id="btnExportPngLossless">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            Export PNG (Lossless)
+          </a>
+          <a href="#" id="btnExportWebp">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            Export WebP
+          </a>
+          <a href="#" id="btnExportXmp" style="color: #38A9FF; font-weight: 600;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            Download Adobe Camera Raw (.XMP)
+          </a>
+        </div>
+      </div>
     </div>
   </header>
 
-  <!-- Main Workspace -->
-  <div class="main-container">
-    <!-- Loupe Canvas Area -->
+  <!-- Main Container -->
+  <div class="main-container" id="mainContainer">
+    <!-- Desktop Loupe Viewport Panel -->
     <div class="viewport-panel" id="viewportPanel">
       <canvas id="glCanvas"></canvas>
 
+      <!-- Rule of Thirds Crop Grid Overlay -->
+      <div id="cropGridOverlay" class="crop-grid-overlay"></div>
+
+      <!-- Eyedropper Magnifier Preview -->
+      <div id="eyedropperLoupe" class="eyedropper-loupe">
+        <div id="eyedropperSwatch" class="eyedropper-swatch"></div>
+        <div class="eyedropper-crosshair"></div>
+        <div id="eyedropperVal" class="eyedropper-val">RGB</div>
+      </div>
+
+      <!-- Canvas HUD Pills -->
       <div class="canvas-overlay-hud">
         <div id="hudBefore" class="hud-pill">BEFORE (ORIGINAL)</div>
         <div id="hudAltClip" class="hud-pill">ALT CLIPPING PREVIEW</div>
+        <div id="hudEyedropper" class="hud-pill">TAP PHOTO TO PICK NEUTRAL GRAY</div>
       </div>
 
+      <!-- Canvas Viewport Controls -->
       <div class="canvas-controls-hud">
         <button id="btnFit" class="hud-btn">Fit View</button>
         <button id="btn100" class="hud-btn">100% (1:1)</button>
+        <button id="btnZoomIn" class="hud-btn">+</button>
+        <button id="btnZoomOut" class="hud-btn">-</button>
         <span id="zoomLevelText" style="font-size: 11px; align-self: center; color: #a0a0a0; padding: 0 4px;">100%</span>
       </div>
     </div>
 
-    <!-- Right Adjustment Controls Sidebar -->
-    <div class="sidebar-panel">
+    <!-- Desktop Adjustment Controls Sidebar -->
+    <div class="sidebar-panel" id="sidebarPanel">
       <!-- 5-Zone Interactive RGB Histogram -->
       <div class="histogram-container">
         <div class="histogram-header">
           <span>RGB Waveform Histogram</span>
-          <span style="font-size: 10px; color: #6e6e6e;">Drag Zones to Adjust</span>
+          <span style="font-size: 10px; color: #707070;">Drag Zones to Adjust</span>
         </div>
 
         <div class="histogram-box" id="histogramBox">
@@ -124,23 +171,80 @@
         </div>
       </div>
 
-      <!-- Navigation Tabs (Tip 401 & 454) -->
-      <div class="tabs-bar">
-        <button class="tab-btn active" data-tab="tabLight">Light</button>
-        <button class="tab-btn" data-tab="tabColor">Color</button>
-        <button class="tab-btn" data-tab="tabEffects">Effects</button>
-        <button class="tab-btn" data-tab="tabDetail">Detail</button>
-        <button class="tab-btn" data-tab="tabCurves">Curves</button>
-        <button class="tab-btn" data-tab="tabCrop">Crop</button>
+      <!-- Primary Mode Navigation Bar (Matching Android Bottom Navigation Bar) -->
+      <div class="mode-nav-bar" id="modeNavBar">
+        <button class="mode-nav-btn" data-mode="modeActions" title="Actions & Recipes">
+          <img src="icons/01_Edit_Panels/lr-mobile-quick-actions.svg" alt="Actions">
+          <span>Actions</span>
+        </button>
+        <button class="mode-nav-btn" data-mode="modePresets" title="Presets Library">
+          <img src="icons/01_Edit_Panels/lr-mobile-presets.svg" alt="Presets">
+          <span>Presets</span>
+        </button>
+        <button class="mode-nav-btn" data-mode="modeCrop" title="Crop & Geometry">
+          <img src="icons/04_Crop_and_Geometry/lr-mobile-crop.svg" alt="Crop">
+          <span>Crop</span>
+        </button>
+        <button class="mode-nav-btn active" data-mode="modeEdit" title="Main Adjustments">
+          <img src="icons/01_Edit_Panels/lr-mobile-light.svg" alt="Edit">
+          <span>Edit</span>
+        </button>
+        <button class="mode-nav-btn" data-mode="modeMasking" title="Selective Masks">
+          <img src="icons/02_Masking_and_AI/lr-mobile-masking.svg" alt="Masking">
+          <span>Masking</span>
+        </button>
+        <button class="mode-nav-btn" data-mode="modeRemove" title="Generative / Healing Remove">
+          <img src="icons/03_Remove_and_Heal/lr-mobile-heal.svg" alt="Remove">
+          <span>Remove</span>
+        </button>
       </div>
 
-      <!-- Scrollable Adjustments Panels -->
-      <div class="panels-scroll">
+      <!-- Horizontal Tools Rack (Matching Android Tools Rack Bar) -->
+      <div class="tools-rack-bar" id="toolsRackBar">
+        <button class="tool-rack-btn auto-btn" id="btnAutoTone" title="One-Tap Intelligent Tone">
+          <img src="icons/01_Edit_Panels/lr-mobile-auto.svg" alt="Auto">
+          <span>Auto</span>
+        </button>
+        <button class="tool-rack-btn active" data-tool="tabLight">
+          <img src="icons/01_Edit_Panels/lr-mobile-light.svg" alt="Light">
+          <span>Light</span>
+        </button>
+        <button class="tool-rack-btn" data-tool="tabColor">
+          <img src="icons/01_Edit_Panels/lr-mobile-color.svg" alt="Color">
+          <span>Color</span>
+        </button>
+        <button class="tool-rack-btn" data-tool="tabBlur">
+          <img src="icons/01_Edit_Panels/lr-mobile-lens-blur.svg" alt="Blur">
+          <span>Blur</span>
+        </button>
+        <button class="tool-rack-btn" data-tool="tabEffects">
+          <img src="icons/01_Edit_Panels/lr-mobile-effects.svg" alt="Effects">
+          <span>Effects</span>
+        </button>
+        <button class="tool-rack-btn" data-tool="tabDetail">
+          <img src="icons/01_Edit_Panels/lr-mobile-detail.svg" alt="Detail">
+          <span>Detail</span>
+        </button>
+        <button class="tool-rack-btn" data-tool="tabOptics">
+          <img src="icons/01_Edit_Panels/lr-mobile-optics.svg" alt="Optics">
+          <span>Optics</span>
+        </button>
+        <button class="tool-rack-btn" data-tool="tabCurves">
+          <img src="icons/01_Edit_Panels/lr-mobile-curve.svg" alt="Curves">
+          <span>Curves</span>
+        </button>
+      </div>
+
+      <!-- Scrollable Adjustments & Mode Panels Container -->
+      <div class="panels-scroll" id="panelsScroll">
         <!-- 1. LIGHT PANEL -->
         <div class="tool-section active" id="tabLight">
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="exposure">Exposure</span>
+              <span class="slider-label" data-reset="exposure">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-exposure.svg" width="14" height="14" alt="">
+                Exposure
+              </span>
               <span class="slider-value" id="valExposure">0.00 EV</span>
             </div>
             <div class="range-wrap">
@@ -151,7 +255,10 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="contrast">Contrast</span>
+              <span class="slider-label" data-reset="contrast">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-contrast.svg" width="14" height="14" alt="">
+                Contrast
+              </span>
               <span class="slider-value" id="valContrast">0</span>
             </div>
             <div class="range-wrap">
@@ -162,7 +269,10 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="highlights">Highlights</span>
+              <span class="slider-label" data-reset="highlights">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-highlights.svg" width="14" height="14" alt="">
+                Highlights
+              </span>
               <span class="slider-value" id="valHighlights">0</span>
             </div>
             <div class="range-wrap">
@@ -173,7 +283,10 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="shadows">Shadows</span>
+              <span class="slider-label" data-reset="shadows">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-shadows.svg" width="14" height="14" alt="">
+                Shadows
+              </span>
               <span class="slider-value" id="valShadows">0</span>
             </div>
             <div class="range-wrap">
@@ -184,7 +297,10 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="whites">Whites (Alt Preview)</span>
+              <span class="slider-label" data-reset="whites">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-whites.svg" width="14" height="14" alt="">
+                Whites (Alt Preview)
+              </span>
               <span class="slider-value" id="valWhites">0</span>
             </div>
             <div class="range-wrap">
@@ -195,7 +311,10 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="blacks">Blacks (Alt Preview)</span>
+              <span class="slider-label" data-reset="blacks">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-blacks.svg" width="14" height="14" alt="">
+                Blacks (Alt Preview)
+              </span>
               <span class="slider-value" id="valBlacks">0</span>
             </div>
             <div class="range-wrap">
@@ -205,39 +324,75 @@
           </div>
         </div>
 
-        <!-- 2. COLOR PANEL -->
+        <!-- 2. COLOR PANEL (Exact structure as window_dump.xml) -->
         <div class="tool-section" id="tabColor">
-          <!-- Quick Color Actions: Auto WB & B&W Mode -->
-          <div class="quick-chips-row">
-            <button id="btnAutoWb" class="action-chip" title="Auto White Balance">⚖️ Auto WB</button>
-            <button id="btnToggleBw" class="action-chip" title="Toggle Black & White Mode">⚫ B&W Mode</button>
+          <!-- Authentic Sub-Tabs (B&W, Grading, Mix) -->
+          <div class="color-subtabs-row">
+            <button id="btnSubtabBw" class="subtab-pill btn-bw" title="Toggle Black & White Mode">B &amp; W</button>
+            <button id="btnSubtabGrading" class="subtab-pill" title="Open Color Grading Screen">Grading</button>
+            <button id="btnSubtabMix" class="subtab-pill" title="Open 8-Color HSL Mix Screen">Mix</button>
           </div>
 
-          <div class="slider-group">
-            <div class="slider-header">
-              <span class="slider-label" data-reset="temp">Temp</span>
-              <span class="slider-value" id="valTemp">5500 K</span>
+          <!-- White Balance Selector & Eyedropper Row -->
+          <div class="wb-controls-row">
+            <span class="wb-label">White balance</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <select id="wbPresetSelect" class="wb-select" title="White Balance Preset">
+                <option value="as_shot" selected>As Shot</option>
+                <option value="auto">Auto</option>
+                <option value="daylight">Daylight</option>
+                <option value="cloudy">Cloudy</option>
+                <option value="shade">Shade</option>
+                <option value="tungsten">Tungsten</option>
+                <option value="fluorescent">Fluorescent</option>
+                <option value="flash">Flash</option>
+                <option value="custom">Custom</option>
+              </select>
+
+              <button id="btnEyedropperColor" class="wb-eyedropper-btn" title="White Balance Eyedropper">
+                <img src="icons/12_Color_Grading_and_Curves/lr-mobile-wb-eyedropper.svg" width="16" height="16" alt="Eyedropper">
+              </button>
             </div>
-            <div class="range-wrap">
-              <input type="range" id="sliderTemp" min="2000" max="10000" step="50" value="5500">
-            </div>
-            <div id="lblKelvinDesc" style="font-size: 10px; color: #777; margin-top: 2px;">(Daylight / Neutral)</div>
           </div>
 
+          <!-- Temp Slider -->
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="tint">Tint</span>
-              <span class="slider-value" id="valTint">0</span>
+              <span class="slider-label" data-reset="temp">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-temp.svg" width="14" height="14" alt="">
+                Temp
+              </span>
+              <span class="slider-value" id="valTemp">0</span>
             </div>
             <div class="range-wrap">
-              <input type="range" id="sliderTint" min="-150" max="150" step="1" value="0">
+              <input type="range" id="sliderTemp" class="track-temp" min="-100" max="100" step="1" value="0">
               <div class="zero-notch"></div>
             </div>
           </div>
 
+          <!-- Tint Slider -->
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="vibrance">Vibrance <span class="badge-pill">Skin Safe</span></span>
+              <span class="slider-label" data-reset="tint">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-tint.svg" width="14" height="14" alt="">
+                Tint
+              </span>
+              <span class="slider-value" id="valTint">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderTint" class="track-tint" min="-150" max="150" step="1" value="0">
+              <div class="zero-notch"></div>
+            </div>
+          </div>
+
+          <!-- Vibrance Slider (Skin Safe) -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="vibrance">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-vibrance.svg" width="14" height="14" alt="">
+                Vibrance
+                <span class="skin-safe-badge">Skin Safe</span>
+              </span>
               <span class="slider-value" id="valVibrance">0</span>
             </div>
             <div class="range-wrap">
@@ -246,9 +401,13 @@
             </div>
           </div>
 
+          <!-- Saturation Slider -->
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="saturation">Saturation</span>
+              <span class="slider-label" data-reset="saturation">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-saturation.svg" width="14" height="14" alt="">
+                Saturation
+              </span>
               <span class="slider-value" id="valSaturation">0</span>
             </div>
             <div class="range-wrap">
@@ -256,87 +415,59 @@
               <div class="zero-notch"></div>
             </div>
           </div>
+        </div>
 
-          <!-- 8-Channel Color Mixer -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin: 14px 0 8px;">
-            <span style="font-size: 11px; font-weight: 600; color: #a0a0a0; text-transform: uppercase;">8-Channel Color Mixer</span>
-            <button id="btnResetHsl" class="text-btn">Reset Colors</button>
+        <!-- 3. BLUR (LENS BLUR) PANEL -->
+        <div class="tool-section" id="tabBlur">
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="blurAmount">Blur Amount</span>
+              <span class="slider-value" id="valBlurAmount">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderBlurAmount" min="0" max="100" step="1" value="0">
+            </div>
           </div>
-          <div class="hsl-swatches">
-            <button class="swatch-btn active" data-color="0" style="background: #E53935;" title="Red"><span class="swatch-dot"></span></button>
-            <button class="swatch-btn" data-color="1" style="background: #FB8C00;" title="Orange (Skin)"><span class="swatch-dot"></span></button>
-            <button class="swatch-btn" data-color="2" style="background: #FDD835;" title="Yellow"><span class="swatch-dot"></span></button>
-            <button class="swatch-btn" data-color="3" style="background: #43A047;" title="Green"><span class="swatch-dot"></span></button>
-            <button class="swatch-btn" data-color="4" style="background: #00ACC1;" title="Aqua"><span class="swatch-dot"></span></button>
-            <button class="swatch-btn" data-color="5" style="background: #1E88E5;" title="Blue"><span class="swatch-dot"></span></button>
-            <button class="swatch-btn" data-color="6" style="background: #8E24AA;" title="Purple"><span class="swatch-dot"></span></button>
-            <button class="swatch-btn" data-color="7" style="background: #D81B60;" title="Magenta"><span class="swatch-dot"></span></button>
+
+          <div class="section-title">Bokeh Shape</div>
+          <div class="aspect-chips-grid" style="margin-top: 6px;">
+            <button class="aspect-chip active" data-bokeh="circle">⭕ Circle</button>
+            <button class="aspect-chip" data-bokeh="blade5">⬠ 5-Blade</button>
+            <button class="aspect-chip" data-bokeh="blade7">⬡ 7-Blade</button>
+            <button class="aspect-chip" data-bokeh="swirl">🌀 Swirl</button>
+            <button class="aspect-chip" data-bokeh="cateye">🐱 Cat Eye</button>
           </div>
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" id="lblHslChannel">Red Hue</span>
-              <span class="slider-value" id="valHslHue">0</span>
+              <span class="slider-label" data-reset="bokehBoost">Bokeh Boost</span>
+              <span class="slider-value" id="valBokehBoost">0</span>
             </div>
             <div class="range-wrap">
-              <input type="range" id="sliderHslHue" min="-100" max="100" step="1" value="0">
-              <div class="zero-notch"></div>
-            </div>
-          </div>
-
-          <div class="slider-group">
-            <div class="slider-header">
-              <span class="slider-label">Saturation</span>
-              <span class="slider-value" id="valHslSat">0</span>
-            </div>
-            <div class="range-wrap">
-              <input type="range" id="sliderHslSat" min="-100" max="100" step="1" value="0">
-              <div class="zero-notch"></div>
+              <input type="range" id="sliderBokehBoost" min="0" max="100" step="1" value="0">
             </div>
           </div>
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label">Luminance</span>
-              <span class="slider-value" id="valHslLum">0</span>
+              <span class="slider-label" data-reset="focalRange">Focal Range</span>
+              <span class="slider-value" id="valFocalRange">50%</span>
             </div>
             <div class="range-wrap">
-              <input type="range" id="sliderHslLum" min="-100" max="100" step="1" value="0">
-              <div class="zero-notch"></div>
-            </div>
-          </div>
-
-          <!-- 3-Way Color Grading Wheels -->
-          <div style="margin: 16px 0 8px; font-size: 11px; font-weight: 600; color: #a0a0a0; text-transform: uppercase;">3-Way Color Grading</div>
-          <div class="wheels-row">
-            <button class="wheel-tab-btn active" data-wheel="shadows">Shadows</button>
-            <button class="wheel-tab-btn" data-wheel="midtones">Midtones</button>
-            <button class="wheel-tab-btn" data-wheel="highlights">Highlights</button>
-          </div>
-
-          <div class="color-wheel-box">
-            <canvas id="wheelCanvas" width="160" height="160"></canvas>
-            <span style="font-size: 10px; color: #777; margin-top: 6px;">Drag puck for tint, double-click to reset</span>
-          </div>
-
-          <div class="slider-group">
-            <div class="slider-header">
-              <span class="slider-label">Wheel Luminance</span>
-              <span class="slider-value" id="valWheelLum">0</span>
-            </div>
-            <div class="range-wrap">
-              <input type="range" id="sliderWheelLum" min="-100" max="100" step="1" value="0">
-              <div class="zero-notch"></div>
+              <input type="range" id="sliderFocalRange" min="0" max="100" step="1" value="50">
             </div>
           </div>
         </div>
 
-        <!-- 3. EFFECTS PANEL (Tip 291–297, 454) -->
+        <!-- 4. EFFECTS PANEL -->
         <div class="tool-section" id="tabEffects">
           <div class="section-title">Presence</div>
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="texture">Texture</span>
+              <span class="slider-label" data-reset="texture">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-texture.svg" width="14" height="14" alt="">
+                Texture
+              </span>
               <span class="slider-value" id="valTexture">0</span>
             </div>
             <div class="range-wrap">
@@ -347,7 +478,10 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="clarity">Clarity</span>
+              <span class="slider-label" data-reset="clarity">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-clarity.svg" width="14" height="14" alt="">
+                Clarity
+              </span>
               <span class="slider-value" id="valClarity">0</span>
             </div>
             <div class="range-wrap">
@@ -358,7 +492,10 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="dehaze">Dehaze</span>
+              <span class="slider-label" data-reset="dehaze">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-dehaze.svg" width="14" height="14" alt="">
+                Dehaze
+              </span>
               <span class="slider-value" id="valDehaze">0</span>
             </div>
             <div class="range-wrap">
@@ -371,7 +508,10 @@
           <div class="section-title" style="margin-top: 14px;">Post-Crop Vignette</div>
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="vignetteAmount">Vignette Amount</span>
+              <span class="slider-label" data-reset="vignetteAmount">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-vignette.svg" width="14" height="14" alt="">
+                Vignette Amount
+              </span>
               <span class="slider-value" id="valVignetteAmount">0</span>
             </div>
             <div class="range-wrap">
@@ -380,25 +520,23 @@
             </div>
           </div>
 
-          <div id="vignetteSubsliders" class="sub-slider-group">
-            <div class="slider-group">
-              <div class="slider-header">
-                <span class="slider-label">Midpoint</span>
-                <span class="slider-value" id="valVignetteMidpoint">50</span>
-              </div>
-              <div class="range-wrap">
-                <input type="range" id="sliderVignetteMidpoint" min="0" max="100" step="1" value="50">
-              </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Midpoint</span>
+              <span class="slider-value" id="valVignetteMidpoint">50</span>
             </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderVignetteMidpoint" min="0" max="100" step="1" value="50">
+            </div>
+          </div>
 
-            <div class="slider-group">
-              <div class="slider-header">
-                <span class="slider-label">Feather</span>
-                <span class="slider-value" id="valVignetteFeather">50</span>
-              </div>
-              <div class="range-wrap">
-                <input type="range" id="sliderVignetteFeather" min="0" max="100" step="1" value="50">
-              </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Feather</span>
+              <span class="slider-value" id="valVignetteFeather">50</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderVignetteFeather" min="0" max="100" step="1" value="50">
             </div>
           </div>
 
@@ -406,7 +544,10 @@
           <div class="section-title" style="margin-top: 14px;">Film Grain</div>
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label" data-reset="grainAmount">Grain Amount</span>
+              <span class="slider-label" data-reset="grainAmount">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-grain.svg" width="14" height="14" alt="">
+                Grain Amount
+              </span>
               <span class="slider-value" id="valGrainAmount">0</span>
             </div>
             <div class="range-wrap">
@@ -414,35 +555,36 @@
             </div>
           </div>
 
-          <div id="grainSubsliders" class="sub-slider-group">
-            <div class="slider-group">
-              <div class="slider-header">
-                <span class="slider-label">Grain Size</span>
-                <span class="slider-value" id="valGrainSize">25</span>
-              </div>
-              <div class="range-wrap">
-                <input type="range" id="sliderGrainSize" min="0" max="100" step="1" value="25">
-              </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Grain Size</span>
+              <span class="slider-value" id="valGrainSize">25</span>
             </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderGrainSize" min="0" max="100" step="1" value="25">
+            </div>
+          </div>
 
-            <div class="slider-group">
-              <div class="slider-header">
-                <span class="slider-label">Grain Roughness</span>
-                <span class="slider-value" id="valGrainRoughness">50</span>
-              </div>
-              <div class="range-wrap">
-                <input type="range" id="sliderGrainRoughness" min="0" max="100" step="1" value="50">
-              </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Grain Roughness</span>
+              <span class="slider-value" id="valGrainRoughness">50</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderGrainRoughness" min="0" max="100" step="1" value="50">
             </div>
           </div>
         </div>
 
-        <!-- 4. DETAIL PANEL (Tip 294, 302, 331, 332) -->
+        <!-- 5. DETAIL PANEL -->
         <div class="tool-section" id="tabDetail">
           <div class="section-title">Sharpening</div>
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label">Sharpening</span>
+              <span class="slider-label" data-reset="sharpening">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-sharpening.svg" width="14" height="14" alt="">
+                Sharpening
+              </span>
               <span class="slider-value" id="valSharpening">40</span>
             </div>
             <div class="range-wrap">
@@ -483,7 +625,10 @@
           <div class="section-title" style="margin-top: 14px;">Noise Reduction</div>
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label">Luminance Noise</span>
+              <span class="slider-label" data-reset="luminanceNoise">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-noise-luminance.svg" width="14" height="14" alt="">
+                Luminance Noise
+              </span>
               <span class="slider-value" id="valLuminanceNoise">0</span>
             </div>
             <div class="range-wrap">
@@ -493,7 +638,10 @@
 
           <div class="slider-group">
             <div class="slider-header">
-              <span class="slider-label">Color Noise</span>
+              <span class="slider-label" data-reset="colorNoise">
+                <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-slider-noise-color.svg" width="14" height="14" alt="">
+                Color Noise
+              </span>
               <span class="slider-value" id="valColorNoise">25</span>
             </div>
             <div class="range-wrap">
@@ -502,8 +650,40 @@
           </div>
         </div>
 
-        <!-- 5. CURVES PANEL -->
+        <!-- 6. OPTICS PANEL -->
+        <div class="tool-section" id="tabOptics">
+          <div class="section-title">Lens Corrections</div>
+          <div class="aspect-chips-grid" style="margin-top: 8px;">
+            <button id="btnToggleProfile" class="aspect-chip" style="flex: 1; text-align: center;">
+              <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-lens-profile-correction.svg" width="14" height="14" alt="" style="vertical-align: middle;">
+              Lens Profile Corrections
+            </button>
+            <button id="btnToggleCA" class="aspect-chip" style="flex: 1; text-align: center;">
+              <img src="icons/11_Slider_and_Adjustment_Icons/lr-mobile-chromatic-aberration.svg" width="14" height="14" alt="" style="vertical-align: middle;">
+              Remove Chromatic Aberration
+            </button>
+          </div>
+
+          <div class="slider-group" style="margin-top: 14px;">
+            <div class="slider-header">
+              <span class="slider-label" data-reset="defringe">Defringe Purple/Green</span>
+              <span class="slider-value" id="valDefringe">0</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderDefringe" min="0" max="100" step="1" value="0">
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. CURVES PANEL -->
         <div class="tool-section" id="tabCurves">
+          <div class="curve-channel-tabs">
+            <button class="curve-chan-btn active" data-channel="rgb">RGB</button>
+            <button class="curve-chan-btn" data-channel="red" style="color: #ff5252;">Red</button>
+            <button class="curve-chan-btn" data-channel="green" style="color: #69f0ae;">Green</button>
+            <button class="curve-chan-btn" data-channel="blue" style="color: #448aff;">Blue</button>
+          </div>
+
           <div class="curve-box" id="curveBox">
             <canvas id="curveCanvas" width="340" height="200"></canvas>
           </div>
@@ -554,14 +734,52 @@
           </div>
         </div>
 
-        <!-- 6. CROP & GEOMETRY PANEL (Tips 401–420) -->
-        <div class="tool-section" id="tabCrop">
-          <div class="section-title">Transform & Orientation</div>
+        <!-- MODE: PRESETS LIBRARY -->
+        <div class="tool-section" id="modePresetsPanel">
+          <div class="presets-panel-container">
+            <div class="preset-amount-row">
+              <span style="font-size: 11px; font-weight: 600; color: #b0b0b0;">Preset Amount</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="range" id="sliderPresetAmount" min="0" max="200" step="1" value="100" style="width: 90px;">
+                <span id="valPresetAmount" style="font-size: 11px; font-weight: bold; color: #38A9FF; width: 36px; text-align: right;">100%</span>
+              </div>
+            </div>
+
+            <div class="preset-categories-scroll">
+              <button class="cat-chip active" data-cat="all">All</button>
+              <button class="cat-chip" data-cat="creative">Creative</button>
+              <button class="cat-chip" data-cat="vintage">Vintage</button>
+              <button class="cat-chip" data-cat="bw">B&amp;W</button>
+              <button class="cat-chip" data-cat="portrait">Portrait</button>
+              <button class="cat-chip" data-cat="landscape">Landscape</button>
+            </div>
+
+            <div class="presets-grid" id="presetsGrid">
+              <!-- Preset Cards populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- MODE: CROP & GEOMETRY -->
+        <div class="tool-section" id="modeCropPanel">
+          <div class="section-title">Transform &amp; Orientation</div>
           <div class="crop-btn-row">
-            <button id="btnRotateCcw" class="action-btn" title="Rotate 90° CCW">⟲ 90°</button>
-            <button id="btnRotateCw" class="action-btn" title="Rotate 90° CW">⟳ 90°</button>
-            <button id="btnFlipH" class="action-btn" title="Flip Horizontal">⇄ Flip H</button>
-            <button id="btnFlipV" class="action-btn" title="Flip Vertical">⇅ Flip V</button>
+            <button id="btnRotateCcw" class="crop-action-btn" title="Rotate 90° CCW">
+              <img src="icons/04_Crop_and_Geometry/lr-mobile-rotate-left.svg" width="16" height="16" alt="">
+              90° CCW
+            </button>
+            <button id="btnRotateCw" class="crop-action-btn" title="Rotate 90° CW">
+              <img src="icons/04_Crop_and_Geometry/lr-mobile-rotate-right.svg" width="16" height="16" alt="">
+              90° CW
+            </button>
+            <button id="btnFlipH" class="crop-action-btn" title="Flip Horizontal">
+              <img src="icons/04_Crop_and_Geometry/lr-mobile-flip-horizontal.svg" width="16" height="16" alt="">
+              Flip H
+            </button>
+            <button id="btnFlipV" class="crop-action-btn" title="Flip Vertical">
+              <img src="icons/04_Crop_and_Geometry/lr-mobile-flip-vertical.svg" width="16" height="16" alt="">
+              Flip V
+            </button>
           </div>
 
           <div class="slider-group" style="margin-top: 14px;">
@@ -576,73 +794,267 @@
           </div>
 
           <div class="section-title" style="margin-top: 14px;">Aspect Ratio</div>
-          <div class="aspect-ratio-row">
+          <div class="aspect-chips-grid">
             <button class="aspect-chip active" data-ratio="free">Free</button>
-            <button class="aspect-chip" data-ratio="1:1">1:1</button>
-            <button class="aspect-chip" data-ratio="4:5">4:5</button>
-            <button class="aspect-chip" data-ratio="16:9">16:9</button>
-            <button class="aspect-chip" data-ratio="9:16">9:16</button>
-            <button class="aspect-chip" data-ratio="3:2">3:2</button>
-            <button class="aspect-chip" data-ratio="4:3">4:3</button>
+            <button class="aspect-chip" data-ratio="original">Original</button>
+            <button class="aspect-chip" data-ratio="1:1">1:1 Square</button>
+            <button class="aspect-chip" data-ratio="4:5">4:5 Portrait</button>
+            <button class="aspect-chip" data-ratio="16:9">16:9 Widescreen</button>
+            <button class="aspect-chip" data-ratio="9:16">9:16 Stories</button>
+            <button class="aspect-chip" data-ratio="3:2">3:2 35mm</button>
+            <button class="aspect-chip" data-ratio="4:3">4:3 Medium</button>
+            <button class="aspect-chip" data-ratio="2:3">2:3 Photo</button>
           </div>
 
           <div style="margin-top: 20px; text-align: center;">
-            <button id="btnResetCrop" class="text-btn">Reset Crop & Geometry</button>
+            <button id="btnResetCrop" class="text-btn">Reset Crop &amp; Geometry</button>
+          </div>
+        </div>
+
+        <!-- MODE: MASKING -->
+        <div class="tool-section" id="modeMaskingPanel">
+          <div class="section-title">Selective Masks</div>
+          <div class="aspect-chips-grid" style="margin-top: 8px;">
+            <button class="aspect-chip active" data-mask="brush">🖌️ Brush Mask</button>
+            <button class="aspect-chip" data-mask="linear">Linear Gradient</button>
+            <button class="aspect-chip" data-mask="radial">Radial Gradient</button>
+          </div>
+
+          <div class="slider-group" style="margin-top: 14px;">
+            <div class="slider-header">
+              <span class="slider-label">Brush Size</span>
+              <span class="slider-value" id="valBrushSize">30 px</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderBrushSize" min="5" max="100" step="1" value="30">
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Feather</span>
+              <span class="slider-value" id="valMaskFeather">50%</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderMaskFeather" min="0" max="100" step="1" value="50">
+            </div>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <button id="btnInvertMask" class="action-chip" style="width: 100%;">Invert Mask</button>
+          </div>
+        </div>
+
+        <!-- MODE: REMOVE (HEALING) -->
+        <div class="tool-section" id="modeRemovePanel">
+          <div class="section-title">Generative &amp; Spot Healing</div>
+          <p style="font-size: 11px; color: #888; margin: 8px 0 14px;">Tap anywhere on the photo to remove spots, dust, and blemishes seamlessly.</p>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Heal Size</span>
+              <span class="slider-value" id="valHealSize">25 px</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderHealSize" min="5" max="80" step="1" value="25">
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Feather</span>
+              <span class="slider-value" id="valHealFeather">30%</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sliderHealFeather" min="0" max="100" step="1" value="30">
+            </div>
+          </div>
+        </div>
+
+        <!-- MODE: ACTIONS (RECIPES & XMP) -->
+        <div class="tool-section" id="modeActionsPanel">
+          <div class="section-title">Recipe Management</div>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+            <button id="btnCopySettings" class="action-btn" style="text-align: left; padding: 10px;">
+              <img src="icons/08_Batch_and_Export/lr-mobile-copy-settings.svg" width="16" height="16" alt="">
+              Copy All Edit Settings (JSON)
+            </button>
+            <button id="btnPasteSettings" class="action-btn" style="text-align: left; padding: 10px;">
+              <img src="icons/08_Batch_and_Export/lr-mobile-paste-settings.svg" width="16" height="16" alt="">
+              Paste Edit Settings
+            </button>
+            <button id="btnDownloadXmpSidecar" class="action-btn" style="text-align: left; padding: 10px; color: #38A9FF;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+              Download Adobe Camera Raw (.XMP) Sidecar
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Presets Footer Bar (Tips 388, 391, 400, 454, 499) -->
-      <div class="presets-section">
-        <div class="presets-top-bar">
-          <div class="presets-label">Presets Library (21 Pro Looks)</div>
-          <div class="preset-amount-container">
-            <span style="font-size: 10px; color: #a0a0a0;">Amount:</span>
-            <input type="range" id="sliderPresetAmount" min="0" max="200" step="1" value="100" style="width: 80px;">
-            <span id="valPresetAmount" style="font-size: 11px; font-weight: bold; color: #38A9FF; width: 36px; text-align: right;">100%</span>
+      <!-- DEDICATED OVERLAY: COLOR MIX (8-CHANNEL HSL) -->
+      <div id="drawerColorMix" class="overlay-drawer">
+        <div class="overlay-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <img src="icons/01_Edit_Panels/lr-mobile-color-mix.svg" width="20" height="20" alt="Mix">
+            <span class="overlay-title">Color Mix</span>
+          </div>
+          <button id="btnDoneMix" class="btn-done">DONE</button>
+        </div>
+
+        <!-- 8 Authentic Ring Swatches -->
+        <div class="hsl-rings-row" id="hslRingsRow">
+          <!-- Populated by JS for Red, Orange, Yellow, Green, Aqua, Blue, Purple, Magenta -->
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center;">
+            <span id="lblHslChannelTitle" style="font-size: 13px; font-weight: 700; color: #ffffff;">Red</span>
+            <span id="badgeHslSkin" class="skin-safe-badge" style="display: none;">Skin Safe (18° Gauss)</span>
+          </div>
+          <button id="btnResetCurrentHsl" class="text-btn">Reset Color</button>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Hue</span>
+            <span class="slider-value" id="valHslHue">0</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" id="sliderHslHue" min="-100" max="100" step="1" value="0">
+            <div class="zero-notch"></div>
           </div>
         </div>
 
-        <div class="preset-category-tabs">
-          <button class="cat-pill active" data-cat="all">All</button>
-          <button class="cat-pill" data-cat="creative">Creative</button>
-          <button class="cat-pill" data-cat="vintage">Vintage</button>
-          <button class="cat-pill" data-cat="bw">B&W</button>
-          <button class="cat-pill" data-cat="portrait">Portrait</button>
-          <button class="cat-pill" data-cat="landscape">Landscape</button>
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Saturation</span>
+            <span class="slider-value" id="valHslSat">0</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" id="sliderHslSat" min="-100" max="100" step="1" value="0">
+            <div class="zero-notch"></div>
+          </div>
         </div>
 
-        <div class="presets-list">
-          <button class="preset-chip active" data-preset="natural" data-cat="all">None (Original)</button>
-          <!-- Creative -->
-          <button class="preset-chip" data-preset="golden" data-cat="creative">Golden Hour</button>
-          <button class="preset-chip" data-preset="cyberpunk" data-cat="creative">Cyberpunk Neon</button>
-          <button class="preset-chip" data-preset="bright" data-cat="creative">Clean Bright & Airy</button>
-          <button class="preset-chip" data-preset="matte" data-cat="creative">Matte Cinema</button>
-          <button class="preset-chip" data-preset="forest" data-cat="creative">Moody Forest</button>
-          <button class="preset-chip" data-preset="street" data-cat="creative">Urban Street</button>
-          <!-- Vintage -->
-          <button class="preset-chip" data-preset="portra" data-cat="vintage">Kodak Portra 400</button>
-          <button class="preset-chip" data-preset="astia" data-cat="vintage">Fuji Astia Soft</button>
-          <button class="preset-chip" data-preset="polaroid" data-cat="vintage">Vintage Polaroid 1970</button>
-          <button class="preset-chip" data-preset="sepia" data-cat="vintage">Sepia Classic</button>
-          <!-- B&W -->
-          <button class="preset-chip" data-preset="bw_high" data-cat="bw">B&W High Contrast</button>
-          <button class="preset-chip" data-preset="bw_silver" data-cat="bw">B&W Fine Art Silver</button>
-          <button class="preset-chip" data-preset="bw_dark" data-cat="bw">B&W Dark Moody</button>
-          <!-- Portrait -->
-          <button class="preset-chip" data-preset="portrait_pop" data-cat="portrait">Studio Portrait Pop</button>
-          <button class="preset-chip" data-preset="warm_glow" data-cat="portrait">Soft Warm Glow</button>
-          <!-- Landscape -->
-          <button class="preset-chip" data-preset="vivid" data-cat="landscape">Vivid Landscape</button>
-          <button class="preset-chip" data-preset="hdr" data-cat="landscape">HDR Drama</button>
-          <button class="preset-chip" data-preset="cinematic" data-cat="landscape">Cinematic Moody</button>
-          <button class="preset-chip" data-preset="sunset_punch" data-cat="landscape">Sunset Punch</button>
-          <button class="preset-chip" data-preset="ocean_teal" data-cat="landscape">Deep Ocean Teal</button>
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Luminance</span>
+            <span class="slider-value" id="valHslLum">0</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" id="sliderHslLum" min="-100" max="100" step="1" value="0">
+            <div class="zero-notch"></div>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; text-align: center;">
+          <button id="btnResetAllHsl" class="text-btn" style="color: #ff5252;">Reset All 8 Colors</button>
+        </div>
+      </div>
+
+      <!-- DEDICATED OVERLAY: COLOR GRADING (4-WAY TARGETS) -->
+      <div id="drawerColorGrading" class="overlay-drawer">
+        <div class="overlay-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <img src="icons/01_Edit_Panels/lr-mobile-color-grading.svg" width="20" height="20" alt="Grading">
+            <span class="overlay-title">Color Grading</span>
+          </div>
+          <button id="btnDoneGrading" class="btn-done">DONE</button>
+        </div>
+
+        <!-- 4 Target Switchers -->
+        <div class="grading-targets-row">
+          <button class="grading-target-btn active" data-target="shadows">Shadows</button>
+          <button class="grading-target-btn" data-target="midtones">Midtones</button>
+          <button class="grading-target-btn" data-target="highlights">Highlights</button>
+          <button class="grading-target-btn" data-target="global">Global</button>
+        </div>
+
+        <!-- High-DPI Color Wheel Canvas -->
+        <div class="color-wheel-wrapper">
+          <canvas id="wheelCanvas" width="200" height="200"></canvas>
+          <span class="wheel-hint">Drag puck to tint, double-click to reset</span>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Luminance</span>
+            <span class="slider-value" id="valWheelLum">0</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" id="sliderWheelLum" min="-100" max="100" step="1" value="0">
+            <div class="zero-notch"></div>
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Blending</span>
+            <span class="slider-value" id="valWheelBlending">50</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" id="sliderWheelBlending" min="0" max="100" step="1" value="50">
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="slider-label">Balance</span>
+            <span class="slider-value" id="valWheelBalance">0</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" id="sliderWheelBalance" min="-100" max="100" step="1" value="0">
+            <div class="zero-notch"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Device Emulation Frame (When in Mobile View Mode) -->
+    <div class="mobile-device-frame" id="mobileDeviceFrame">
+      <div class="mobile-screen-wrapper">
+        <!-- Android Status Bar -->
+        <div class="mobile-status-bar">
+          <span id="mobileClock">12:00</span>
+          <span>5G  ●  100%</span>
+        </div>
+
+        <!-- Mobile Top App Bar -->
+        <div class="mobile-top-bar">
+          <button class="mobile-top-btn" title="Back to library">
+            <img src="icons/06_Header_and_Actions/lr-mobile-back-chevron.svg" width="20" height="20" alt="Back">
+          </button>
+          <div style="font-weight: 600; font-size: 13px;">CleanLightroom</div>
+          <div style="display: flex; gap: 4px;">
+            <button class="mobile-top-btn" id="mobileBtnShare" title="Share and Export">
+              <img src="icons/05_Workspace_and_Camera/lr-mobile-share-export.svg" width="18" height="18" alt="Share">
+            </button>
+            <button class="mobile-top-btn" title="More options">
+              <img src="icons/06_Header_and_Actions/lr-mobile-more-menu.svg" width="18" height="18" alt="More">
+            </button>
+          </div>
+        </div>
+
+        <!-- Mobile Loupe Canvas -->
+        <div class="mobile-canvas-area" id="mobileCanvasArea">
+          <!-- Synchronized canvas cloned dynamically or moved into frame -->
+        </div>
+
+        <!-- Mobile Bottom Tool & Adjustments Area (Synced directly with adjustments) -->
+        <div class="mobile-adjustments-sheet" id="mobileAdjustmentsSheet">
+          <!-- Populated from desktop active panels -->
+        </div>
+
+        <!-- Mobile Bottom Dock (Actions, Presets, Crop, Edit, Masking, Remove) -->
+        <div class="mobile-bottom-dock" id="mobileBottomDock">
+          <!-- Mirrored from modeNavBar -->
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastMsg" class="toast-msg">Settings Applied</div>
 
   <script src="app.js"></script>
 </body>
