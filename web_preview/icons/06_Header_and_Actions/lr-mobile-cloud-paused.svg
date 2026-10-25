@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_CloudPaused_24_N" data-name="Cloud Sync Paused" style="--iconPrimary: currentColor;">
+  <title>Cloud Sync Paused (S2_Icon_CloudPaused_24_N)</title>
+  <desc>Indicates cloud syncing is paused or waiting for Wi-Fi</desc>
+  <path d="M6.5 17.5h11a3.8 3.8 0 0 0 .4-7.58A5.4 5.4 0 0 0 7.6 8.3a4.3 4.3 0 0 0-1.1 9.2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><line x1="10.6" y1="11" x2="10.6" y2="14.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="13.4" y1="11" x2="13.4" y2="14.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

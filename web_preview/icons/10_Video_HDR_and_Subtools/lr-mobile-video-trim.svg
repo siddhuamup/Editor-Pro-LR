@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_VideoTrim_24_N" data-name="Video Trim & Timeline" style="--iconPrimary: currentColor;">
+  <title>Video Trim & Timeline (S2_Icon_VideoTrim_24_N)</title>
+  <desc>Trims start/end frames of video clips and color-grades footage</desc>
+  <rect x="4.5" y="5.5" width="15" height="13" rx="1.5" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="8" y1="3.5" x2="8" y2="20.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="3.5" x2="16" y2="20.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polygon points="10.5,9.5 14.5,12 10.5,14.5" fill="currentColor"/>
+</svg>

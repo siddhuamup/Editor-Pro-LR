@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_SelectSubject_24_N" data-name="Select Subject (AI)" style="--iconPrimary: currentColor;">
+  <title>Select Subject (AI) (S2_Icon_SelectSubject_24_N)</title>
+  <desc>Automatically detects and masks the primary person, animal, or object</desc>
+  <rect x="3.5" y="3.5" width="17" height="17" rx="3" stroke="currentColor" stroke-width="1.65" stroke-dasharray="3 2.2" fill="none"/><circle cx="12" cy="9.5" r="2.6" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M7.5 17.5c0-2.4 2-4.2 4.5-4.2s4.5 1.8 4.5 4.2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_SliderSaturation_24_N" data-name="Slider: Saturation" style="--iconPrimary: currentColor;">
+  <title>Slider: Saturation (S2_Icon_SliderSaturation_24_N)</title>
+  <desc>Uniformly scales color intensity across all hues</desc>
+  <path d="M12 3.5s6.5 6.8 6.5 11.2a6.5 6.5 0 1 1-13 0C5.5 10.3 12 3.5 12 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="currentColor" fill-opacity="0.28"/>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_SliderShadows_24_N" data-name="Slider: Shadows" style="--iconPrimary: currentColor;">
+  <title>Slider: Shadows (S2_Icon_SliderShadows_24_N)</title>
+  <desc>Opens up or deepens dark shadow regions</desc>
+  <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M5.5 14.5a7 7 0 0 0 13 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><line x1="8" y1="16" x2="16" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

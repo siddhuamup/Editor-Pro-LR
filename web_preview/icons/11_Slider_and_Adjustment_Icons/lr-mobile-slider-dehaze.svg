@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_SliderDehaze_24_N" data-name="Slider: Dehaze" style="--iconPrimary: currentColor;">
+  <title>Slider: Dehaze (S2_Icon_SliderDehaze_24_N)</title>
+  <desc>Cuts through atmospheric fog, mist, or haze (or adds dreamy fog)</desc>
+  <path d="M6.5 12a5.5 5.5 0 0 1 11 0" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><line x1="3.5" y1="15" x2="20.5" y2="15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><line x1="5.5" y1="18.5" x2="18.5" y2="18.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-dasharray="3 2.5"/>
+</svg>

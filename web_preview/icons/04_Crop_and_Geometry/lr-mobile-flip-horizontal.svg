@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_FlipHorizontal_24_N" data-name="Flip Horizontal" style="--iconPrimary: currentColor;">
+  <title>Flip Horizontal (S2_Icon_FlipHorizontal_24_N)</title>
+  <desc>Mirrors image horizontally across vertical axis</desc>
+  <line x1="12" y1="3" x2="12" y2="21" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-dasharray="2.5 2.5"/><polygon points="9,6 3.5,18 9,18" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><polygon points="15,6 20.5,18 15,18" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="currentColor" fill-opacity="0.25"/>
+</svg>

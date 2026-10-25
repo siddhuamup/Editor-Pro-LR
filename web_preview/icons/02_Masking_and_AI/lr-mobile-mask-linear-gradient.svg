@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_LinearGradient_24_N" data-name="Linear Gradient Mask" style="--iconPrimary: currentColor;">
+  <title>Linear Gradient Mask (S2_Icon_LinearGradient_24_N)</title>
+  <desc>Graduated filter for smooth directional exposure and color transitions</desc>
+  <rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="3.5" y1="8.5" x2="20.5" y2="8.5" stroke="currentColor" stroke-width="1.8"/><line x1="3.5" y1="12.5" x2="20.5" y2="12.5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2"/><line x1="3.5" y1="16.5" x2="20.5" y2="16.5" stroke="currentColor" stroke-width="1" stroke-dasharray="1.5 2.5"/><circle cx="12" cy="12.5" r="1.8" fill="currentColor"/>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_ManualFocus_24_N" data-name="Manual Focus & Peaking ([MF])" style="--iconPrimary: currentColor;">
+  <title>Manual Focus & Peaking ([MF]) (S2_Icon_ManualFocus_24_N)</title>
+  <desc>Slider focus distance control with green focus peaking highlights</desc>
+  <path d="M7 5H4v4M17 5h3v4M7 19H4v-4M17 19h3v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="1" fill="currentColor"/>
+</svg>

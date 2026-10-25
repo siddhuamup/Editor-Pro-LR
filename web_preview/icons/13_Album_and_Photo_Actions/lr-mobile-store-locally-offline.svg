@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_OfflinePin_24_N" data-name="Store Locally (Make Offline)" style="--iconPrimary: currentColor;">
+  <title>Store Locally (Make Offline) (S2_Icon_OfflinePin_24_N)</title>
+  <desc>Caches full-resolution Smart Previews and originals on device for offline editing</desc>
+  <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M12 7.5v6.5M9.5 11.8L12 14.3l2.5-2.5M8.5 16.8h7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

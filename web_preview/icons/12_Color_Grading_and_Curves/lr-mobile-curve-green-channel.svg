@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_CurveGreen_24_N" data-name="Tone Curve: Green Channel (G)" style="--iconPrimary: currentColor;">
+  <title>Tone Curve: Green Channel (G) (S2_Icon_CurveGreen_24_N)</title>
+  <desc>Green-Magenta channel point curve</desc>
+  <path d="M4 19.5C9 18 15 6 20 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6" fill="none"/><text x="10.2" y="14" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">G</text>
+</svg>

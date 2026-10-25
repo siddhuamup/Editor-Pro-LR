@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_SelectObjects_24_N" data-name="Select Objects (AI)" style="--iconPrimary: currentColor;">
+  <title>Select Objects (AI) (S2_Icon_SelectObjects_24_N)</title>
+  <desc>Brush or draw a box over any object to snap a precise AI mask</desc>
+  <rect x="4" y="4" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2.8 2" fill="none"/><path d="M14 14l6 6M14 18.5V14h4.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

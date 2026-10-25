@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_CloudInProgress_24_N" data-name="Cloud Sync Uploading" style="--iconPrimary: currentColor;">
+  <title>Cloud Sync Uploading (S2_Icon_CloudInProgress_24_N)</title>
+  <desc>Indicates active RAW/DNG photo upload to Creative Cloud</desc>
+  <path d="M6.5 17.5h11a3.8 3.8 0 0 0 .4-7.58A5.4 5.4 0 0 0 7.6 8.3a4.3 4.3 0 0 0-1.1 9.2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M12 15.5v-5M9.8 12.5L12 10.3l2.2 2.2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

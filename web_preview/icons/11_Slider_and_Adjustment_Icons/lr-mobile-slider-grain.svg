@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_SliderGrain_24_N" data-name="Slider: Film Grain" style="--iconPrimary: currentColor;">
+  <title>Slider: Film Grain (S2_Icon_SliderGrain_24_N)</title>
+  <desc>Simulates organic analog film grain with Size and Roughness controls</desc>
+  <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="8" cy="8" r="1.1" fill="currentColor"/><circle cx="15" cy="7.5" r="1.1" fill="currentColor"/><circle cx="11.5" cy="12" r="1.1" fill="currentColor"/><circle cx="7.5" cy="15.5" r="1.1" fill="currentColor"/><circle cx="16" cy="15" r="1.1" fill="currentColor"/>
+</svg>

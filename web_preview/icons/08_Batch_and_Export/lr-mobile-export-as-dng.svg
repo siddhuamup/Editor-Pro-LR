@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_FileDNG_24_N" data-name="Export as DNG Raw" style="--iconPrimary: currentColor;">
+  <title>Export as DNG Raw (S2_Icon_FileDNG_24_N)</title>
+  <desc>Exports Adobe Digital Negative (DNG) with embedded edit instructions</desc>
+  <path d="M6 3.5h8.5L19 8v12.5H6a1.5 1.5 0 0 1-1.5-1.5V5A1.5 1.5 0 0 1 6 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M14 3.5V8h4.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/><text x="7.2" y="16.5" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">DNG</text>
+</svg>

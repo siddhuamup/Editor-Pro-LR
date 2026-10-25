@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_LensProfile_24_N" data-name="Optics: Enable Lens Profile" style="--iconPrimary: currentColor;">
+  <title>Optics: Enable Lens Profile (S2_Icon_LensProfile_24_N)</title>
+  <desc>Corrects optical barrel/pincushion distortion and lens vignette</desc>
+  <path d="M4 5.5c5 1.8 11 1.8 16 0 1.5 4.2 1.5 8.8 0 13-5-1.8-11-1.8-16 0-1.5-4.2-1.5-8.8 0-13z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
+</svg>

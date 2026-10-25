@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_CurveParametric_24_N" data-name="Tone Curve: Parametric Mode" style="--iconPrimary: currentColor;">
+  <title>Tone Curve: Parametric Mode (S2_Icon_CurveParametric_24_N)</title>
+  <desc>Slider-based Highlights, Lights, Darks, and Shadows region curve</desc>
+  <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" stroke="currentColor" stroke-width="1.65" fill="none"/><path d="M4.5 19.5C9.5 18 14.5 6 19.5 4.5" stroke="currentColor" stroke-width="1.85" fill="none"/><line x1="4.5" y1="19.5" x2="19.5" y2="4.5" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2.5 2"/>
+</svg>
