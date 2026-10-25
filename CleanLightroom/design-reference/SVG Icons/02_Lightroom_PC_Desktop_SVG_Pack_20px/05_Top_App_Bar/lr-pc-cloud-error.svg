@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_CloudStateError_20_N" data-name="Cloud Sync Warning / Quota Full" style="--iconPrimary: currentColor;">
+  <title>Cloud Sync Warning / Quota Full (S2_Icon_CloudStateError_20_N)</title>
+  <desc>Alerts when cloud storage is full or a file failed to sync</desc>
+  <path d="M5.5 14.5h9.2a3.2 3.2 0 0 0 .3-6.38A4.5 4.5 0 0 0 6.4 6.9 3.6 3.6 0 0 0 5.5 14.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><line x1="10" y1="8.5" x2="10" y2="11.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="13" r="0.9" fill="currentColor"/>
+</svg>

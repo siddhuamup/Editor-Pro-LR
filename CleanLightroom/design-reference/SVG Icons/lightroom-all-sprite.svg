@@ -1,0 +1,1398 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="lr-mobile-auto" viewBox="0 0 24 24">
+    <title>Auto Tone (Sensei)</title>
+    <path d="M4.5 19.5L15.5 8.5M13.5 6.5L17.5 10.5M3.5 18.5a1.414 1.414 0 0 0 2 2l12-12a1.414 1.414 0 0 0-2-2l-12 12z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M19 3v3M17.5 4.5h3M6 4v2.5M4.75 5.25h2.5M19.5 14v2.5M18.25 15.25h2.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-light" viewBox="0 0 24 24">
+    <title>Light</title>
+    <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M12 2.75v2.5M12 18.75v2.5M2.75 12h2.5M18.75 12h2.5M5.46 5.46l1.77 1.77M16.77 16.77l1.77 1.77M18.54 5.46l-1.77 1.77M7.23 16.77l-1.77 1.77" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-curve" viewBox="0 0 24 24">
+    <title>Tone Curve</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M3.5 12h17M12 3.5v17" stroke="currentColor" stroke-width="1" stroke-opacity="0.35"/><path d="M4.5 19.5C9.5 19.5 9.5 4.5 19.5 4.5" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" fill="none"/><circle cx="8.2" cy="15.2" r="1.6" fill="currentColor"/><circle cx="15.8" cy="8.8" r="1.6" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-color" viewBox="0 0 24 24">
+    <title>Color / White Balance</title>
+    <path d="M14 14.26V5.5a2 2 0 1 0-4 0v8.76a4 4 0 1 0 4 0z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="12" cy="17.5" r="1.75" fill="currentColor"/><path d="M16.5 6h2M16.5 9h1.5M16.5 12h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-color-mix" viewBox="0 0 24 24">
+    <title>Color Mix (HSL)</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" stroke-dasharray="3.2 2.2" fill="none"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-color-grading" viewBox="0 0 24 24">
+    <title>Color Grading</title>
+    <circle cx="12" cy="7.5" r="4.2" stroke="currentColor" stroke-width="1.65" fill="none"/><circle cx="8" cy="15.2" r="4.2" stroke="currentColor" stroke-width="1.65" fill="none"/><circle cx="16" cy="15.2" r="4.2" stroke="currentColor" stroke-width="1.65" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-point-color" viewBox="0 0 24 24">
+    <title>Point Color</title>
+    <path d="M14.5 6.5l3 3M5 19l3.5-.8L18.2 8.5a1.5 1.5 0 0 0 0-2.1l-.6-.6a1.5 1.5 0 0 0-2.1 0L5.8 15.5 5 19z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M18.5 15.5l2.5 2.5-2.5 2.5-2.5-2.5 2.5-2.5z" stroke="currentColor" stroke-width="1.6" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-effects" viewBox="0 0 24 24">
+    <title>Effects</title>
+    <rect x="3.5" y="6.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><rect x="9.5" y="6.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.75" stroke-dasharray="2.5 2" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-detail" viewBox="0 0 24 24">
+    <title>Detail & Sharpening</title>
+    <polygon points="12,3.5 20.5,19.5 3.5,19.5" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><line x1="12" y1="3.5" x2="12" y2="19.5" stroke="currentColor" stroke-width="1.4" stroke-opacity="0.5"/>
+  </symbol>
+  <symbol id="lr-mobile-optics" viewBox="0 0 24 24">
+    <title>Optics & Lens</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M12 3.5v4M12 16.5v4M3.5 12h4M16.5 12h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-lens-blur" viewBox="0 0 24 24">
+    <title>Lens Blur (AI Depth)</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.5" fill="none"/><circle cx="12" cy="10.2" r="2.3" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M8.2 16.5c0-2 1.7-3.4 3.8-3.4s3.8 1.4 3.8 3.4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-profiles" viewBox="0 0 24 24">
+    <title>Profiles</title>
+    <circle cx="9.5" cy="9.5" r="4.8" stroke="currentColor" stroke-width="1.65" fill="none"/><circle cx="14.5" cy="9.5" r="4.8" stroke="currentColor" stroke-width="1.65" fill="none"/><circle cx="12" cy="14.2" r="4.8" stroke="currentColor" stroke-width="1.65" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-presets" viewBox="0 0 24 24">
+    <title>Presets</title>
+    <circle cx="9.5" cy="12" r="5.5" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="14.5" cy="12" r="5.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M12 7.3a5.5 5.5 0 0 1 0 9.4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-quick-actions" viewBox="0 0 24 24">
+    <title>Quick Actions (AI)</title>
+    <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M18.5 16l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-masking" viewBox="0 0 24 24">
+    <title>Masking</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" stroke-dasharray="3 2.5" fill="none"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.75" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-subject" viewBox="0 0 24 24">
+    <title>Select Subject (AI)</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="3" stroke="currentColor" stroke-width="1.65" stroke-dasharray="3 2.2" fill="none"/><circle cx="12" cy="9.5" r="2.6" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M7.5 17.5c0-2.4 2-4.2 4.5-4.2s4.5 1.8 4.5 4.2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-sky" viewBox="0 0 24 24">
+    <title>Select Sky (AI)</title>
+    <path d="M6.5 15.5h11a3.5 3.5 0 0 0 .4-6.98A5 5 0 0 0 8.2 7.2a4 4 0 0 0-1.7 8.3z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M3.5 19.5h17" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-dasharray="3 2.5"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-background" viewBox="0 0 24 24">
+    <title>Select Background (AI)</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M4 9l5-5M4 14l10-10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-opacity="0.55"/><circle cx="13.5" cy="11.5" r="2.2" stroke="currentColor" stroke-width="1.65" fill="none"/><path d="M9.8 18.5c0-2 1.6-3.5 3.7-3.5s3.7 1.5 3.7 3.5" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-objects" viewBox="0 0 24 24">
+    <title>Select Objects (AI)</title>
+    <rect x="4" y="4" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2.8 2" fill="none"/><path d="M14 14l6 6M14 18.5V14h4.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-people" viewBox="0 0 24 24">
+    <title>Select People (AI)</title>
+    <circle cx="12" cy="8.5" r="3.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M5.5 19.5c0-3.3 2.9-5.8 6.5-5.8s6.5 2.5 6.5 5.8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-brush" viewBox="0 0 24 24">
+    <title>Brush Mask</title>
+    <path d="M18.37 3.63a2.12 2.12 0 0 1 3 3L11 17l-4 1 1-4 10.37-10.37z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M4 20c1.5 0 3-.8 3-2.5S5.8 15 4.5 15 2 16 2 17.8C2 19.2 3 20 4 20z" stroke="currentColor" stroke-width="1.65" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-linear-gradient" viewBox="0 0 24 24">
+    <title>Linear Gradient Mask</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="3.5" y1="8.5" x2="20.5" y2="8.5" stroke="currentColor" stroke-width="1.8"/><line x1="3.5" y1="12.5" x2="20.5" y2="12.5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2"/><line x1="3.5" y1="16.5" x2="20.5" y2="16.5" stroke="currentColor" stroke-width="1" stroke-dasharray="1.5 2.5"/><circle cx="12" cy="12.5" r="1.8" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-radial-gradient" viewBox="0 0 24 24">
+    <title>Radial Gradient Mask</title>
+    <ellipse cx="12" cy="12" rx="8.5" ry="6.5" stroke="currentColor" stroke-width="1.75" stroke-dasharray="3 2.2" fill="none"/><ellipse cx="12" cy="12" rx="4.5" ry="3.2" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-color-range" viewBox="0 0 24 24">
+    <title>Color Range Mask</title>
+    <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M14 20l2.2-.5 4.3-4.3a1.2 1.2 0 0 0-1.7-1.7l-4.3 4.3L14 20z" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-luminance-range" viewBox="0 0 24 24">
+    <title>Luminance Range Mask</title>
+    <rect x="3.5" y="6" width="17" height="12" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="9" y1="6" x2="9" y2="18" stroke="currentColor" stroke-width="1.5"/><line x1="15" y1="6" x2="15" y2="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2"/><path d="M9 3.5l2 2.5H7l2-2.5zM15 20.5l2-2.5h-4l2 2.5z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-generative-remove" viewBox="0 0 24 24">
+    <title>Generative Remove (Firefly AI)</title>
+    <path d="M6.5 13.5l7-7a3.54 3.54 0 0 1 5 5l-7 7a3.54 3.54 0 0 1-5-5z" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M18.5 14.5l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5z" fill="currentColor"/><circle cx="11" cy="12" r="1" fill="currentColor"/><circle cx="13" cy="10" r="1" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-heal" viewBox="0 0 24 24">
+    <title>Heal Tool</title>
+    <rect x="3.2" y="8.5" width="17.6" height="7" rx="3.5" transform="rotate(-45 12 12)" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="9.5" y1="9.5" x2="14.5" y2="14.5" stroke="currentColor" stroke-width="1.5"/><line x1="14.5" y1="9.5" x2="9.5" y2="14.5" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10.2" r="0.9" fill="currentColor"/><circle cx="12" cy="13.8" r="0.9" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-clone" viewBox="0 0 24 24">
+    <title>Clone Stamp</title>
+    <path d="M5 17h14v2.5H5V17zm2-3h10l1.5 3h-13L7 14zm3.5-8a2.5 2.5 0 0 1 3 0c.7.6.8 1.7.3 2.5L13 10.5v3.5h-2v-3.5L10.2 8.5c-.5-.8-.4-1.9.3-2.5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-red-eye" viewBox="0 0 24 24">
+    <title>Red-Eye & Pet-Eye</title>
+    <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.65" fill="none"/><path d="M12 7.5v9M7.5 12h9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-crop" viewBox="0 0 24 24">
+    <title>Crop & Straighten</title>
+    <path d="M6.5 2.5v14a1 1 0 0 0 1 1h14M17.5 21.5v-14a1 1 0 0 0-1-1h-14" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-geometry-upright" viewBox="0 0 24 24">
+    <title>Geometry & Upright</title>
+    <polygon points="6.5,4.5 17.5,4.5 20.5,19.5 3.5,19.5" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><line x1="12" y1="4.5" x2="12" y2="19.5" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2.5 2"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2.5 2"/>
+  </symbol>
+  <symbol id="lr-mobile-rotate-left" viewBox="0 0 24 24">
+    <title>Rotate Left (90° CCW)</title>
+    <rect x="9" y="9" width="10.5" height="10.5" rx="1.8" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M4.5 10.5a6.5 6.5 0 0 1 6.5-6.5h2M7.5 7.5l-3 3 3 3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-rotate-right" viewBox="0 0 24 24">
+    <title>Rotate Right (90° CW)</title>
+    <rect x="4.5" y="9" width="10.5" height="10.5" rx="1.8" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M19.5 10.5A6.5 6.5 0 0 0 13 4h-2m5.5 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-flip-horizontal" viewBox="0 0 24 24">
+    <title>Flip Horizontal</title>
+    <line x1="12" y1="3" x2="12" y2="21" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-dasharray="2.5 2.5"/><polygon points="9,6 3.5,18 9,18" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><polygon points="15,6 20.5,18 15,18" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="currentColor" fill-opacity="0.25"/>
+  </symbol>
+  <symbol id="lr-mobile-flip-vertical" viewBox="0 0 24 24">
+    <title>Flip Vertical</title>
+    <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-dasharray="2.5 2.5"/><polygon points="6,9 18,3.5 18,9" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><polygon points="6,15 18,20.5 18,15" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="currentColor" fill-opacity="0.25"/>
+  </symbol>
+  <symbol id="lr-mobile-aspect-ratio" viewBox="0 0 24 24">
+    <title>Aspect Ratio Presets</title>
+    <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M6.5 11V8.5H9M17.5 13v2.5H15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-camera-pro" viewBox="0 0 24 24">
+    <title>In-App Pro Camera (DNG)</title>
+    <path d="M3.5 8.5A2 2 0 0 1 5.5 6.5h2.2l1.6-2h5.4l1.6 2h2.2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-9z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><circle cx="12" cy="13" r="3.5" stroke="currentColor" stroke-width="1.75" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-import-add" viewBox="0 0 24 24">
+    <title>Add / Import Photos</title>
+    <path d="M19.5 11.5v-6a2 2 0 0 0-2-2h-12a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><path d="M3.5 15.5l4-4 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor"/><path d="M17.5 14v6M14.5 17h6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-versions" viewBox="0 0 24 24">
+    <title>Versions & Snapshots</title>
+    <rect x="6" y="3.5" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M4 7.5v11a2 2 0 0 0 2 2h11" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><path d="M13 7.5v3.5l2.5 1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-reset-all" viewBox="0 0 24 24">
+    <title>Reset Adjustments</title>
+    <path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9M4.5 4.5V9H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-compare-before-after" viewBox="0 0 24 24">
+    <title>Before / After Compare</title>
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="12" y1="3" x2="12" y2="21" stroke="currentColor" stroke-width="1.85" stroke-linecap="round"/><path d="M12 4.5h8.5v15H12z" fill="currentColor" fill-opacity="0.22"/>
+  </symbol>
+  <symbol id="lr-mobile-share-export" viewBox="0 0 24 24">
+    <title>Share & Export</title>
+    <path d="M12 15.5V4M8 8l4-4 4 4" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M4.5 13.5v5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-back-chevron" viewBox="0 0 24 24">
+    <title>Back to Grid (<)</title>
+    <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-undo" viewBox="0 0 24 24">
+    <title>Undo Edit Step</title>
+    <path d="M9 7L4 12l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M4 12h10.5a5.5 5.5 0 0 1 0 11H12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-redo" viewBox="0 0 24 24">
+    <title>Redo Edit Step</title>
+    <path d="M15 7l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M20 12H9.5a5.5 5.5 0 0 0 0 11H12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-context-help" viewBox="0 0 24 24">
+    <title>Contextual Help (?)</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M9.6 9.5a2.4 2.4 0 1 1 3.5 2.1c-.8.4-1.1 1-1.1 1.9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><circle cx="12" cy="16.8" r="1.1" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-more-menu" viewBox="0 0 24 24">
+    <title>More Options (•••)</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="8" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="16" cy="12" r="1.3" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-info-rating-overlay" viewBox="0 0 24 24">
+    <title>Info & Rating Mode Switcher</title>
+    <polygon points="12,3.5 14.4,8.4 19.8,9.2 15.9,13 16.8,18.4 12,15.8 7.2,18.4 8.1,13 4.2,9.2 9.6,8.4" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" fill="none"/><path d="M8 21h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-cloud-uploading" viewBox="0 0 24 24">
+    <title>Cloud Sync Uploading</title>
+    <path d="M6.5 17.5h11a3.8 3.8 0 0 0 .4-7.58A5.4 5.4 0 0 0 7.6 8.3a4.3 4.3 0 0 0-1.1 9.2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M12 15.5v-5M9.8 12.5L12 10.3l2.2 2.2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-cloud-paused" viewBox="0 0 24 24">
+    <title>Cloud Sync Paused</title>
+    <path d="M6.5 17.5h11a3.8 3.8 0 0 0 .4-7.58A5.4 5.4 0 0 0 7.6 8.3a4.3 4.3 0 0 0-1.1 9.2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><line x1="10.6" y1="11" x2="10.6" y2="14.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="13.4" y1="11" x2="13.4" y2="14.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-cloud-offline" viewBox="0 0 24 24">
+    <title>Cloud Disconnected / Offline</title>
+    <path d="M6.5 17.5h10.5M18 17.2a3.8 3.8 0 0 0 .3-7.3A5.4 5.4 0 0 0 8.2 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-notifications-bell" viewBox="0 0 24 24">
+    <title>Activity & Notifications</title>
+    <path d="M18 15v-4.5a6 6 0 1 0-12 0V15l-2 2h16l-2-2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M10 19a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-device-tab" viewBox="0 0 24 24">
+    <title>Device Gallery Tab</title>
+    <rect x="6.5" y="2.5" width="11" height="19" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="10" y1="18.5" x2="14" y2="18.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-lightroom-cloud-tab" viewBox="0 0 24 24">
+    <title>Lightroom Cloud Tab</title>
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M8 14.5h7.5a2.5 2.5 0 0 0 .2-5 3.6 3.6 0 0 0-6.8-1 2.8 2.8 0 0 0-.9 6z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-shared-tab" viewBox="0 0 24 24">
+    <title>Shared Albums Tab</title>
+    <circle cx="9" cy="8.5" r="3" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M3.5 18.5c0-2.8 2.5-5 5.5-5s5.5 2.2 5.5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><circle cx="16.5" cy="9.5" r="2.3" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M16.5 14c2.2.3 4 1.9 4 4.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-learn-tab" viewBox="0 0 24 24">
+    <title>Learn & Tutorials Tab</title>
+    <polygon points="12,4 21,8.5 12,13 3,8.5" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M6.5 10.5v5.2c0 1.8 2.5 3.3 5.5 3.3s5.5-1.5 5.5-3.3v-5.2M21 8.5v6.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-community-tab" viewBox="0 0 24 24">
+    <title>Community & Remix Tab</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><polygon points="15.5,8.5 13.2,13.2 8.5,15.5 10.8,10.8" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-search-bar" viewBox="0 0 24 24">
+    <title>Sensei AI Search</title>
+    <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.8" fill="none"/><line x1="15.2" y1="15.2" x2="20" y2="20" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-filter-funnel" viewBox="0 0 24 24">
+    <title>Filter Library</title>
+    <polygon points="3.5,4.5 20.5,4.5 14,12.5 14,19.5 10,17.5 10,12.5" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-sort-order" viewBox="0 0 24 24">
+    <title>Sort Order (Asc / Desc)</title>
+    <path d="M7.5 4v16M4.5 7l3-3 3 3M16.5 20V4m-3 13l3 3 3-3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-grid-segmentation" viewBox="0 0 24 24">
+    <title>Time Segmentation Grid</title>
+    <line x1="3.5" y1="4.5" x2="12" y2="4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3.5" y="7.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="10.5" y="7.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><line x1="3.5" y1="15.5" x2="12" y2="15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3.5" y="18" width="5" height="3" rx="0.8" stroke="currentColor" stroke-width="1.6" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-slideshow" viewBox="0 0 24 24">
+    <title>Present Slideshow</title>
+    <rect x="3" y="4.5" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><polygon points="10.5,8.5 15,11 10.5,13.5" fill="currentColor"/><line x1="8" y1="20" x2="16" y2="20" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-copy-settings" viewBox="0 0 24 24">
+    <title>Copy Edit Settings</title>
+    <rect x="7.5" y="7.5" width="12.5" height="12.5" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M4.5 15.5v-10a1.5 1.5 0 0 1 1.5-1.5h10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><line x1="10.5" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="10.5" y1="15.5" x2="17" y2="15.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-paste-settings" viewBox="0 0 24 24">
+    <title>Paste Edit Settings</title>
+    <path d="M9 4.5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-12a2 2 0 0 0-2-2h-3" stroke="currentColor" stroke-width="1.75" fill="none"/><rect x="9" y="3" width="6" height="3.5" rx="1" stroke="currentColor" stroke-width="1.65" fill="none"/><path d="M12 10.5v6M9.5 14l2.5 2.5 2.5-2.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-create-preset" viewBox="0 0 24 24">
+    <title>Create New Preset</title>
+    <circle cx="9" cy="12" r="5" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="13.5" cy="12" r="5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M18.5 4.5v5M16 7h5" stroke="currentColor" stroke-width="1.85" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-watermark" viewBox="0 0 24 24">
+    <title>Add Watermark</title>
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M14.2 15.5a2.2 2.2 0 1 1 0-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/><circle cx="13.2" cy="14" r="4" stroke="currentColor" stroke-width="1.3" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-content-credentials" viewBox="0 0 24 24">
+    <title>Content Credentials (CR)</title>
+    <path d="M12 3a9 9 0 1 0 9 9c0-1.5-.4-2.9-1-4.1" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><path d="M9.5 14a2.2 2.2 0 1 1 0-4M13 10v4m0-2.5c.5-.9 1.3-1.5 2.3-1.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18.5" cy="5.5" r="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-export-as-dng" viewBox="0 0 24 24">
+    <title>Export as DNG Raw</title>
+    <path d="M6 3.5h8.5L19 8v12.5H6a1.5 1.5 0 0 1-1.5-1.5V5A1.5 1.5 0 0 1 6 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M14 3.5V8h4.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/><text x="7.2" y="16.5" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">DNG</text>
+  </symbol>
+  <symbol id="lr-mobile-save-to-device" viewBox="0 0 24 24">
+    <title>Save Copy to Device</title>
+    <path d="M12 4v11.5M8 11.5l4 4 4-4" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M4.5 15.5v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-edit-in-photoshop" viewBox="0 0 24 24">
+    <title>Edit in Photoshop</title>
+    <path d="M14 4h6v6M20 4l-8.5 8.5M19 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 4 18.5v-12A1.5 1.5 0 0 1 5.5 5H10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-shutter-button" viewBox="0 0 24 24">
+    <title>Camera Shutter Button</title>
+    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="12" cy="12" r="6" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-camera-flip" viewBox="0 0 24 24">
+    <title>Flip Front / Rear Camera</title>
+    <path d="M4 12a8 8 0 0 1 13.6-5.6L19.5 8M20 12a8 8 0 0 1-13.6 5.6L4.5 16" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/><polyline points="19.5 4.5 19.5 8 16 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/><polyline points="4.5 19.5 4.5 16 8 16" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-flash-auto" viewBox="0 0 24 24">
+    <title>Flash Auto (⚡A)</title>
+    <polygon points="11,3 5,13 10.5,13 9.5,21 16.5,10.5 11,10.5" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" fill="none"/><path d="M16.5 20l2-6 2 6M17.2 18h2.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-flash-on" viewBox="0 0 24 24">
+    <title>Flash On / Torch</title>
+    <polygon points="13,2.5 5.5,13.5 12,13.5 11,21.5 18.5,10.5 12,10.5" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-flash-off" viewBox="0 0 24 24">
+    <title>Flash Off</title>
+    <path d="M13 2.5l-2.5 3.7M7.8 10L5.5 13.5H12l-1 8 4.2-6.2M14.5 10.5h4L16 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="3.5" y1="3.5" x2="20.5" y2="20.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-hdr-capture" viewBox="0 0 24 24">
+    <title>HDR DNG Capture Mode</title>
+    <rect x="2.5" y="6" width="19" height="12" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><text x="5.2" y="14.2" fill="currentColor" font-size="6.5" font-family="monospace" font-weight="bold">HDR</text>
+  </symbol>
+  <symbol id="lr-mobile-dng-raw-badge" viewBox="0 0 24 24">
+    <title>DNG / JPG Format Selector</title>
+    <rect x="2.5" y="6" width="19" height="12" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><text x="5.2" y="14.2" fill="currentColor" font-size="6.5" font-family="monospace" font-weight="bold">RAW</text>
+  </symbol>
+  <symbol id="lr-mobile-exposure-comp" viewBox="0 0 24 24">
+    <title>Exposure Compensation (+/- EV)</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="4.5" y1="19.5" x2="19.5" y2="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M8.5 6.5v4M6.5 8.5h4M13.5 16h4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-shutter-speed-sec" viewBox="0 0 24 24">
+    <title>Shutter Speed (Sec)</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="14.3" y1="8" x2="19" y2="16" stroke="currentColor" stroke-width="1.5"/><line x1="9.7" y1="8" x2="14.3" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="7.4" y1="12" x2="12" y2="4" stroke="currentColor" stroke-width="1.5"/><line x1="9.7" y1="16" x2="5" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="14.3" y1="16" x2="9.7" y2="16" stroke="currentColor" stroke-width="1.5"/><line x1="16.6" y1="12" x2="12" y2="20" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="lr-mobile-iso-sensitivity" viewBox="0 0 24 24">
+    <title>ISO Sensor Sensitivity</title>
+    <rect x="2.5" y="6" width="19" height="12" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><text x="5.5" y="14.2" fill="currentColor" font-size="6.5" font-family="monospace" font-weight="bold">ISO</text>
+  </symbol>
+  <symbol id="lr-mobile-manual-focus" viewBox="0 0 24 24">
+    <title>Manual Focus & Peaking ([MF])</title>
+    <path d="M7 5H4v4M17 5h3v4M7 19H4v-4M17 19h3v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="1" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-wb-daylight" viewBox="0 0 24 24">
+    <title>WB Preset: Daylight (5500K)</title>
+    <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-wb-cloudy" viewBox="0 0 24 24">
+    <title>WB Preset: Cloudy (6500K)</title>
+    <path d="M6.5 17.5h11a3.8 3.8 0 0 0 .4-7.58A5.4 5.4 0 0 0 7.6 8.3a4.3 4.3 0 0 0-1.1 9.2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-wb-tungsten" viewBox="0 0 24 24">
+    <title>WB Preset: Incandescent (3200K)</title>
+    <path d="M9 16.2A5.5 5.5 0 1 1 15 16.2V18a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-1.8z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><line x1="10" y1="21.5" x2="14" y2="21.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-wb-fluorescent" viewBox="0 0 24 24">
+    <title>WB Preset: Fluorescent (4000K)</title>
+    <rect x="3.5" y="9.5" width="17" height="5" rx="2.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M8 5.5l1 2M16 5.5l-1 2M12 4.5v2.5M8 18.5l1-2M16 18.5l-1-2M12 19.5V17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-timer-self" viewBox="0 0 24 24">
+    <title>Self-Timer (2s / 5s / 10s)</title>
+    <circle cx="12" cy="13" r="7.5" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="10" y1="2.5" x2="14" y2="2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="2.5" x2="12" y2="5.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 9v4l2.5 2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-grid-level-overlay" viewBox="0 0 24 24">
+    <title>Viewfinder Grid & Horizon Level</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="9.2" y1="3.5" x2="9.2" y2="20.5" stroke="currentColor" stroke-width="1.2" stroke-opacity="0.6"/><line x1="14.8" y1="3.5" x2="14.8" y2="20.5" stroke="currentColor" stroke-width="1.2" stroke-opacity="0.6"/><line x1="3.5" y1="12" x2="20.5" y2="12" stroke="currentColor" stroke-width="1.8"/>
+  </symbol>
+  <symbol id="lr-mobile-highlight-clipping" viewBox="0 0 24 24">
+    <title>Highlight Clipping Overlay</title>
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="5" y1="19" x2="19" y2="5" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="19" x2="20" y2="9" stroke="currentColor" stroke-width="1.5"/><line x1="4" y1="15" x2="14" y2="5" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="lr-mobile-exposure-lock" viewBox="0 0 24 24">
+    <title>AE / Exposure Lock</title>
+    <rect x="5.5" y="10.5" width="13" height="10" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-video-trim" viewBox="0 0 24 24">
+    <title>Video Trim & Timeline</title>
+    <rect x="4.5" y="5.5" width="15" height="13" rx="1.5" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="8" y1="3.5" x2="8" y2="20.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="3.5" x2="16" y2="20.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polygon points="10.5,9.5 14.5,12 10.5,14.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-video-volume" viewBox="0 0 24 24">
+    <title>Video Audio Mute / Unmute</title>
+    <polygon points="4.5,9.5 8.5,9.5 13.5,5.5 13.5,18.5 8.5,14.5 4.5,14.5" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M16.5 9a4.5 4.5 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-video-play" viewBox="0 0 24 24">
+    <title>Video Play / Preview</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><polygon points="10,8.5 16,12 10,15.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-bw-mode" viewBox="0 0 24 24">
+    <title>B&W Monochrome Toggle</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17V3.5z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-hdr-edit" viewBox="0 0 24 24">
+    <title>HDR Edit & Visualization</title>
+    <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18.5 4l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-curve-rgb" viewBox="0 0 24 24">
+    <title>RGB Channel Tone Curve</title>
+    <path d="M4 19C9 18 11 6 20 5" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" fill="none"/><path d="M4 16C10 16 14 8 20 8" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2.5 2" fill="none"/><circle cx="12" cy="12" r="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-color-target-tool" viewBox="0 0 24 24">
+    <title>Targeted Adjustment Crosshair</title>
+    <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><path d="M12 2.5v3.5M10 4.5l2-2 2 2M12 21.5V18M10 19.5l2 2 2-2" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-invert" viewBox="0 0 24 24">
+    <title>Invert Mask Selection</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="3" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path d="M3.5 12h4M16.5 12h4" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-duplicate" viewBox="0 0 24 24">
+    <title>Duplicate Mask Layer</title>
+    <circle cx="10" cy="10" r="6" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2.5 2" fill="none"/><circle cx="14" cy="14" r="6" stroke="currentColor" stroke-width="1.7" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-hide-eye" viewBox="0 0 24 24">
+    <title>Hide / Show Mask Overlay</title>
+    <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.65" fill="none"/><line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-mask-eraser" viewBox="0 0 24 24">
+    <title>Mask Brush Eraser</title>
+    <path d="M16 4l4 4-9.5 9.5H5.5L3.5 15.5 15 4a.7.7 0 0 1 1 0z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><line x1="8.5" y1="11.5" x2="13.5" y2="16.5" stroke="currentColor" stroke-width="1.6"/><line x1="4" y1="20" x2="20" y2="20" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-distracting-people" viewBox="0 0 24 24">
+    <title>Remove Distracting People (AI)</title>
+    <circle cx="9" cy="8" r="2.6" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M4 18.5c0-2.6 2.2-4.5 5-4.5s5 1.9 5 4.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><path d="M16 7l4 4m0-4l-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-ai-edit-status" viewBox="0 0 24 24">
+    <title>Manage AI Edits Status</title>
+    <path d="M11 3.5l1.8 4.6 4.6 1.8-4.6 1.8L11 16.3 9.2 11.7 4.6 9.9l4.6-1.8L11 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><circle cx="18" cy="18" r="3" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-exposure" viewBox="0 0 24 24">
+    <title>Slider: Exposure</title>
+    <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M12 9.5v5M9.5 12h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-contrast" viewBox="0 0 24 24">
+    <title>Slider: Contrast</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17V3.5z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-highlights" viewBox="0 0 24 24">
+    <title>Slider: Highlights</title>
+    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M5.5 9.5a7 7 0 0 1 13 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><line x1="12" y1="5" x2="12" y2="7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-shadows" viewBox="0 0 24 24">
+    <title>Slider: Shadows</title>
+    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M5.5 14.5a7 7 0 0 0 13 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><line x1="8" y1="16" x2="16" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-whites" viewBox="0 0 24 24">
+    <title>Slider: Whites</title>
+    <polygon points="12,3.5 20.5,12 12,20.5 3.5,12" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-blacks" viewBox="0 0 24 24">
+    <title>Slider: Blacks</title>
+    <polygon points="12,3.5 20.5,12 12,20.5 3.5,12" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="currentColor" fill-opacity="0.3"/><circle cx="12" cy="12" r="3" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-temp" viewBox="0 0 24 24">
+    <title>Slider: Temperature (K)</title>
+    <path d="M14 14.5V5.5a2 2 0 1 0-4 0v9a4 4 0 1 0 4 0z" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="17.5" r="1.8" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-tint" viewBox="0 0 24 24">
+    <title>Slider: Tint (G/M)</title>
+    <path d="M12 3.5s6.5 6.8 6.5 11.2a6.5 6.5 0 1 1-13 0C5.5 10.3 12 3.5 12 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M9.5 15.5a3 3 0 0 0 3 2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-vibrance" viewBox="0 0 24 24">
+    <title>Slider: Vibrance</title>
+    <polygon points="12,3.5 20,18.5 4,18.5" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><circle cx="12" cy="13.5" r="2.8" stroke="currentColor" stroke-width="1.6" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-saturation" viewBox="0 0 24 24">
+    <title>Slider: Saturation</title>
+    <path d="M12 3.5s6.5 6.8 6.5 11.2a6.5 6.5 0 1 1-13 0C5.5 10.3 12 3.5 12 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="currentColor" fill-opacity="0.28"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-texture" viewBox="0 0 24 24">
+    <title>Slider: Texture</title>
+    <path d="M4 7c2.5-2 5.5-2 8 0s5.5 2 8 0M4 12c2.5-2 5.5-2 8 0s5.5 2 8 0M4 17c2.5-2 5.5-2 8 0s5.5 2 8 0" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-clarity" viewBox="0 0 24 24">
+    <title>Slider: Clarity</title>
+    <polygon points="12,3 15,9 21,12 15,15 12,21 9,15 3,12 9,9" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-dehaze" viewBox="0 0 24 24">
+    <title>Slider: Dehaze</title>
+    <path d="M6.5 12a5.5 5.5 0 0 1 11 0" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><line x1="3.5" y1="15" x2="20.5" y2="15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><line x1="5.5" y1="18.5" x2="18.5" y2="18.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-dasharray="3 2.5"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-vignette" viewBox="0 0 24 24">
+    <title>Slider: Vignette & Midpoint</title>
+    <rect x="3" y="4.5" width="18" height="15" rx="2.5" stroke="currentColor" stroke-width="1.75" fill="none"/><ellipse cx="12" cy="12" rx="6.5" ry="4.8" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.5 2" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-grain" viewBox="0 0 24 24">
+    <title>Slider: Film Grain</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="8" cy="8" r="1.1" fill="currentColor"/><circle cx="15" cy="7.5" r="1.1" fill="currentColor"/><circle cx="11.5" cy="12" r="1.1" fill="currentColor"/><circle cx="7.5" cy="15.5" r="1.1" fill="currentColor"/><circle cx="16" cy="15" r="1.1" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-sharpening" viewBox="0 0 24 24">
+    <title>Slider: Sharpening & Masking</title>
+    <polygon points="12,3 19.5,20 4.5,20" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-noise-luminance" viewBox="0 0 24 24">
+    <title>Slider: Luminance Noise Reduction</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="12" y1="3.5" x2="12" y2="20.5" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="9" r="1" fill="currentColor"/><circle cx="8.5" cy="13" r="1" fill="currentColor"/><circle cx="7.5" cy="16" r="1" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-slider-noise-color" viewBox="0 0 24 24">
+    <title>Slider: Color Noise Reduction</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" stroke-dasharray="3 2" fill="none"/><circle cx="9.5" cy="10" r="1.3" fill="currentColor"/><circle cx="14.5" cy="10" r="1.3" fill="currentColor"/><circle cx="12" cy="14.5" r="1.3" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-chromatic-aberration" viewBox="0 0 24 24">
+    <title>Optics: Remove Chromatic Aberration</title>
+    <circle cx="10.2" cy="12" r="6.5" stroke="currentColor" stroke-width="1.65" fill="none"/><circle cx="13.8" cy="12" r="6.5" stroke="currentColor" stroke-width="1.65" stroke-dasharray="2.5 2" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-lens-profile-correction" viewBox="0 0 24 24">
+    <title>Optics: Enable Lens Profile</title>
+    <path d="M4 5.5c5 1.8 11 1.8 16 0 1.5 4.2 1.5 8.8 0 13-5-1.8-11-1.8-16 0-1.5-4.2-1.5-8.8 0-13z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-cg-3way-wheels" viewBox="0 0 24 24">
+    <title>Color Grading: 3-Way View</title>
+    <circle cx="12" cy="7" r="3.8" stroke="currentColor" stroke-width="1.65" fill="none"/><circle cx="7.5" cy="15.5" r="3.8" stroke="currentColor" stroke-width="1.65" fill="none"/><circle cx="16.5" cy="15.5" r="3.8" stroke="currentColor" stroke-width="1.65" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-cg-shadows-wheel" viewBox="0 0 24 24">
+    <title>Color Grading: Shadows Wheel</title>
+    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M4.5 14.5a8 8 0 0 0 15 0z" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-cg-midtones-wheel" viewBox="0 0 24 24">
+    <title>Color Grading: Midtones Wheel</title>
+    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M4.5 9.5h15v5h-15z" fill="currentColor" fill-opacity="0.35"/><circle cx="12" cy="12" r="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-cg-highlights-wheel" viewBox="0 0 24 24">
+    <title>Color Grading: Highlights Wheel</title>
+    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M4.5 9.5a8 8 0 0 1 15 0z" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-cg-global-wheel" viewBox="0 0 24 24">
+    <title>Color Grading: Global Wheel</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.5 2" fill="none"/><circle cx="12" cy="12" r="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-curve-parametric" viewBox="0 0 24 24">
+    <title>Tone Curve: Parametric Mode</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" stroke="currentColor" stroke-width="1.65" fill="none"/><path d="M4.5 19.5C9.5 18 14.5 6 19.5 4.5" stroke="currentColor" stroke-width="1.85" fill="none"/><line x1="4.5" y1="19.5" x2="19.5" y2="4.5" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2.5 2"/>
+  </symbol>
+  <symbol id="lr-mobile-curve-point-rgb" viewBox="0 0 24 24">
+    <title>Tone Curve: Master RGB Point</title>
+    <path d="M4 19.5C8.5 19 15.5 5 20 4.5" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" fill="none"/><circle cx="8" cy="15.5" r="2" fill="currentColor"/><circle cx="16" cy="8.5" r="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-curve-red-channel" viewBox="0 0 24 24">
+    <title>Tone Curve: Red Channel (R)</title>
+    <path d="M4 19.5C9 18 15 6 20 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6" fill="none"/><text x="10.2" y="14" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">R</text>
+  </symbol>
+  <symbol id="lr-mobile-curve-green-channel" viewBox="0 0 24 24">
+    <title>Tone Curve: Green Channel (G)</title>
+    <path d="M4 19.5C9 18 15 6 20 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6" fill="none"/><text x="10.2" y="14" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">G</text>
+  </symbol>
+  <symbol id="lr-mobile-curve-blue-channel" viewBox="0 0 24 24">
+    <title>Tone Curve: Blue Channel (B)</title>
+    <path d="M4 19.5C9 18 15 6 20 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6" fill="none"/><text x="10.2" y="14" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">B</text>
+  </symbol>
+  <symbol id="lr-mobile-wb-eyedropper" viewBox="0 0 24 24">
+    <title>White Balance Eyedropper</title>
+    <path d="M14.5 6.5l3 3M5 19l3.5-.8L18.2 8.5a1.5 1.5 0 0 0 0-2.1l-.6-.6a1.5 1.5 0 0 0-2.1 0L5.8 15.5 5 19z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-select-checkmark" viewBox="0 0 24 24">
+    <title>Select Photo Checkmark</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><polyline points="8.2 12.2 10.8 14.8 16 9.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-select-all" viewBox="0 0 24 24">
+    <title>Select All in Album</title>
+    <rect x="3.5" y="3.5" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.65" fill="none"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.65" fill="none"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.65" fill="none"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.65" fill="none"/><polyline points="5.5 7 6.8 8.3 9 5.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><polyline points="15.5 7 16.8 8.3 19 5.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-deselect-all" viewBox="0 0 24 24">
+    <title>Deselect All</title>
+    <rect x="4" y="4" width="16" height="16" rx="2.5" stroke="currentColor" stroke-width="1.75" stroke-dasharray="3 2.2" fill="none"/><path d="M9 9l6 6m0-6l-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-add-to-album" viewBox="0 0 24 24">
+    <title>Add to Album (+)</title>
+    <rect x="4" y="3.5" width="13" height="17" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M19 13v6M16 16h6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-move-to-album" viewBox="0 0 24 24">
+    <title>Move to Album</title>
+    <path d="M3.5 6.5A2 2 0 0 1 5.5 4.5h4.5l2 2.2h6.5a2 2 0 0 1 2 2v8.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V6.5z" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M9.5 13h5m-2-2.2l2.2 2.2-2.2 2.2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-set-album-cover" viewBox="0 0 24 24">
+    <title>Set as Album Cover</title>
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><polygon points="12,7.5 13.4,10.3 16.5,10.8 14.2,13 14.8,16 12,14.5 9.2,16 9.8,13 7.5,10.8 10.6,10.3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-store-locally-offline" viewBox="0 0 24 24">
+    <title>Store Locally (Make Offline)</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M12 7.5v6.5M9.5 11.8L12 14.3l2.5-2.5M8.5 16.8h7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-star-filled" viewBox="0 0 24 24">
+    <title>Star Rating Filled (★)</title>
+    <polygon points="12,3 14.8,8.7 21,9.6 16.5,14 17.6,20.2 12,17.3 6.4,20.2 7.5,14 3,9.6 9.2,8.7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-star-half-swipe" viewBox="0 0 24 24">
+    <title>Swipe Gesture Rating</title>
+    <path d="M12 4v16M9 7l3-3 3 3M9 17l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-flag-unflagged" viewBox="0 0 24 24">
+    <title>Flag: Unflagged (Neutral)</title>
+    <path d="M6 20V4h11l-2.2 4.5L17 13H6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2.5 2" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-lock-orientation" viewBox="0 0 24 24">
+    <title>Rotate Crop Aspect (Portrait ↔ Landscape)</title>
+    <rect x="4" y="8" width="11" height="12" rx="1.6" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M11 4h7a2 2 0 0 1 2 2v7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-straighten-auto" viewBox="0 0 24 24">
+    <title>Auto Straighten Horizon</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="4" y1="14.5" x2="20" y2="9.5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.5 2"/><line x1="3.5" y1="12" x2="20.5" y2="12" stroke="currentColor" stroke-width="1.8"/>
+  </symbol>
+  <symbol id="lr-mobile-heal-brush-size" viewBox="0 0 24 24">
+    <title>Brush Size Control</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-heal-feather" viewBox="0 0 24 24">
+    <title>Brush Feather Softness</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2.2" fill="none"/><circle cx="12" cy="12" r="5.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 1.8" fill="none"/><circle cx="12" cy="12" r="2.8" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-heal-opacity" viewBox="0 0 24 24">
+    <title>Brush Opacity & Flow</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17V3.5z" fill="currentColor" fill-opacity="0.45"/>
+  </symbol>
+  <symbol id="lr-mobile-generative-refresh" viewBox="0 0 24 24">
+    <title>Regenerate Firefly Variations</title>
+    <path d="M4.5 12a7.5 7.5 0 0 1 13-5.2L19.5 9M19.5 12a7.5 7.5 0 0 1-13 5.2L4.5 15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><path d="M12 8.5l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-variation-prev" viewBox="0 0 24 24">
+    <title>Previous AI Variation (<)</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><polyline points="13.5 8.5 10 12 13.5 15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-variation-next" viewBox="0 0 24 24">
+    <title>Next AI Variation (>)</title>
+    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><polyline points="10.5 8.5 14 12 10.5 15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-camera-widget" viewBox="0 0 24 24">
+    <title>Mobile Camera Shortcut Widget</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="4" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12.5" r="3.2" stroke="currentColor" stroke-width="1.65" fill="none"/><path d="M9.5 6.5h5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-samsung-s-pen" viewBox="0 0 24 24">
+    <title>Stylus / Apple Pencil / S-Pen</title>
+    <path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L8 19l-4.5 1.5L5 16 17.5 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><line x1="14.5" y1="6.5" x2="17.5" y2="9.5" stroke="currentColor" stroke-width="1.6"/>
+  </symbol>
+  <symbol id="lr-mobile-overlay-thirds" viewBox="0 0 24 24">
+    <title>Crop Overlay: Rule of Thirds</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="9.2" y1="3.5" x2="9.2" y2="20.5" stroke="currentColor" stroke-width="1.4"/><line x1="14.8" y1="3.5" x2="14.8" y2="20.5" stroke="currentColor" stroke-width="1.4"/><line x1="3.5" y1="9.2" x2="20.5" y2="9.2" stroke="currentColor" stroke-width="1.4"/><line x1="3.5" y1="14.8" x2="20.5" y2="14.8" stroke="currentColor" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="lr-mobile-overlay-golden-spiral" viewBox="0 0 24 24">
+    <title>Crop Overlay: Golden Spiral</title>
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M14 4.5v15M14 13.5h6.5M17.5 13.5v6M4 19c0-7.5 5.5-14 12.5-14 3 0 4 2.5 4 5.5 0 2.5-1.8 4.2-4 4.2-1.5 0-2.5-1-2.5-2.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-overlay-diagonal" viewBox="0 0 24 24">
+    <title>Crop Overlay: Diagonal Guide</title>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="3.5" y1="3.5" x2="20.5" y2="20.5" stroke="currentColor" stroke-width="1.4"/><line x1="20.5" y1="3.5" x2="3.5" y2="20.5" stroke="currentColor" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="lr-mobile-overlay-triangle" viewBox="0 0 24 24">
+    <title>Crop Overlay: Golden Triangle</title>
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="3.5" y1="19.5" x2="20.5" y2="4.5" stroke="currentColor" stroke-width="1.5"/><line x1="3.5" y1="4.5" x2="11" y2="12.8" stroke="currentColor" stroke-width="1.4"/><line x1="20.5" y1="19.5" x2="13" y2="11.2" stroke="currentColor" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="lr-mobile-preset-adaptive-portrait" viewBox="0 0 24 24">
+    <title>Adaptive Preset: Polished Portrait</title>
+    <circle cx="11" cy="8.5" r="3.2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M5 19.5c0-3 2.7-5.5 6-5.5s6 2.5 6 5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><path d="M18.5 3.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-preset-adaptive-sky" viewBox="0 0 24 24">
+    <title>Adaptive Preset: Dramatic Sky</title>
+    <path d="M6.5 16.5h10.5a3.5 3.5 0 0 0 .4-6.98A4.8 4.8 0 0 0 8 8.2a3.8 3.8 0 0 0-1.5 8.3z" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M18.5 3l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-mobile-community-remix-arrows" viewBox="0 0 24 24">
+    <title>Community: Remix Photo</title>
+    <path d="M17 4l3 3-3 3M4 17h9a4 4 0 0 0 4-4V4M7 20l-3-3 3-3M20 7h-9a4 4 0 0 0-4 4v9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-edit-replay-video" viewBox="0 0 24 24">
+    <title>Export Edit Replay Video</title>
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" stroke="currentColor" stroke-width="1.75" fill="none"/><polygon points="10,8.5 15.5,12 10,15.5" fill="currentColor"/><path d="M7 4.5v-2M17 4.5v-2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-video-extract-frame" viewBox="0 0 24 24">
+    <title>Extract Still Frame from Video</title>
+    <rect x="3.5" y="5" width="17" height="14" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.65" fill="none"/><path d="M7 8h1.5M15.5 8H17M7 16h1.5M15.5 16H17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-mobile-gesture-pinch-zoom" viewBox="0 0 24 24">
+    <title>Two-Finger Pinch / Overlay Gesture</title>
+    <path d="M6 18L11 13M6 14v4h4M18 6l-5 5M18 10V6h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-hold-original-gesture" viewBox="0 0 24 24">
+    <title>Long-Press Before / After Gesture</title>
+    <circle cx="12" cy="9" r="3.5" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="9" r="6.5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.5 2" fill="none"/><path d="M12 12.5v8M9.5 18l2.5-2.5 2.5 2.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-mobile-share-before-after" viewBox="0 0 24 24">
+    <title>Export Side-by-Side Before & After</title>
+    <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="1.75"/><circle cx="7.5" cy="12" r="1.5" fill="currentColor"/><polygon points="15,10 18,14 14,14" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-my-photos" viewBox="0 0 20 20">
+    <title>My Photos (Home Sidebar)</title>
+    <rect x="2.5" y="4" width="15" height="12" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="6.8" cy="8.2" r="1.3" fill="currentColor"/><path d="M3 14.5l4-3.8 3.2 3 3-2.5 4.3 3.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-all-photos" viewBox="0 0 20 20">
+    <title>All Photos</title>
+    <rect x="4.5" y="5" width="13" height="11.5" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2.5 13.5V4.2A1.7 1.7 0 0 1 4.2 2.5h10.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-recently-added" viewBox="0 0 20 20">
+    <title>Recently Added</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 6v4.2l2.8 1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-by-date" viewBox="0 0 20 20">
+    <title>By Date</title>
+    <rect x="2.8" y="4.2" width="14.4" height="13" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="2.8" y1="8.2" x2="17.2" y2="8.2" stroke="currentColor" stroke-width="1.4"/><line x1="6.5" y1="2.5" x2="6.5" y2="5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="13.5" y1="2.5" x2="13.5" y2="5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-people-view" viewBox="0 0 20 20">
+    <title>People View (Sensei Face ID)</title>
+    <circle cx="8" cy="7" r="2.6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 16c0-2.5 2.2-4.4 5-4.4s5 1.9 5 4.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><circle cx="13.8" cy="7.8" r="2" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M14.5 12c1.8.4 3 1.8 3 3.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-folders" viewBox="0 0 20 20">
+    <title>Folders</title>
+    <path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h4.2l1.8 2H16a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 16 16H4a1.5 1.5 0 0 1-1.5-1.5v-9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-albums" viewBox="0 0 20 20">
+    <title>Albums</title>
+    <rect x="4" y="2.8" width="13" height="14.4" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="7.2" y1="2.8" x2="7.2" y2="17.2" stroke="currentColor" stroke-width="1.3"/><line x1="2.5" y1="6" x2="4" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="2.5" y1="10" x2="4" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="2.5" y1="14" x2="4" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-shared-albums" viewBox="0 0 20 20">
+    <title>Shared & Web Galleries</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" fill="none"/><ellipse cx="10" cy="10" rx="3.4" ry="7.2" stroke="currentColor" stroke-width="1.4" fill="none"/><line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="lr-pc-discover-community" viewBox="0 0 20 20">
+    <title>Community & Remix</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" fill="none"/><polygon points="13.2,6.8 11.2,11.2 6.8,13.2 8.8,8.8" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-deleted-trash" viewBox="0 0 20 20">
+    <title>Deleted Photos</title>
+    <path d="M3.5 5.5h13M7.5 5.5V3.8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.7M5.2 5.5l.8 10.5a1.5 1.5 0 0 0 1.5 1.4h5a1.5 1.5 0 0 0 1.5-1.4l.8-10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-local-storage" viewBox="0 0 20 20">
+    <title>Local Tab (Direct Disk Browse)</title>
+    <rect x="2.5" y="4.5" width="15" height="11" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="2.5" y1="11.5" x2="17.5" y2="11.5" stroke="currentColor" stroke-width="1.4"/><circle cx="14.2" cy="13.5" r="1" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-add-photos" viewBox="0 0 20 20">
+    <title>Add Photos (+ Button)</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 6.5v7M6.5 10h7" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-edit-sliders" viewBox="0 0 20 20">
+    <title>Edit Panel (E)</title>
+    <line x1="3" y1="5.5" x2="17" y2="5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="14.5" x2="17" y2="14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="7.5" cy="5.5" r="1.9" fill="currentColor"/><circle cx="13" cy="10" r="1.9" fill="currentColor"/><circle cx="9" cy="14.5" r="1.9" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-crop-rotate" viewBox="0 0 20 20">
+    <title>Crop & Geometry (C)</title>
+    <path d="M5.5 2.2v11.3a1 1 0 0 0 1 1h11.3M14.5 17.8V6.5a1 1 0 0 0-1-1H2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-remove-heal" viewBox="0 0 20 20">
+    <title>Remove, Heal & Clone (Q)</title>
+    <rect x="2.8" y="7.2" width="14.4" height="5.6" rx="2.8" transform="rotate(-45 10 10)" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="8.6" r="0.8" fill="currentColor"/><circle cx="10" cy="11.4" r="0.8" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-masking" viewBox="0 0 20 20">
+    <title>Masking (M)</title>
+    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.5 2" fill="none"/><circle cx="10" cy="10" r="3.4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-presets" viewBox="0 0 20 20">
+    <title>Presets (Shift+P)</title>
+    <circle cx="8" cy="10" r="4.6" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="12" cy="10" r="4.6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-quick-actions" viewBox="0 0 20 20">
+    <title>Quick Actions (AI)</title>
+    <path d="M10 2.5l1.6 4.2 4.2 1.6-4.2 1.6L10 14.1 8.4 9.9 4.2 8.3l4.2-1.6L10 2.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><path d="M15.5 13l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-histogram" viewBox="0 0 20 20">
+    <title>Interactive Histogram</title>
+    <rect x="2.5" y="3.5" width="15" height="13" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3.5 15.5L6.5 9l2.5 3.5L12.5 6l4 9.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="currentColor" fill-opacity="0.22"/><polygon points="4,5 6,5 4,7" fill="currentColor"/><polygon points="16,5 14,5 16,7" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-white-balance-sampler" viewBox="0 0 20 20">
+    <title>White Balance Sampler (W)</title>
+    <path d="M12 5.2l2.8 2.8M3.8 16.2l3-.7 8.4-8.4a1.3 1.3 0 0 0 0-1.8l-.5-.5a1.3 1.3 0 0 0-1.8 0l-8.4 8.4-.7 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-point-curve" viewBox="0 0 20 20">
+    <title>Point Curve Mode</title>
+    <path d="M3.5 16.5C8 16.5 12 3.5 16.5 3.5" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" fill="none"/><circle cx="7" cy="13" r="1.7" fill="currentColor"/><circle cx="13" cy="7" r="1.7" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-parametric-curve" viewBox="0 0 20 20">
+    <title>Parametric Curve Mode</title>
+    <rect x="3" y="3" width="14" height="14" rx="1.6" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M3.5 16.5C8 15.5 12 4.5 16.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M3.5 16.5L16.5 3.5" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2" stroke-opacity="0.5"/>
+  </symbol>
+  <symbol id="lr-pc-color-mixer" viewBox="0 0 20 20">
+    <title>Color Mixer (HSL)</title>
+    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.6 1.8" fill="none"/><circle cx="10" cy="10" r="3.2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-color-grading" viewBox="0 0 20 20">
+    <title>Color Grading Wheels</title>
+    <circle cx="10" cy="6.2" r="3.4" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="6.6" cy="12.8" r="3.4" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="13.4" cy="12.8" r="3.4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-point-color" viewBox="0 0 20 20">
+    <title>Point Color Swatch</title>
+    <path d="M10 3l6.5 6.5L10 16 3.5 9.5 10 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><circle cx="10" cy="9.5" r="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-denoise-ai" viewBox="0 0 20 20">
+    <title>AI Denoise & Super Resolution</title>
+    <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="6.5" cy="6.5" r="1" fill="currentColor"/><circle cx="9.5" cy="9.5" r="1" fill="currentColor"/><circle cx="6.5" cy="12.5" r="1" fill="currentColor"/><path d="M13 6l1 2.2 2.2 1-2.2 1L13 12.4l-1-2.2-2.2-1 2.2-1L13 6z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-lens-blur" viewBox="0 0 20 20">
+    <title>Lens Blur & Bokeh Shapes</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.2 2" fill="none"/><polygon points="10,5.5 13.8,7.8 13.8,12.2 10,14.5 6.2,12.2 6.2,7.8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-guided-upright" viewBox="0 0 20 20">
+    <title>Guided Upright Tool (Shift+G)</title>
+    <line x1="5" y1="2.5" x2="7.5" y2="17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="15" y1="2.5" x2="12.5" y2="17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="2.5" y1="6.5" x2="17.5" y2="6.5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 2"/><line x1="2.5" y1="13.5" x2="17.5" y2="13.5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 2"/>
+  </symbol>
+  <symbol id="lr-pc-sensor-dust" viewBox="0 0 20 20">
+    <title>Visualize Spots & Dust</title>
+    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="7.8" cy="8.2" r="1.2" fill="currentColor"/><circle cx="12.5" cy="11.5" r="1.5" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="9.2" cy="13" r="0.9" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-window-reflection" viewBox="0 0 20 20">
+    <title>Remove Window Reflection (AI)</title>
+    <rect x="3" y="3" width="14" height="14" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6 13l7-7M9.5 13.5l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-photo-grid-square" viewBox="0 0 20 20">
+    <title>Square Grid View (G)</title>
+    <rect x="3" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="11" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="3" y="11" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="11" y="11" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-photo-grid-adaptive" viewBox="0 0 20 20">
+    <title>Photo Grid View (Adaptive)</title>
+    <rect x="2.8" y="3" width="8.2" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="13" y="3" width="4.2" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="2.8" y="11" width="4.2" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="9" y="11" width="8.2" height="6" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-detail-view" viewBox="0 0 20 20">
+    <title>Detail Loupe View (D)</title>
+    <rect x="2.5" y="3" width="15" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="2.5" y="15" width="4" height="2.2" rx="0.5" fill="currentColor"/><rect x="8" y="15" width="4" height="2.2" rx="0.5" fill="currentColor"/><rect x="13.5" y="15" width="4" height="2.2" rx="0.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-compare-view" viewBox="0 0 20 20">
+    <title>Compare View (C / X-Y)</title>
+    <rect x="2.5" y="3.5" width="6.5" height="13" rx="1.2" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="11" y="3.5" width="6.5" height="13" rx="1.2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-show-original" viewBox="0 0 20 20">
+    <title>Show Original (\)</title>
+    <path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><circle cx="10" cy="10" r="2.4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-flag-pick" viewBox="0 0 20 20">
+    <title>Flag as Pick (Z)</title>
+    <path d="M5 17.5V3.5h9.5l-2 4 2 4H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-flag-reject" viewBox="0 0 20 20">
+    <title>Flag as Reject (X)</title>
+    <path d="M4.5 17.5V3.5h8.5l-1.8 4 1.8 4H4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M13.5 13l4 4m0-4l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-star-rating" viewBox="0 0 20 20">
+    <title>Star Rating (1–5)</title>
+    <polygon points="10,2.6 12.3,7.3 17.5,8 13.7,11.7 14.6,16.9 10,14.4 5.4,16.9 6.3,11.7 2.5,8 7.7,7.3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-assisted-culling" viewBox="0 0 20 20">
+    <title>Assisted Culling (AI)</title>
+    <path d="M2.2 10s2.8-4.5 7.8-4.5 7.8 4.5 7.8 4.5-2.8 4.5-7.8 4.5-7.8-4.5-7.8-4.5z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="10" r="2" fill="currentColor"/><path d="M15.5 2.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-keywords-tag" viewBox="0 0 20 20">
+    <title>Keywords Panel (K)</title>
+    <path d="M3 10.2V4a1 1 0 0 1 1-1h6.2l6.8 6.8a1.4 1.4 0 0 1 0 2l-5.2 5.2a1.4 1.4 0 0 1-2 0L3 10.2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><circle cx="6.8" cy="6.8" r="1.2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-info-metadata" viewBox="0 0 20 20">
+    <title>Info & EXIF Metadata (I)</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="10" y1="9" x2="10" y2="14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="6.4" r="1" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-cloud-sync" viewBox="0 0 20 20">
+    <title>Cloud Storage & Sync</title>
+    <path d="M5.5 14.5h9.2a3.2 3.2 0 0 0 .3-6.38A4.5 4.5 0 0 0 6.4 6.9 3.6 3.6 0 0 0 5.5 14.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><path d="M8.2 11.2l1.5 1.5 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-sidebar-toggle-left" viewBox="0 0 20 20">
+    <title>Toggle Left Sidebar</title>
+    <rect x="2.5" y="3.5" width="15" height="13" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="7.5" y1="3.5" x2="7.5" y2="16.5" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="lr-pc-filmstrip-toggle-bottom" viewBox="0 0 20 20">
+    <title>Toggle Bottom Filmstrip</title>
+    <rect x="2.5" y="3.5" width="15" height="13" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="2.5" y1="12.5" x2="17.5" y2="12.5" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="lr-pc-undo" viewBox="0 0 20 20">
+    <title>Undo (Ctrl+Z)</title>
+    <path d="M7.5 6L3.5 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M3.5 10h8.5a4.5 4.5 0 0 1 0 9H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-redo" viewBox="0 0 20 20">
+    <title>Redo (Ctrl+Y)</title>
+    <path d="M12.5 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M16.5 10H8a4.5 4.5 0 0 0 0 9h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-search-magnifying" viewBox="0 0 20 20">
+    <title>Search Bar (Ctrl+F)</title>
+    <circle cx="8.8" cy="8.8" r="5.3" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="12.7" y1="12.7" x2="16.8" y2="16.8" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-filter-funnel" viewBox="0 0 20 20">
+    <title>Filter Bar Toggle</title>
+    <polygon points="3,4 17,4 11.8,10.5 11.8,16.5 8.2,15 8.2,10.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-share-export" viewBox="0 0 20 20">
+    <title>Share & Export (Ctrl+Shift+E)</title>
+    <path d="M10 13V3.2M6.8 6.4L10 3.2l3.2 3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M3.5 11.5v4a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5v-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-cloud-uploading" viewBox="0 0 20 20">
+    <title>Cloud Sync In Progress</title>
+    <path d="M5.5 14.5h9.2a3.2 3.2 0 0 0 .3-6.38A4.5 4.5 0 0 0 6.4 6.9 3.6 3.6 0 0 0 5.5 14.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><path d="M10 13V9M8.2 10.6L10 8.8l1.8 1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-cloud-paused" viewBox="0 0 20 20">
+    <title>Cloud Sync Paused</title>
+    <path d="M5.5 14.5h9.2a3.2 3.2 0 0 0 .3-6.38A4.5 4.5 0 0 0 6.4 6.9 3.6 3.6 0 0 0 5.5 14.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><line x1="8.8" y1="9.2" x2="8.8" y2="12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="11.2" y1="9.2" x2="11.2" y2="12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-cloud-error" viewBox="0 0 20 20">
+    <title>Cloud Sync Warning / Quota Full</title>
+    <path d="M5.5 14.5h9.2a3.2 3.2 0 0 0 .3-6.38A4.5 4.5 0 0 0 6.4 6.9 3.6 3.6 0 0 0 5.5 14.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><line x1="10" y1="8.5" x2="10" y2="11.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="13" r="0.9" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-activity-notifications" viewBox="0 0 20 20">
+    <title>Notifications Bell</title>
+    <path d="M15 12.5V8.8a5 5 0 1 0-10 0v3.7L3.5 14h13L15 12.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><path d="M8.5 16a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-help-question" viewBox="0 0 20 20">
+    <title>Help & In-App Tutorials (?)</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 8a2 2 0 1 1 2.9 1.8c-.6.3-.9.8-.9 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><circle cx="10" cy="14" r="0.9" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-settings-gear" viewBox="0 0 20 20">
+    <title>Preferences & Settings (Ctrl+,)</title>
+    <circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="10" r="5.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-subject" viewBox="0 0 20 20">
+    <title>Select Subject Mask (AI)</title>
+    <rect x="3" y="3" width="14" height="14" rx="2.5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.5 1.8" fill="none"/><circle cx="10" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6.2 14.8c0-2 1.7-3.5 3.8-3.5s3.8 1.5 3.8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-sky" viewBox="0 0 20 20">
+    <title>Select Sky Mask (AI)</title>
+    <path d="M5.5 13h9a3 3 0 0 0 .3-5.98A4.2 4.2 0 0 0 6.8 6a3.4 3.4 0 0 0-1.3 7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><line x1="3" y1="16.2" x2="17" y2="16.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2.5 2"/>
+  </symbol>
+  <symbol id="lr-pc-mask-background" viewBox="0 0 20 20">
+    <title>Select Background Mask (AI)</title>
+    <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="3.5" y1="8" x2="8" y2="3.5" stroke="currentColor" stroke-width="1.3"/><line x1="3.5" y1="12" x2="12" y2="3.5" stroke="currentColor" stroke-width="1.3"/><circle cx="11.5" cy="9.8" r="1.9" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M8.5 15.5c0-1.7 1.3-3 3-3s3 1.3 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-objects" viewBox="0 0 20 20">
+    <title>Select Objects Mask (AI)</title>
+    <rect x="3.2" y="3.2" width="11" height="11" rx="1.8" stroke="currentColor" stroke-width="1.45" stroke-dasharray="2.4 1.8" fill="none"/><path d="M11.5 11.5l5.2 5.2M11.5 15.5v-4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-brush" viewBox="0 0 20 20">
+    <title>Brush Mask Tool (K)</title>
+    <path d="M15.2 3.2a1.8 1.8 0 0 1 2.5 2.5L9.2 14.2 6 15l.8-3.2 8.4-8.6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><path d="M3.5 16.8c1.2 0 2.5-.6 2.5-2s-1-2-2.1-2-2.1.8-2.1 2.2c0 1.2.8 1.8 1.7 1.8z" stroke="currentColor" stroke-width="1.45" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-linear-gradient" viewBox="0 0 20 20">
+    <title>Linear Gradient Mask (L)</title>
+    <rect x="3" y="3" width="14" height="14" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="3" y1="7" x2="17" y2="7" stroke="currentColor" stroke-width="1.5"/><line x1="3" y1="10.5" x2="17" y2="10.5" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2.5 1.8"/><line x1="3" y1="14" x2="17" y2="14" stroke="currentColor" stroke-width="1" stroke-dasharray="1.2 2"/><circle cx="10" cy="10.5" r="1.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-mask-radial-gradient" viewBox="0 0 20 20">
+    <title>Radial Gradient Mask (R)</title>
+    <ellipse cx="10" cy="10" rx="7" ry="5.4" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.5 1.8" fill="none"/><ellipse cx="10" cy="10" rx="3.8" ry="2.7" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="10" cy="10" r="1.3" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-mask-color-range" viewBox="0 0 20 20">
+    <title>Color Range Mask</title>
+    <rect x="3" y="3" width="5.8" height="5.8" rx="1.2" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="3" y="11.2" width="5.8" height="5.8" rx="1.2" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="11.2" y="3" width="5.8" height="5.8" rx="1.2" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M11.5 16.8l1.8-.4 3.6-3.6a1 1 0 0 0-1.4-1.4l-3.6 3.6-.4 1.8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-luminance-range" viewBox="0 0 20 20">
+    <title>Luminance Range Mask</title>
+    <rect x="3" y="5" width="14" height="10" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="7.5" y1="5" x2="7.5" y2="15" stroke="currentColor" stroke-width="1.4"/><line x1="12.5" y1="5" x2="12.5" y2="15" stroke="currentColor" stroke-width="1.4" stroke-dasharray="1.8 1.8"/>
+  </symbol>
+  <symbol id="lr-pc-mask-depth-range" viewBox="0 0 20 20">
+    <title>Depth Range Mask</title>
+    <polygon points="10,3 17,6.5 10,10 3,6.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><polyline points="3,10 10,13.5 17,10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><polyline points="3,13.5 10,17 17,13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2.2 1.8" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-landscape-vegetation" viewBox="0 0 20 20">
+    <title>Landscape Mask: Vegetation</title>
+    <path d="M10 3L5 11h3.2L6 15h8l-2.2-4H15L10 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><line x1="10" y1="15" x2="10" y2="17.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-mask-landscape-water" viewBox="0 0 20 20">
+    <title>Landscape Mask: Water</title>
+    <path d="M2.5 7.5c1.8-1.5 3.2-1.5 5 0s3.2 1.5 5 0 3.2-1.5 5 0M2.5 11.5c1.8-1.5 3.2-1.5 5 0s3.2 1.5 5 0 3.2-1.5 5 0M2.5 15.5c1.8-1.5 3.2-1.5 5 0s3.2 1.5 5 0 3.2-1.5 5 0" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-landscape-mountains" viewBox="0 0 20 20">
+    <title>Landscape Mask: Mountains</title>
+    <polygon points="2.5,16 8.5,5.5 13.5,14 14.5,16" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><polyline points="11.2,10.2 14,6.5 17.8,16 14.5,16" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-landscape-architecture" viewBox="0 0 20 20">
+    <title>Landscape Mask: Architecture</title>
+    <rect x="4" y="3.5" width="8" height="13.5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="12" y="8" width="4.5" height="9" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="6.5" y1="6.5" x2="9.5" y2="6.5" stroke="currentColor" stroke-width="1.4"/><line x1="6.5" y1="9.5" x2="9.5" y2="9.5" stroke="currentColor" stroke-width="1.4"/><line x1="6.5" y1="12.5" x2="9.5" y2="12.5" stroke="currentColor" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="lr-pc-mask-landscape-roads" viewBox="0 0 20 20">
+    <title>Landscape Mask: Artificial Ground</title>
+    <path d="M7.5 3.5L3 16.5h14L12.5 3.5h-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><line x1="10" y1="6" x2="10" y2="8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="11.5" x2="10" y2="14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-mask-person-face-skin" viewBox="0 0 20 20">
+    <title>People Mask: Face & Body Skin</title>
+    <path d="M10 3.2c-3.4 0-5.8 2.6-5.8 6.3 0 4.2 2.6 7.3 5.8 7.3s5.8-3.1 5.8-7.3c0-3.7-2.4-6.3-5.8-6.3z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="8.8" r="0.9" fill="currentColor"/><circle cx="12" cy="8.8" r="0.9" fill="currentColor"/><path d="M8.2 12.8c1 .8 2.6.8 3.6 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-person-eyes-iris" viewBox="0 0 20 20">
+    <title>People Mask: Iris, Pupil & Sclera</title>
+    <path d="M2.2 10s3-5.2 7.8-5.2 7.8 5.2 7.8 5.2-3 5.2-7.8 5.2-7.8-5.2-7.8-5.2z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-mask-person-lips-teeth" viewBox="0 0 20 20">
+    <title>People Mask: Lips & Teeth</title>
+    <path d="M2.5 10c2-2.5 4.2-3 5.8-1.5.7.6 1.1.8 1.7.8s1-.2 1.7-.8c1.6-1.5 3.8-1 5.8 1.5-2.2 3.8-4.8 5.2-7.5 5.2S4.7 13.8 2.5 10z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><line x1="3" y1="10.2" x2="17" y2="10.2" stroke="currentColor" stroke-width="1.3"/>
+  </symbol>
+  <symbol id="lr-pc-mask-person-hair-brows" viewBox="0 0 20 20">
+    <title>People Mask: Hair, Brows & Beard</title>
+    <path d="M4.2 14.5c-.5-1.5-.7-3-.7-4.5a6.5 6.5 0 0 1 13 0c0 1.5-.2 3-.7 4.5" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" fill="none"/><path d="M6.5 8.5c1.5-1.5 5.5-1.5 7 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/><circle cx="10" cy="12.5" r="3.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-person-clothes" viewBox="0 0 20 20">
+    <title>People Mask: Clothes & Apparel</title>
+    <path d="M6.5 3.5L3 6.5l2 2.5 2-1.5V16.5h6V7.5l2 1.5 2-2.5-3.5-3a2.5 2.5 0 0 1-5 0z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-mask-add-intersect" viewBox="0 0 20 20">
+    <title>Add / Subtract / Intersect Mask</title>
+    <rect x="3" y="3" width="9" height="9" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="8" y="8" width="9" height="9" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.25"/>
+  </symbol>
+  <symbol id="lr-pc-mask-invert" viewBox="0 0 20 20">
+    <title>Invert Mask (I)</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 2.8a7.2 7.2 0 0 0 0 14.4V2.8z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-hdr-merge" viewBox="0 0 20 20">
+    <title>Photo Merge: HDR (Ctrl+H)</title>
+    <rect x="2.5" y="5" width="11" height="9" rx="1.4" stroke="currentColor" stroke-width="1.45" fill="none"/><path d="M6.5 14v1.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1H14" stroke="currentColor" stroke-width="1.45" fill="none"/><circle cx="8" cy="9.5" r="2" stroke="currentColor" stroke-width="1.4" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-panorama-merge" viewBox="0 0 20 20">
+    <title>Photo Merge: Panorama (Ctrl+M)</title>
+    <path d="M2.2 4.5C6.5 6.2 13.5 6.2 17.8 4.5v11c-4.3-1.7-11.3-1.7-15.6 0v-11z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-hdr-panorama-merge" viewBox="0 0 20 20">
+    <title>Photo Merge: HDR Panorama</title>
+    <path d="M2.2 5C6.5 6.5 13.5 6.5 17.8 5v10c-4.3-1.5-11.3-1.5-15.6 0V5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><circle cx="10" cy="10" r="1.8" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-super-resolution" viewBox="0 0 20 20">
+    <title>Super Resolution (2x Enhance)</title>
+    <rect x="2.8" y="2.8" width="14.4" height="14.4" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M11 5.5h3.5V9M9 14.5H5.5V11M14.5 5.5L11 9M5.5 14.5L9 11" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-raw-details" viewBox="0 0 20 20">
+    <title>Enhance Raw Details</title>
+    <rect x="3" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.45" fill="none"/><rect x="11" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.45" fill="currentColor" fill-opacity="0.3"/><rect x="3" y="11" width="6" height="6" stroke="currentColor" stroke-width="1.45" fill="currentColor" fill-opacity="0.3"/><rect x="11" y="11" width="6" height="6" stroke="currentColor" stroke-width="1.45" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-edit-in-photoshop" viewBox="0 0 20 20">
+    <title>Edit in Photoshop (Ctrl+E)</title>
+    <rect x="2.8" y="2.8" width="14.4" height="14.4" rx="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="5.2" y="13" fill="currentColor" font-size="7.5" font-family="sans-serif" font-weight="bold">Ps</text>
+  </symbol>
+  <symbol id="lr-pc-copy-settings" viewBox="0 0 20 20">
+    <title>Copy Edit Settings (Ctrl+C)</title>
+    <rect x="6.5" y="6.5" width="10.5" height="10.5" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3.5 13.5V4.5a1.5 1.5 0 0 1 1.5-1.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-paste-settings" viewBox="0 0 20 20">
+    <title>Paste Edit Settings (Ctrl+V)</title>
+    <path d="M7.5 4H5a1.5 1.5 0 0 0-1.5 1.5v10.5A1.5 1.5 0 0 0 5 17.5h10a1.5 1.5 0 0 0 1.5-1.5V5.5A1.5 1.5 0 0 0 15 4h-2.5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="7.5" y="2.5" width="5" height="3" rx="0.8" stroke="currentColor" stroke-width="1.4" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-choose-edit-settings" viewBox="0 0 20 20">
+    <title>Choose Edit Settings to Copy (Ctrl+Shift+C)</title>
+    <path d="M3.5 6l1.5 1.5 3-3M3.5 11.5l1.5 1.5 3-3M3.5 16l1.5 1.5 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="10.5" y1="6" x2="17" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="10.5" y1="11" x2="17" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="10.5" y1="16" x2="17" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-photo-stack" viewBox="0 0 20 20">
+    <title>Group into Stack (Ctrl+G)</title>
+    <rect x="5" y="5" width="12" height="10" rx="1.4" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2.8 12.5v-8A1.5 1.5 0 0 1 4.3 3h10.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-smart-stack-similarity" viewBox="0 0 20 20">
+    <title>Smart Stack by Visual Similarity</title>
+    <rect x="4" y="6" width="10.5" height="9.5" rx="1.4" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2.5 13V4.5A1.5 1.5 0 0 1 4 3h8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/><path d="M15.5 2.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-versions-history" viewBox="0 0 20 20">
+    <title>Versions & Edit History</title>
+    <rect x="5" y="3" width="12" height="12" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 6.5v9A1.5 1.5 0 0 0 4.5 17h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M11 6.2v3l2 1.2" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-bokeh-circle" viewBox="0 0 20 20">
+    <title>Bokeh Shape: Circle</title>
+    <circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.28"/>
+  </symbol>
+  <symbol id="lr-pc-bokeh-bubble" viewBox="0 0 20 20">
+    <title>Bokeh Shape: Bubble</title>
+    <circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="10" cy="10" r="4.5" stroke="currentColor" stroke-width="0.9" stroke-opacity="0.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-bokeh-5blade" viewBox="0 0 20 20">
+    <title>Bokeh Shape: 5-Blade Pentagon</title>
+    <polygon points="10,3 16.8,7.9 14.2,15.9 5.8,15.9 3.2,7.9" stroke="currentColor" stroke-width="1.55" stroke-linejoin="round" fill="currentColor" fill-opacity="0.22"/>
+  </symbol>
+  <symbol id="lr-pc-bokeh-ring" viewBox="0 0 20 20">
+    <title>Bokeh Shape: Reflex Ring</title>
+    <circle cx="10" cy="10" r="6.8" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-bokeh-cateye" viewBox="0 0 20 20">
+    <title>Bokeh Shape: Cat Eye</title>
+    <path d="M4.5 15.5C3.5 9.5 9.5 3.5 15.5 4.5 16.5 10.5 10.5 16.5 4.5 15.5z" stroke="currentColor" stroke-width="1.55" fill="currentColor" fill-opacity="0.22"/>
+  </symbol>
+  <symbol id="lr-pc-focus-range-picker" viewBox="0 0 20 20">
+    <title>Lens Blur Focus Target Picker</title>
+    <circle cx="10" cy="10" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 2.5v3M10 14.5v3M2.5 10h3M14.5 10h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="10" r="1.4" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-visualize-depth" viewBox="0 0 20 20">
+    <title>Visualize Depth Map Overlay</title>
+    <rect x="3" y="3" width="14" height="14" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 13l14-6" stroke="currentColor" stroke-width="1.4"/><path d="M3 13h14v4H3z" fill="currentColor" fill-opacity="0.28"/>
+  </symbol>
+  <symbol id="lr-pc-hdr-toggle-button" viewBox="0 0 20 20">
+    <title>HDR Edit Mode Button</title>
+    <rect x="2" y="5" width="16" height="10" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.2" y="12" fill="currentColor" font-size="5.8" font-family="monospace" font-weight="bold">HDR</text>
+  </symbol>
+  <symbol id="lr-pc-bw-toggle" viewBox="0 0 20 20">
+    <title>B&W Mode Toggle (V)</title>
+    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 3a7 7 0 0 1 0 14V3z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-auto-upright" viewBox="0 0 20 20">
+    <title>Geometry: Auto Upright</title>
+    <polygon points="5,4 15,4 17,16 3,16" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 1.8" fill="none"/><rect x="5.5" y="6" width="9" height="8" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-level-upright" viewBox="0 0 20 20">
+    <title>Geometry: Level Upright</title>
+    <rect x="3" y="4.5" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.8"/>
+  </symbol>
+  <symbol id="lr-pc-vertical-upright" viewBox="0 0 20 20">
+    <title>Geometry: Vertical Upright</title>
+    <rect x="3" y="4.5" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="7.5" y1="4.5" x2="7.5" y2="15.5" stroke="currentColor" stroke-width="1.6"/><line x1="12.5" y1="4.5" x2="12.5" y2="15.5" stroke="currentColor" stroke-width="1.6"/>
+  </symbol>
+  <symbol id="lr-pc-full-upright" viewBox="0 0 20 20">
+    <title>Geometry: Full Upright</title>
+    <rect x="3" y="4" width="14" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="7.5" y1="4" x2="7.5" y2="16" stroke="currentColor" stroke-width="1.4"/><line x1="12.5" y1="4" x2="12.5" y2="16" stroke="currentColor" stroke-width="1.4"/><line x1="3" y1="8" x2="17" y2="8" stroke="currentColor" stroke-width="1.4"/><line x1="3" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="lr-pc-constrain-crop" viewBox="0 0 20 20">
+    <title>Lock Aspect Ratio / Constrain</title>
+    <rect x="4.5" y="9" width="11" height="8" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-zoom-fit-fill" viewBox="0 0 20 20">
+    <title>Zoom Fit / 100% (Space)</title>
+    <circle cx="8.8" cy="8.8" r="5.3" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8.8 6.5v4.6M6.5 8.8h4.6M12.7 12.7l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-pan-hand" viewBox="0 0 20 20">
+    <title>Pan Hand Tool</title>
+    <path d="M7.5 10V4.5a1 1 0 0 1 2 0V9m0-5a1 1 0 0 1 2 0v5m0-4a1 1 0 0 1 2 0v5.5m0-3a1 1 0 0 1 2 0v5c0 2.8-2 4.5-4.8 4.5H9.2c-2.2 0-3.8-1.2-4.7-3.2L3.5 11a1 1 0 0 1 1.8-.8l2.2 1.8V10z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-like-heart" viewBox="0 0 20 20">
+    <title>Like / Appreciation Heart</title>
+    <path d="M10 16.5s-6.5-4.2-6.5-8.6A3.6 3.6 0 0 1 10 5.6a3.6 3.6 0 0 1 6.5 2.3c0 4.4-6.5 8.6-6.5 8.6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-comment-bubble" viewBox="0 0 20 20">
+    <title>Shared Album Comment</title>
+    <path d="M3 5a1.5 1.5 0 0 1 1.5-1.5h11A1.5 1.5 0 0 1 17 5v7.5a1.5 1.5 0 0 1-1.5 1.5H7.5L4 17v-3H4.5A1.5 1.5 0 0 1 3 12.5V5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-gps-location-pin" viewBox="0 0 20 20">
+    <title>GPS Location Map Pin</title>
+    <path d="M10 17.5s5.5-5.2 5.5-9.5a5.5 5.5 0 1 0-11 0c0 4.3 5.5 9.5 5.5 9.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.4" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-content-credentials" viewBox="0 0 20 20">
+    <title>Content Credentials (CR)</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8.2 11.8a1.8 1.8 0 1 1 0-3.6M11.2 8.2v3.6m0-2.2c.4-.8 1-1.4 1.8-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-distracting-people-remove" viewBox="0 0 20 20">
+    <title>Distraction Removal: People (AI)</title>
+    <circle cx="7.5" cy="6.8" r="2.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3.2 15.5c0-2.2 1.9-3.8 4.3-3.8s4.3 1.6 4.3 3.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M13.5 6l3.5 3.5m0-3.5L13.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-filter-photos-only" viewBox="0 0 20 20">
+    <title>Filter Bar: Photos Only</title>
+    <rect x="2.5" y="4" width="15" height="12" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="6.5" cy="8" r="1.2" fill="currentColor"/><path d="M3 14.5l4-3.8 3.2 3 2.8-2.2 4 3" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-filter-videos-only" viewBox="0 0 20 20">
+    <title>Filter Bar: Videos Only</title>
+    <rect x="2.5" y="4" width="15" height="12" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><polygon points="8.2,7.2 13.2,10 8.2,12.8" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-filter-favorites-picks" viewBox="0 0 20 20">
+    <title>Filter Bar: Flagged Picks</title>
+    <path d="M5 17V3.5h9.5l-2 3.8 2 3.7H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="currentColor" fill-opacity="0.3"/>
+  </symbol>
+  <symbol id="lr-pc-filter-rejected" viewBox="0 0 20 20">
+    <title>Filter Bar: Rejected Flags</title>
+    <path d="M4.5 17V3.5H13l-1.8 3.8L13 11H4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M13 12.5l4 4m0-4l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-filter-unflagged" viewBox="0 0 20 20">
+    <title>Filter Bar: Unflagged Photos</title>
+    <path d="M5 17V3.5h9.5l-2 3.8 2 3.7H5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.2 1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-filter-edited" viewBox="0 0 20 20">
+    <title>Filter Bar: Edited Photos (±)</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 6v4.5M7.8 8.2h4.4M7.8 13.2h4.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-filter-unedited" viewBox="0 0 20 20">
+    <title>Filter Bar: Unedited Photos</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.5 2" fill="none"/><circle cx="10" cy="10" r="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-filter-camera-exif" viewBox="0 0 20 20">
+    <title>Facet Filter: Camera Model</title>
+    <path d="M2.8 7a1.5 1.5 0 0 1 1.5-1.5h2l1.2-1.8h5l1.2 1.8h2A1.5 1.5 0 0 1 17.2 7v8a1.5 1.5 0 0 1-1.5 1.5H4.3A1.5 1.5 0 0 1 2.8 15V7z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="11" r="2.8" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-filter-lens-exif" viewBox="0 0 20 20">
+    <title>Facet Filter: Lens Focal Length</title>
+    <rect x="3" y="5.5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="7" y1="5.5" x2="7" y2="14.5" stroke="currentColor" stroke-width="1.4"/><line x1="12.5" y1="5.5" x2="12.5" y2="14.5" stroke="currentColor" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="lr-pc-filter-location-map" viewBox="0 0 20 20">
+    <title>Facet Filter: Location / GPS</title>
+    <polygon points="2.5,5 7.5,3.2 12.5,5 17.5,3.2 17.5,15 12.5,16.8 7.5,15 2.5,16.8" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round" fill="none"/><line x1="7.5" y1="3.2" x2="7.5" y2="15" stroke="currentColor" stroke-width="1.3"/><line x1="12.5" y1="5" x2="12.5" y2="16.8" stroke="currentColor" stroke-width="1.3"/>
+  </symbol>
+  <symbol id="lr-pc-filter-people-faces" viewBox="0 0 20 20">
+    <title>Facet Filter: People</title>
+    <circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4.5 16.5c0-2.8 2.5-4.8 5.5-4.8s5.5 2 5.5 4.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-filter-keywords-status" viewBox="0 0 20 20">
+    <title>Facet Filter: Keyword Status</title>
+    <path d="M3 9.8V4a1 1 0 0 1 1-1h5.8l6.8 6.8a1.4 1.4 0 0 1 0 2l-4.8 4.8a1.4 1.4 0 0 1-2 0L3 9.8z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="6.5" cy="6.5" r="1.1" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-filter-sync-status" viewBox="0 0 20 20">
+    <title>Facet Filter: Cloud Sync Status</title>
+    <path d="M5.5 14.5h9a3 3 0 0 0 .3-6A4.2 4.2 0 0 0 6.5 7.2 3.4 3.4 0 0 0 5.5 14.5z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8.5 10.5l1.5 1.5 2.5-2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-sort-reverse-arrows" viewBox="0 0 20 20">
+    <title>Sort Direction (Asc / Desc)</title>
+    <path d="M6.5 3.5v13M4 6l2.5-2.5L9 6M13.5 16.5v-13M11 14l2.5 2.5L16 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-badge-has-edits" viewBox="0 0 20 20">
+    <title>Thumbnail Badge: Edited</title>
+    <rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="6" y1="7.5" x2="14" y2="7.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="6" y1="12.5" x2="14" y2="12.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8.5" cy="7.5" r="1.5" fill="currentColor"/><circle cx="11.5" cy="12.5" r="1.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-badge-has-crop" viewBox="0 0 20 20">
+    <title>Thumbnail Badge: Cropped</title>
+    <rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M7 5.5v7.5h7.5M13 14.5V7H5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-badge-has-masks" viewBox="0 0 20 20">
+    <title>Thumbnail Badge: Masked</title>
+    <rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="10" r="4.5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 1.6" fill="none"/><circle cx="10" cy="10" r="1.8" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-badge-hdr-photo" viewBox="0 0 20 20">
+    <title>Thumbnail Badge: HDR</title>
+    <rect x="2" y="4.5" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.2" y="12.2" fill="currentColor" font-size="5.8" font-family="monospace" font-weight="bold">HDR</text>
+  </symbol>
+  <symbol id="lr-pc-badge-pano-photo" viewBox="0 0 20 20">
+    <title>Thumbnail Badge: Panorama</title>
+    <path d="M2.5 5.5c4.2 1.5 10.8 1.5 15 0v9c-4.2-1.5-10.8-1.5-15 0v-9z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-badge-video-duration" viewBox="0 0 20 20">
+    <title>Thumbnail Badge: Video Clip</title>
+    <rect x="2.5" y="4" width="15" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><polygon points="8,7.2 13,10 8,12.8" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-badge-stack-count" viewBox="0 0 20 20">
+    <title>Thumbnail Badge: Photo Stack</title>
+    <rect x="5" y="5.5" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 13V4.5A1.5 1.5 0 0 1 4.5 3H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-badge-cloud-synced" viewBox="0 0 20 20">
+    <title>Thumbnail Badge: Cloud Backed Up</title>
+    <circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.5" fill="none"/><polyline points="6.8 10.2 9.2 12.5 13.5 7.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-badge-local-copied" viewBox="0 0 20 20">
+    <title>Thumbnail Badge: Local + Cloud Copy</title>
+    <path d="M5.5 14.5h9a3 3 0 0 0 .3-6A4.2 4.2 0 0 0 6.5 7.2 3.4 3.4 0 0 0 5.5 14.5z" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.25"/>
+  </symbol>
+  <symbol id="lr-pc-badge-ai-needs-update" viewBox="0 0 20 20">
+    <title>Thumbnail Badge: AI Edit Update Needed</title>
+    <path d="M9.5 3l1.5 3.8 3.8 1.5-3.8 1.5L9.5 13.6 8 9.8 4.2 8.3 8 6.8 9.5 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><circle cx="15.2" cy="15.2" r="2.3" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-eye-preview-toggle" viewBox="0 0 20 20">
+    <title>Panel Eye Toggle (Before/After Section)</title>
+    <path d="M2 10s3-4.8 8-4.8 8 4.8 8 4.8-3 4.8-8 4.8-8-4.8-8-4.8z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="10" r="2.2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-panel-more-dots" viewBox="0 0 20 20">
+    <title>Panel Three-Dot Menu (•••)</title>
+    <circle cx="5" cy="10" r="1.4" fill="currentColor"/><circle cx="10" cy="10" r="1.4" fill="currentColor"/><circle cx="15" cy="10" r="1.4" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-clipping-shadows-indicator" viewBox="0 0 20 20">
+    <title>Histogram: Shadow Clipping (J)</title>
+    <rect x="3" y="3" width="14" height="14" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><polygon points="3,3 11,3 3,11" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-clipping-highlights-indicator" viewBox="0 0 20 20">
+    <title>Histogram: Highlight Clipping (J)</title>
+    <rect x="3" y="3" width="14" height="14" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><polygon points="17,3 9,3 17,11" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-hdr-gamut-warning" viewBox="0 0 20 20">
+    <title>Histogram: HDR Headroom & SDR Preview</title>
+    <rect x="2.5" y="3.5" width="15" height="13" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="12" y1="3.5" x2="12" y2="16.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 1.8"/><rect x="12" y="3.5" width="5.5" height="13" fill="currentColor" fill-opacity="0.25"/>
+  </symbol>
+  <symbol id="lr-pc-profile-browser-grid" viewBox="0 0 20 20">
+    <title>Browse All Profiles Grid</title>
+    <circle cx="6.5" cy="6.5" r="2.8" stroke="currentColor" stroke-width="1.45" fill="none"/><circle cx="13.5" cy="6.5" r="2.8" stroke="currentColor" stroke-width="1.45" fill="none"/><circle cx="6.5" cy="13.5" r="2.8" stroke="currentColor" stroke-width="1.45" fill="none"/><circle cx="13.5" cy="13.5" r="2.8" stroke="currentColor" stroke-width="1.45" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-profile-favorite-star" viewBox="0 0 20 20">
+    <title>Favorite Profile Pin</title>
+    <polygon points="10,2.8 12.2,7.3 17.2,8 13.6,11.5 14.4,16.5 10,14.1 5.6,16.5 6.4,11.5 2.8,8 7.8,7.3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="currentColor" fill-opacity="0.3"/>
+  </symbol>
+  <symbol id="lr-pc-point-color-visualize-range" viewBox="0 0 20 20">
+    <title>Point Color: Visualize Range</title>
+    <rect x="2.8" y="3.8" width="14.4" height="12.4" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="10" r="3.2" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-color-mixer-target-tat" viewBox="0 0 20 20">
+    <title>Targeted Adjustment Tool (TAT)</title>
+    <circle cx="10" cy="10" r="3.8" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 2.2v3M8.2 3.8L10 2l1.8 1.8M10 17.8v-3M8.2 16.2L10 18l1.8-1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-optics-ca-checkbox" viewBox="0 0 20 20">
+    <title>Optics: Defringe / Chromatic Aberration</title>
+    <circle cx="8.5" cy="10" r="5.2" stroke="currentColor" stroke-width="1.45" fill="none"/><circle cx="11.5" cy="10" r="5.2" stroke="currentColor" stroke-width="1.45" stroke-dasharray="2.2 1.8" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-optics-profile-checkbox" viewBox="0 0 20 20">
+    <title>Optics: Enable Lens Profile</title>
+    <path d="M3.5 4.5c4 1.5 9 1.5 13 0 1.2 3.5 1.2 7.5 0 11-4-1.5-9-1.5-13 0-1.2-3.5-1.2-7.5 0-11z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-geometry-sliders-tab" viewBox="0 0 20 20">
+    <title>Geometry: Manual Transform Sliders</title>
+    <polygon points="4.5,3.5 15.5,5 14,16.5 3,15" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-archive-to-local" viewBox="0 0 20 20">
+    <title>Archive to Local Storage</title>
+    <rect x="3" y="4" width="14" height="12" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 6.5v5.5M7.8 9.8L10 12l2.2-2.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="3" y1="13.5" x2="17" y2="13.5" stroke="currentColor" stroke-width="1.3"/>
+  </symbol>
+  <symbol id="lr-pc-copy-to-cloud" viewBox="0 0 20 20">
+    <title>Copy Local Photo to Cloud</title>
+    <path d="M5.5 14.5h9a3 3 0 0 0 .3-6A4.2 4.2 0 0 0 6.5 7.2 3.4 3.4 0 0 0 5.5 14.5z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 12.8V8.8M8.2 10.5L10 8.7l1.8 1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-connection-behance" viewBox="0 0 20 20">
+    <title>Connection: Adobe Behance</title>
+    <rect x="2.5" y="3.5" width="15" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.5" y="12.5" fill="currentColor" font-size="6.8" font-family="sans-serif" font-weight="bold">Be</text>
+  </symbol>
+  <symbol id="lr-pc-connection-portfolio" viewBox="0 0 20 20">
+    <title>Connection: Adobe Portfolio</title>
+    <rect x="2.5" y="3.5" width="15" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="5.2" y="12.5" fill="currentColor" font-size="6.8" font-family="sans-serif" font-weight="bold">Pf</text>
+  </symbol>
+  <symbol id="lr-pc-invite-collaborator" viewBox="0 0 20 20">
+    <title>Invite People to Album (User +)</title>
+    <circle cx="8" cy="7" r="2.8" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 16c0-2.6 2.2-4.5 5-4.5s5 1.9 5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M15.5 6.5v4.5M13.2 8.8h4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-copy-share-link" viewBox="0 0 20 20">
+    <title>Copy Shared Album Link</title>
+    <path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.8-2.8a3 3 0 0 0-4.2-4.2L9.8 6M11.5 8.5a3 3 0 0 0-4.2 0L4.5 11.3a3 3 0 0 0 4.2 4.2L10.2 14" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-fullscreen-mode" viewBox="0 0 20 20">
+    <title>Full Screen Workspace (F)</title>
+    <path d="M3.5 7.5v-4h4M16.5 7.5v-4h-4M3.5 12.5v4h4M16.5 12.5v4h-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-lights-out-dim" viewBox="0 0 20 20">
+    <title>Lights Out Mode (L)</title>
+    <path d="M13.5 14.5A6 6 0 0 1 7.5 4.2a6 6 0 1 0 8.3 8.3c-.7.9-1.5 1.6-2.3 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-merge-people-faces" viewBox="0 0 20 20">
+    <title>People View: Merge Faces</title>
+    <circle cx="6.5" cy="7" r="2.2" stroke="currentColor" stroke-width="1.45" fill="none"/><circle cx="13.5" cy="7" r="2.2" stroke="currentColor" stroke-width="1.45" fill="none"/><path d="M3.5 15.5c0-2 1.8-3.5 4-3.5h5c2.2 0 4 1.5 4 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-hide-person-face" viewBox="0 0 20 20">
+    <title>People View: Hide Person</title>
+    <circle cx="9.5" cy="7" r="2.6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4.5 16c0-2.5 2.2-4.4 5-4.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><line x1="3.5" y1="3.5" x2="16.5" y2="16.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-import-presets-profiles" viewBox="0 0 20 20">
+    <title>Import Presets & Profiles (.XMP / .ZIP)</title>
+    <path d="M10 3.5v8.5M7.2 9.2L10 12l2.8-2.8" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M3.5 13v2.5A1.5 1.5 0 0 0 5 17h10a1.5 1.5 0 0 0 1.5-1.5V13" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-export-preset" viewBox="0 0 20 20">
+    <title>Export User Preset (.XMP)</title>
+    <circle cx="8" cy="10" r="4.2" stroke="currentColor" stroke-width="1.45" fill="none"/><circle cx="11.5" cy="10" r="4.2" stroke="currentColor" stroke-width="1.45" fill="none"/><path d="M14.5 3.5h3v3M17.5 3.5L13.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-manage-presets-eye" viewBox="0 0 20 20">
+    <title>Manage Presets Visibility</title>
+    <line x1="6.5" y1="6" x2="16.5" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="10" x2="16.5" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6.5" y1="14" x2="16.5" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="3.8" cy="6" r="1.1" fill="currentColor"/><circle cx="3.8" cy="10" r="1.1" fill="currentColor"/><circle cx="3.8" cy="14" r="1.1" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-reset-to-open" viewBox="0 0 20 20">
+    <title>Reset to Original (Shift+R)</title>
+    <path d="M3.8 10a6.2 6.2 0 1 0 1.8-4.4L3.8 7.5M3.8 3.8v3.7h3.7" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-export-jpg" viewBox="0 0 20 20">
+    <title>Export Format: JPEG (.JPG)</title>
+    <rect x="3" y="2.5" width="14" height="15" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.5" y="12.2" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">JPG</text>
+  </symbol>
+  <symbol id="lr-pc-export-tif" viewBox="0 0 20 20">
+    <title>Export Format: TIFF 16-Bit (.TIF)</title>
+    <rect x="3" y="2.5" width="14" height="15" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.8" y="12.2" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">TIF</text>
+  </symbol>
+  <symbol id="lr-pc-export-avif-hdr" viewBox="0 0 20 20">
+    <title>Export Format: AVIF (HDR)</title>
+    <rect x="2.5" y="2.5" width="15" height="15" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="3.5" y="12" fill="currentColor" font-size="5" font-family="monospace" font-weight="bold">AVIF</text>
+  </symbol>
+  <symbol id="lr-pc-export-jxl-hdr" viewBox="0 0 20 20">
+    <title>Export Format: JPEG XL (.JXL)</title>
+    <rect x="3" y="2.5" width="14" height="15" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="4.8" y="12.2" fill="currentColor" font-size="5.5" font-family="monospace" font-weight="bold">JXL</text>
+  </symbol>
+  <symbol id="lr-pc-export-original-xmp" viewBox="0 0 20 20">
+    <title>Export Format: Original + Settings</title>
+    <rect x="2.5" y="3.5" width="10" height="13" rx="1.4" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="7.5" y="5.5" width="10" height="11" rx="1.4" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 1.6" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-ui-chevron-down" viewBox="0 0 20 20">
+    <title>Spectrum UI: Accordion Expand (v)</title>
+    <polyline points="5 7.5 10 12.5 15 7.5" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-ui-chevron-right" viewBox="0 0 20 20">
+    <title>Spectrum UI: Accordion Collapse (>)</title>
+    <polyline points="7.5 5 12.5 10 7.5 15" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-ui-close-x" viewBox="0 0 20 20">
+    <title>Spectrum UI: Close / Dismiss (X)</title>
+    <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-ui-checkmark" viewBox="0 0 20 20">
+    <title>Spectrum UI: Done / Apply Check</title>
+    <polyline points="4 10.5 8.2 14.5 16 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-ui-keyboard-shortcuts" viewBox="0 0 20 20">
+    <title>Keyboard Shortcuts Overlay (Ctrl+/)</title>
+    <rect x="2" y="4.5" width="16" height="11" rx="1.8" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="5" y1="8" x2="6.5" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="9" y1="8" x2="11" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="13.5" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6" y1="12.5" x2="14" y2="12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="lr-pc-ui-warning-alert" viewBox="0 0 20 20">
+    <title>Missing File / Sync Alert Triangle</title>
+    <polygon points="10,2.8 18,16.8 2,16.8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><line x1="10" y1="8" x2="10" y2="11.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14.2" r="0.9" fill="currentColor"/>
+  </symbol>
+  <symbol id="lr-pc-ui-sort-grid-size" viewBox="0 0 20 20">
+    <title>Grid Thumbnail Size Slider Icon</title>
+    <rect x="2.5" y="9.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.45" fill="none"/><rect x="9" y="4.5" width="8.5" height="8.5" rx="1.2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-ui-user-profile-avatar" viewBox="0 0 20 20">
+    <title>Adobe Account Profile Avatar</title>
+    <circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="7.8" r="2.4" stroke="currentColor" stroke-width="1.45" fill="none"/><path d="M5.5 15.5c.8-2 2.4-3.2 4.5-3.2s3.7 1.2 4.5 3.2" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="lr-pc-ui-cloud-storage-meter" viewBox="0 0 20 20">
+    <title>Cloud Storage Quota Gauge</title>
+    <rect x="2.5" y="7" width="15" height="6" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="4" y="8.5" width="8" height="3" rx="1.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="adobe-lightroom-brand-color" viewBox="0 0 240 234">
+    <title>Adobe Lightroom Official App Icon</title>
+    <rect width="240" height="234" rx="42.5" fill="#001E36"/><path d="M58 62h22v88h44v19H58V62zm82 31h19v13c4-9 12-15 23-15 3 0 5 .4 7 1v20c-3-.8-6-1.2-9-1.2-10 0-18 6-20 17v41h-20V93z" fill="#31A8FF"/>
+  </symbol>
+  <symbol id="adobe-lightroom-mobile-badge" viewBox="0 0 240 234">
+    <title>Lightroom Mobile App Badge</title>
+    <rect width="240" height="234" rx="52" fill="#001E36" stroke="#31A8FF" stroke-width="6"/><path d="M56 60h22v86h43v19H56V60zm80 30h19v13c4-9 12-15 23-15 3 0 5 .4 7 1v20c-3-.8-6-1.2-9-1.2-10 0-18 6-20 17v40h-20V90z" fill="#31A8FF"/><rect x="176" y="158" width="32" height="48" rx="6" fill="#001E36" stroke="#31A8FF" stroke-width="5"/><circle cx="192" cy="197" r="2.5" fill="#31A8FF"/>
+  </symbol>
+  <symbol id="adobe-lightroom-pc-desktop-badge" viewBox="0 0 240 234">
+    <title>Lightroom PC (Cloud Desktop) Badge</title>
+    <rect width="240" height="234" rx="42.5" fill="#001E36"/><path d="M54 58h22v86h43v19H54V58zm80 30h19v13c4-9 12-15 23-15 3 0 5 .4 7 1v20c-3-.8-6-1.2-9-1.2-10 0-18 6-20 17v40h-20V88z" fill="#31A8FF"/><path d="M162 192h38a11 11 0 0 0 1-22 15 15 0 0 0-29-4 12 12 0 0 0-10 26z" fill="#001E36" stroke="#31A8FF" stroke-width="5" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="adobe-lightroom-monochrome" viewBox="0 0 24 24">
+    <title>Lightroom Monochrome Vector Icon</title>
+    <rect x="2.5" y="2.5" width="19" height="19" rx="4" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M6.8 7.2v9.2h4.4M14.2 16.4v-6.2m0 1.8c.6-1.2 1.6-1.8 2.8-1.8" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
+  <symbol id="adobe-dng-raw-file-badge" viewBox="0 0 240 234">
+    <title>Adobe DNG (Digital Negative) Badge</title>
+    <rect width="240" height="234" rx="42.5" fill="#141923" stroke="#31A8FF" stroke-width="8"/><text x="38" y="142" fill="#31A8FF" font-size="74" font-family="sans-serif" font-weight="bold">DNG</text>
+  </symbol>
+  <symbol id="adobe-xmp-preset-file-badge" viewBox="0 0 240 234">
+    <title>Lightroom XMP Preset File Badge</title>
+    <rect width="240" height="234" rx="42.5" fill="#001E36" stroke="#38BDF8" stroke-width="8"/><text x="36" y="142" fill="#38BDF8" font-size="74" font-family="sans-serif" font-weight="bold">XMP</text>
+  </symbol>
+  <symbol id="adobe-camera-raw-acr-badge" viewBox="0 0 240 234">
+    <title>Adobe Camera Raw (ACR) Engine Badge</title>
+    <rect width="240" height="234" rx="42.5" fill="#0B1726" stroke="#38BDF8" stroke-width="8"/><circle cx="120" cy="117" r="56" stroke="#31A8FF" stroke-width="10" fill="none"/><circle cx="120" cy="117" r="22" fill="#31A8FF"/>
+  </symbol>
+  <symbol id="adobe-firefly-genai-badge" viewBox="0 0 240 234">
+    <title>Adobe Firefly Generative AI Badge</title>
+    <rect width="240" height="234" rx="42.5" fill="#1E1028" stroke="#F472B6" stroke-width="8"/><path d="M120 42l20 55 55 20-55 20-20 55-20-55-55-20 55-20 20-55z" fill="#F472B6"/>
+  </symbol>
+  <symbol id="adobe-sensei-ai-badge" viewBox="0 0 240 234">
+    <title>Adobe Sensei AI Masking & Culling Badge</title>
+    <rect width="240" height="234" rx="42.5" fill="#0F172A" stroke="#60A5FA" stroke-width="8"/><polygon points="120,48 184,117 120,186 56,117" stroke="#60A5FA" stroke-width="10" fill="none"/><circle cx="120" cy="117" r="18" fill="#60A5FA"/>
+  </symbol>
+  <symbol id="adobe-c2pa-content-credentials-badge" viewBox="0 0 240 234">
+    <title>Content Credentials (CR / C2PA) Official Pin</title>
+    <rect width="240" height="234" rx="42.5" fill="#001E36" stroke="#FFFFFF" stroke-width="8"/><text x="52" y="148" fill="#FFFFFF" font-size="88" font-family="sans-serif" font-weight="bold">cr</text>
+  </symbol>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_BokehCircle_20_N" data-name="Bokeh Shape: Circle" style="--iconPrimary: currentColor;">
+  <title>Bokeh Shape: Circle (S2_Icon_BokehCircle_20_N)</title>
+  <desc>Modern circular aperture bokeh simulation in Lens Blur panel</desc>
+  <circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.28"/>
+</svg>

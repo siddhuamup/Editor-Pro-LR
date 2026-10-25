@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_RedEye_24_N" data-name="Red-Eye & Pet-Eye" style="--iconPrimary: currentColor;">
+  <title>Red-Eye & Pet-Eye (S2_Icon_RedEye_24_N)</title>
+  <desc>Corrects flash red-eye and pet-eye reflections</desc>
+  <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.65" fill="none"/><path d="M12 7.5v9M7.5 12h9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+</svg>

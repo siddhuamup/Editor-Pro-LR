@@ -35,8 +35,8 @@ object SplineInterpolator {
         val h = DoubleArray(n - 1)
         val delta = DoubleArray(n - 1)
         for (i in 0 until n - 1) {
-            h[i] = x[i + 1] - x[i]
-            delta[i] = if (h[i] > 1e-6) (y[i + 1] - y[i]) / h[i] else 0.0
+            h[i] = max(x[i + 1] - x[i], 1e-5)
+            delta[i] = (y[i + 1] - y[i]) / h[i]
         }
 
         // 2. Initial tangents
@@ -76,22 +76,18 @@ object SplineInterpolator {
             while (seg < n - 2 && xi > x[seg + 1]) {
                 seg++
             }
-            val hSeg = h[seg]
-            if (hSeg < 1e-6) {
-                lut[i] = y[seg].toFloat()
-            } else {
-                val t = (xi - x[seg]) / hSeg
-                val t2 = t * t
-                val t3 = t2 * t
+            val hSeg = max(h[seg], 1e-5)
+            val t = (xi - x[seg]) / hSeg
+            val t2 = t * t
+            val t3 = t2 * t
 
-                val h00 = 2.0 * t3 - 3.0 * t2 + 1.0
-                val h10 = t3 - 2.0 * t2 + t
-                val h01 = -2.0 * t3 + 3.0 * t2
-                val h11 = t3 - t2
+            val h00 = 2.0 * t3 - 3.0 * t2 + 1.0
+            val h10 = t3 - 2.0 * t2 + t
+            val h01 = -2.0 * t3 + 3.0 * t2
+            val h11 = t3 - t2
 
-                val yi = h00 * y[seg] + h10 * hSeg * d[seg] + h01 * y[seg + 1] + h11 * hSeg * d[seg + 1]
-                lut[i] = min(255.0, max(0.0, yi)).toFloat()
-            }
+            val yi = h00 * y[seg] + h10 * hSeg * d[seg] + h01 * y[seg + 1] + h11 * hSeg * d[seg + 1]
+            lut[i] = min(255.0, max(0.0, yi)).toFloat()
         }
         return lut
     }

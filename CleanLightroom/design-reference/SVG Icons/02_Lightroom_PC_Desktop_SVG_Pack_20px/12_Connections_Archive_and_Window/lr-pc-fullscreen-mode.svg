@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_FullScreen_20_N" data-name="Full Screen Workspace (F)" style="--iconPrimary: currentColor;">
+  <title>Full Screen Workspace (F) (S2_Icon_FullScreen_20_N)</title>
+  <desc>Expands Lightroom PC canvas to full screen without OS title bar</desc>
+  <path d="M3.5 7.5v-4h4M16.5 7.5v-4h-4M3.5 12.5v4h4M16.5 12.5v4h-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

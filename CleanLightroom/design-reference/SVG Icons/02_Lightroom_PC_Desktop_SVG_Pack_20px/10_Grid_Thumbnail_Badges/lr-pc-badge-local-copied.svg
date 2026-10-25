@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_BadgeLocalCloud_20_N" data-name="Thumbnail Badge: Local + Cloud Copy" style="--iconPrimary: currentColor;">
+  <title>Thumbnail Badge: Local + Cloud Copy (S2_Icon_BadgeLocalCloud_20_N)</title>
+  <desc>Indicates a Local Tab file has also been copied to Creative Cloud</desc>
+  <path d="M5.5 14.5h9a3 3 0 0 0 .3-6A4.2 4.2 0 0 0 6.5 7.2 3.4 3.4 0 0 0 5.5 14.5z" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.25"/>
+</svg>

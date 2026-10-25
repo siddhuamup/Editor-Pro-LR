@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_OverlayGoldenSpiral_24_N" data-name="Crop Overlay: Golden Spiral" style="--iconPrimary: currentColor;">
+  <title>Crop Overlay: Golden Spiral (S2_Icon_OverlayGoldenSpiral_24_N)</title>
+  <desc>Fibonacci Golden Spiral composition guide inside crop tool</desc>
+  <rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M14 4.5v15M14 13.5h6.5M17.5 13.5v6M4 19c0-7.5 5.5-14 12.5-14 3 0 4 2.5 4 5.5 0 2.5-1.8 4.2-4 4.2-1.5 0-2.5-1-2.5-2.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_CGGlobal_24_N" data-name="Color Grading: Global Wheel" style="--iconPrimary: currentColor;">
+  <title>Color Grading: Global Wheel (S2_Icon_CGGlobal_24_N)</title>
+  <desc>Applies overall color grade tint across the entire tonal range</desc>
+  <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.5 2" fill="none"/><circle cx="12" cy="12" r="2" fill="currentColor"/>
+</svg>

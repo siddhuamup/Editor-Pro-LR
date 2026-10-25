@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_VersionsHistory_20_N" data-name="Versions & Edit History" style="--iconPrimary: currentColor;">
+  <title>Versions & Edit History (S2_Icon_VersionsHistory_20_N)</title>
+  <desc>Creates named edit snapshots and browses auto-saved version history</desc>
+  <rect x="5" y="3" width="12" height="12" rx="1.6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 6.5v9A1.5 1.5 0 0 0 4.5 17h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M11 6.2v3l2 1.2" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

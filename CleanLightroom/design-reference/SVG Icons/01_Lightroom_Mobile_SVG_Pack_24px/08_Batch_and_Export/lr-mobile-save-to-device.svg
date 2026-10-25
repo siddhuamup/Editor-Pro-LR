@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_DownloadToDevice_24_N" data-name="Save Copy to Device" style="--iconPrimary: currentColor;">
+  <title>Save Copy to Device (S2_Icon_DownloadToDevice_24_N)</title>
+  <desc>Renders and saves edited photo directly to local camera roll</desc>
+  <path d="M12 4v11.5M8 11.5l4 4 4-4" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M4.5 15.5v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" fill="none"/>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_RawFormat_24_N" data-name="DNG / JPG Format Selector" style="--iconPrimary: currentColor;">
+  <title>DNG / JPG Format Selector (S2_Icon_RawFormat_24_N)</title>
+  <desc>Switches capture format between uncompressed DNG Raw and JPEG</desc>
+  <rect x="2.5" y="6" width="19" height="12" rx="2.2" stroke="currentColor" stroke-width="1.75" fill="none"/><text x="5.2" y="14.2" fill="currentColor" font-size="6.5" font-family="monospace" font-weight="bold">RAW</text>
+</svg>

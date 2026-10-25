@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_EditInPhotoshop_20_N" data-name="Edit in Photoshop (Ctrl+E)" style="--iconPrimary: currentColor;">
+  <title>Edit in Photoshop (Ctrl+E) (S2_Icon_EditInPhotoshop_20_N)</title>
+  <desc>Opens photo in Adobe Photoshop Desktop and syncs saved TIFF/PSD back to Lightroom</desc>
+  <rect x="2.8" y="2.8" width="14.4" height="14.4" rx="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/><text x="5.2" y="13" fill="currentColor" font-size="7.5" font-family="sans-serif" font-weight="bold">Ps</text>
+</svg>

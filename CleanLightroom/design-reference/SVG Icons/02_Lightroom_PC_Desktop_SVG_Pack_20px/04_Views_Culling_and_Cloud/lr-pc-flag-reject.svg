@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_FlagReject_20_N" data-name="Flag as Reject (X)" style="--iconPrimary: currentColor;">
+  <title>Flag as Reject (X) (S2_Icon_FlagReject_20_N)</title>
+  <desc>Marks photo as Rejected for batch cleanup</desc>
+  <path d="M4.5 17.5V3.5h8.5l-1.8 4 1.8 4H4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M13.5 13l4 4m0-4l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

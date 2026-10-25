@@ -68,6 +68,7 @@ import kotlin.math.min
 class LoupeGLView(context: Context) : GLSurfaceView(context) {
 
     private val renderer = LoupeRenderer(context)
+    private var currentBitmap: Bitmap? = null
 
     init {
         setEGLContextClientVersion(3)
@@ -78,6 +79,8 @@ class LoupeGLView(context: Context) : GLSurfaceView(context) {
     }
 
     fun setBitmap(bitmap: Bitmap, onHistogramExtracted: (HistogramData) -> Unit) {
+        if (currentBitmap === bitmap) return
+        currentBitmap = bitmap
         renderer.onHistogramUpdated = { histo ->
             post { onHistogramExtracted(histo) }
         }
@@ -127,6 +130,8 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var isSplitHorizontal = false
     private var film3dLut = com.cleanlr.engine.stage.Film3dLut.NONE
     private var film3dLutIntensity = 1.0f
+    private var surfaceWidth = 0
+    private var surfaceHeight = 0
 
     var onHistogramUpdated: ((HistogramData) -> Unit)? = null
 
@@ -134,6 +139,9 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
         pipeline = RenderPipeline(context).apply {
             initGL()
             setFilm3dLut(film3dLut, film3dLutIntensity)
+            if (surfaceWidth > 0 && surfaceHeight > 0) {
+                setSurfaceSize(surfaceWidth, surfaceHeight)
+            }
         }
         pendingBitmap?.let {
             pipeline?.loadBitmap(it)
@@ -148,10 +156,16 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        surfaceWidth = width
+        surfaceHeight = height
+        pipeline?.setSurfaceSize(width, height)
         GLES30.glViewport(0, 0, width, height)
     }
 
     override fun onDrawFrame(gl: GL10?) {
+        if (surfaceWidth > 0 && surfaceHeight > 0) {
+            GLES30.glViewport(0, 0, surfaceWidth, surfaceHeight)
+        }
         GLES30.glClearColor(0.07f, 0.07f, 0.07f, 1.0f)
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
 
@@ -350,10 +364,12 @@ fun LoupeCanvas(
         )
     }
 
-    // Update GLView when bitmap changes
-    LaunchedEffect(bitmap) {
-        bitmap?.let {
-            glView?.setBitmap(it, onHistogramUpdated)
+    // Update GLView when bitmap or glView changes
+    LaunchedEffect(bitmap, glView) {
+        val bmp = bitmap
+        val gv = glView
+        if (bmp != null && gv != null) {
+            gv.setBitmap(bmp, onHistogramUpdated)
         }
     }
 
@@ -491,7 +507,7 @@ fun LoupeCanvas(
                                 val newScale = (targetScale * zoom).coerceIn(0.85f, 8.0f) // Tip 90: allows 0.85f elastic bounce
                                 targetScale = newScale
 
-                                if (newScale > 1.0f && canvasSize.width > 0) {
+                                if (newScale > 1.01f && canvasSize.width > 0) {
                                     // Tip 89: Pan bounds clamping (rubber-banding)
                                     val maxOffsetX = (canvasSize.width * (newScale - 1f) / 2f)
                                     val maxOffsetY = (canvasSize.height * (newScale - 1f) / 2f)
@@ -500,7 +516,7 @@ fun LoupeCanvas(
                                         nextOffset.x.coerceIn(-maxOffsetX, maxOffsetX),
                                         nextOffset.y.coerceIn(-maxOffsetY, maxOffsetY)
                                     )
-                                } else if (newScale <= 1.0f) {
+                                } else if (newScale <= 1.01f) {
                                     targetOffset = Offset.Zero
                                 }
                             },
@@ -520,6 +536,9 @@ fun LoupeCanvas(
                     glView = it
                     bitmap?.let { bmp -> it.setBitmap(bmp, onHistogramUpdated) }
                 }
+            },
+            update = { view ->
+                glView = view
             },
             modifier = Modifier
                 .fillMaxSize()

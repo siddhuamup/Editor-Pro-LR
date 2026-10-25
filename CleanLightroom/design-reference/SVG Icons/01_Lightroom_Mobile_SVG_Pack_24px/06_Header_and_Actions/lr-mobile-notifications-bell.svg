@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_Bell_24_N" data-name="Activity & Notifications" style="--iconPrimary: currentColor;">
+  <title>Activity & Notifications (S2_Icon_Bell_24_N)</title>
+  <desc>Alerts for likes, comments on shared albums, and community remixes</desc>
+  <path d="M18 15v-4.5a6 6 0 1 0-12 0V15l-2 2h16l-2-2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><path d="M10 19a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+</svg>

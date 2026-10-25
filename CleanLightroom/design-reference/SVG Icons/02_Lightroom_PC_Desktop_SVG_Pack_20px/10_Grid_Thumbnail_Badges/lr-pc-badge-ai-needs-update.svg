@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_BadgeAIUpdate_20_N" data-name="Thumbnail Badge: AI Edit Update Needed" style="--iconPrimary: currentColor;">
+  <title>Thumbnail Badge: AI Edit Update Needed (S2_Icon_BadgeAIUpdate_20_N)</title>
+  <desc>Highlights when AI Masking, Lens Blur, or Generative Remove needs recalculation</desc>
+  <path d="M9.5 3l1.5 3.8 3.8 1.5-3.8 1.5L9.5 13.6 8 9.8 4.2 8.3 8 6.8 9.5 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><circle cx="15.2" cy="15.2" r="2.3" fill="currentColor"/>
+</svg>

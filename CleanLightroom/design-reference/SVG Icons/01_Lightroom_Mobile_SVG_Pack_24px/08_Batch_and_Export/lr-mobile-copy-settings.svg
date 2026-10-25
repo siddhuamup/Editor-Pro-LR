@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_CopySettings_24_N" data-name="Copy Edit Settings" style="--iconPrimary: currentColor;">
+  <title>Copy Edit Settings (S2_Icon_CopySettings_24_N)</title>
+  <desc>Copies selected Light, Color, Effects, Detail, Masking, or Crop settings</desc>
+  <rect x="7.5" y="7.5" width="12.5" height="12.5" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M4.5 15.5v-10a1.5 1.5 0 0 1 1.5-1.5h10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/><line x1="10.5" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="10.5" y1="15.5" x2="17" y2="15.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

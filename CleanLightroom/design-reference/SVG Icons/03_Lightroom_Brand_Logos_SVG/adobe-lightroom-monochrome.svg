@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="Brand_AppIcon_Lr_Mono" data-name="Lightroom Monochrome Vector Icon" style="--iconPrimary: currentColor;">
+  <title>Lightroom Monochrome Vector Icon (Brand_AppIcon_Lr_Mono)</title>
+  <desc>Scalable monochrome currentColor Lightroom (Lr) icon for custom UI themes</desc>
+  <rect x="2.5" y="2.5" width="19" height="19" rx="4" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M6.8 7.2v9.2h4.4M14.2 16.4v-6.2m0 1.8c.6-1.2 1.6-1.8 2.8-1.8" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

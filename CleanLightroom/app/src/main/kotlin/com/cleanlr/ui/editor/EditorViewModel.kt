@@ -152,7 +152,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val _isComparingOriginal = MutableStateFlow(false)
     val isComparingOriginal: StateFlow<Boolean> = _isComparingOriginal.asStateFlow()
 
-    private val _activeTab = MutableStateFlow(EditorToolTab.LIGHT)
+    private val _activeTab = MutableStateFlow(EditorToolTab.COLOR)
     val activeTab: StateFlow<EditorToolTab> = _activeTab.asStateFlow()
 
     private val _exportStatus = MutableStateFlow<String?>(null)

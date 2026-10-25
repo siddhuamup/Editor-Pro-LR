@@ -19,6 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -60,64 +62,64 @@ enum class HslColor(
     RED(
         title = "Red",
         abbr = "R",
-        color = Color(0xFFE53935),
-        hueGradient = listOf(Color(0xFFD81B60), Color(0xFFE53935), Color(0xFFFB8C00)),
+        color = Color(0xFFE63946),
+        hueGradient = listOf(Color(0xFFF72585), Color(0xFFE63946), Color(0xFFF48C06)),
         darkColor = Color(0xFF5D0000),
         lightColor = Color(0xFFFF8A80)
     ),
     ORANGE(
         title = "Orange",
         abbr = "O",
-        color = Color(0xFFFB8C00),
-        hueGradient = listOf(Color(0xFFE53935), Color(0xFFFB8C00), Color(0xFFFDD835)),
+        color = Color(0xFFF48C06),
+        hueGradient = listOf(Color(0xFFE63946), Color(0xFFF48C06), Color(0xFFFFBE0B)),
         darkColor = Color(0xFF6B3B00),
         lightColor = Color(0xFFFFD180)
     ),
     YELLOW(
         title = "Yellow",
         abbr = "Y",
-        color = Color(0xFFFDD835),
-        hueGradient = listOf(Color(0xFFFB8C00), Color(0xFFFDD835), Color(0xFF43A047)),
+        color = Color(0xFFFFBE0B),
+        hueGradient = listOf(Color(0xFFF48C06), Color(0xFFFFBE0B), Color(0xFF38B000)),
         darkColor = Color(0xFF706000),
         lightColor = Color(0xFFFFFF8D)
     ),
     GREEN(
         title = "Green",
         abbr = "G",
-        color = Color(0xFF43A047),
-        hueGradient = listOf(Color(0xFFFDD835), Color(0xFF43A047), Color(0xFF00ACC1)),
+        color = Color(0xFF38B000),
+        hueGradient = listOf(Color(0xFFFFBE0B), Color(0xFF38B000), Color(0xFF00B4D8)),
         darkColor = Color(0xFF004D15),
         lightColor = Color(0xFFB9F6CA)
     ),
     AQUA(
         title = "Aqua",
         abbr = "A",
-        color = Color(0xFF00ACC1),
-        hueGradient = listOf(Color(0xFF43A047), Color(0xFF00ACC1), Color(0xFF1E88E5)),
+        color = Color(0xFF00B4D8),
+        hueGradient = listOf(Color(0xFF38B000), Color(0xFF00B4D8), Color(0xFF0077B6)),
         darkColor = Color(0xFF004852),
         lightColor = Color(0xFF84FFFF)
     ),
     BLUE(
         title = "Blue",
         abbr = "B",
-        color = Color(0xFF1E88E5),
-        hueGradient = listOf(Color(0xFF00ACC1), Color(0xFF1E88E5), Color(0xFF8E24AA)),
+        color = Color(0xFF0077B6),
+        hueGradient = listOf(Color(0xFF00B4D8), Color(0xFF0077B6), Color(0xFF7209B7)),
         darkColor = Color(0xFF002B66),
         lightColor = Color(0xFF82B1FF)
     ),
     PURPLE(
         title = "Purple",
         abbr = "P",
-        color = Color(0xFF8E24AA),
-        hueGradient = listOf(Color(0xFF1E88E5), Color(0xFF8E24AA), Color(0xFFD81B60)),
+        color = Color(0xFF7209B7),
+        hueGradient = listOf(Color(0xFF0077B6), Color(0xFF7209B7), Color(0xFFF72585)),
         darkColor = Color(0xFF420054),
         lightColor = Color(0xFFEA80FC)
     ),
     MAGENTA(
         title = "Magenta",
         abbr = "M",
-        color = Color(0xFFD81B60),
-        hueGradient = listOf(Color(0xFF8E24AA), Color(0xFFD81B60), Color(0xFFE53935)),
+        color = Color(0xFFF72585),
+        hueGradient = listOf(Color(0xFF7209B7), Color(0xFFF72585), Color(0xFFE63946)),
         darkColor = Color(0xFF5E0025),
         lightColor = Color(0xFFFF80AB)
     )
@@ -136,6 +138,9 @@ fun HslMixerPanel(
     isMonochrome: Boolean = false,
     onTouchStart: () -> Unit = {},
     onTouchEnd: (actionName: String) -> Unit = {},
+    isTatActive: Boolean = false,
+    onToggleTat: () -> Unit = {},
+    onDone: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
@@ -201,48 +206,69 @@ fun HslMixerPanel(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
     ) {
-        // Mode Switcher & Header Bar
+        // Authentic Top Header Bar: "Color Mix" + TAT Icon + "DONE" Button (Screenshot 083551 & 083601)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp),
+                .padding(horizontal = 14.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // View Mode Chips
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                HslViewMode.values().forEach { mode ->
-                    val isSelected = viewMode == mode
-                    Surface(
-                        color = if (isSelected) SpectrumBlue else SpectrumElevated,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.clickable {
-                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                            viewMode = mode
-                        }
+            Text(
+                text = "Color Mix",
+                color = Color.White,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // TAT Target Adjustment Tool Toggle Button
+                Surface(
+                    color = if (isTatActive) SpectrumBlue else SpectrumElevated,
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier.clickable {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        onToggleTat()
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier.size(32.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = mode.label,
-                            color = if (isSelected) Color.White else SpectrumTextSecondary,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                        )
+                        Canvas(modifier = Modifier.size(16.dp)) {
+                            val cx = size.width / 2f
+                            val cy = size.height / 2f
+                            drawCircle(Color.White, radius = 2.dp.toPx(), center = Offset(cx, cy))
+                            val lineLen = 4.dp.toPx()
+                            val gap = 3.dp.toPx()
+                            drawLine(Color.White, Offset(cx, cy - gap), Offset(cx, cy - gap - lineLen), strokeWidth = 1.5.dp.toPx())
+                            drawLine(Color.White, Offset(cx, cy + gap), Offset(cx, cy + gap + lineLen), strokeWidth = 1.5.dp.toPx())
+                            drawLine(Color.White, Offset(cx - gap, cy), Offset(cx - gap - lineLen, cy), strokeWidth = 1.5.dp.toPx())
+                            drawLine(Color.White, Offset(cx + gap, cy), Offset(cx + gap + lineLen, cy), strokeWidth = 1.5.dp.toPx())
+                        }
                     }
                 }
-            }
 
-            // Reset All Button (Tip 220)
-            IconButton(
-                onClick = { resetAllChannels() },
-                modifier = Modifier.size(28.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.RestartAlt,
-                    contentDescription = "Reset All 8 Colors",
-                    tint = SpectrumIconNormal,
-                    modifier = Modifier.size(16.dp)
-                )
+                // Authentic Pro "DONE" Button
+                Surface(
+                    color = SpectrumElevated,
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier.clickable {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        onDone()
+                    }
+                ) {
+                    Text(
+                        text = "DONE",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                    )
+                }
             }
         }
 
@@ -283,78 +309,56 @@ fun HslMixerPanel(
                             )
                         }
                     ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(sizeAnim)
-                                .clip(CircleShape)
-                                .background(col.color)
-                                .then(
-                                    if (isTatTarget) {
-                                        Modifier.border(2.5.dp, SpectrumBlue, CircleShape)
-                                    } else if (isSelected) {
-                                        Modifier.border(2.dp, Color.White, CircleShape)
-                                    } else {
-                                        Modifier.border(1.dp, Color(0xFF383838), CircleShape)
-                                    }
+                        if (isSelected) {
+                            // Active: Filled color circle with white center dot (Screenshot 083551)
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(col.color)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White)
                                 )
-                        ) {
-                            // Tip 222: Abbr Letter
-                            Text(
-                                text = col.abbr,
-                                color = if (col == HslColor.YELLOW) Color.Black else Color.White,
-                                fontSize = if (isSelected) 11.sp else 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            }
+                        } else {
+                            // Inactive: Hollow color ring (Screenshot 083551)
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .clip(CircleShape)
+                                    .border(2.dp, col.color, CircleShape)
+                                    .background(Color.Transparent)
+                            ) {
+                                if (isModified) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(4.dp)
+                                            .clip(CircleShape)
+                                            .background(col.color)
+                                    )
+                                }
+                            }
                         }
 
-                        // Tip 210: Active Modification Dot
+                        // Modification indicator dot
                         Box(
                             modifier = Modifier
                                 .padding(top = 3.dp)
                                 .size(4.dp)
                                 .clip(CircleShape)
-                                .background(if (isModified) Color.White else Color.Transparent)
+                                .background(if (isModified && !isSelected) col.color else Color.Transparent)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Section Title & Badges
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Tip 228: Title changes to "B&W Mix (Luminance)" when in B&W mode
-                Text(
-                    text = if (isMonochrome) "${selectedColor.title} B&W Mix" else "${selectedColor.title} Color Mixer",
-                    color = SpectrumTextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                // Tip 219: Skin-Tone Protection Badge for Orange
-                if (selectedColor == HslColor.ORANGE && !isMonochrome) {
-                    Surface(
-                        color = Color(0x33FB8C00),
-                        shape = RoundedCornerShape(4.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x66FB8C00))
-                    ) {
-                        Text(
-                            text = "Skin Safe (18° Gauss)",
-                            color = Color(0xFFFFB74D),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Tip 212: Dynamic Hue Track Gradient
             val hueBrush = remember(selectedColor) {

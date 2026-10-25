@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_GesturePinch_24_N" data-name="Two-Finger Pinch / Overlay Gesture" style="--iconPrimary: currentColor;">
+  <title>Two-Finger Pinch / Overlay Gesture (S2_Icon_GesturePinch_24_N)</title>
+  <desc>Two-finger tap toggles EXIF info overlay; pinch zooms to 100%</desc>
+  <path d="M6 18L11 13M6 14v4h4M18 6l-5 5M18 10V6h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

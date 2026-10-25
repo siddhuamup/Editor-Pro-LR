@@ -123,7 +123,7 @@ fun RampedSlider(
     // --- Tip 44: Thumb pressed state & animation ---
     var isThumbPressed by remember { mutableStateOf(false) }
     val thumbDiameter by animateFloatAsState(
-        targetValue = if (isThumbPressed) 20f else 14f,
+        targetValue = if (isThumbPressed) 16f else 12f,
         animationSpec = spring(dampingRatio = 0.6f, stiffness = 800f),
         label = "thumbScale"
     )
@@ -196,8 +196,8 @@ fun RampedSlider(
             Text(
                 text = label,
                 color = SpectrumSliderLabel,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Normal,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
                 letterSpacing = 0.2.sp,
                 modifier = Modifier.pointerInput(Unit) {
                     detectTapGestures(
@@ -253,8 +253,8 @@ fun RampedSlider(
                 Text(
                     text = displayValue,
                     color = valueColor,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
                     style = TextStyle(fontFeatureSettings = "tnum")
                 )
                 if (effectiveUnit.isNotEmpty()) {

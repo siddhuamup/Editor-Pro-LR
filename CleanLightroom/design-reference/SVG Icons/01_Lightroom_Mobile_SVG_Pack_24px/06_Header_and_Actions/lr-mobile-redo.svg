@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_Redo_24_N" data-name="Redo Edit Step" style="--iconPrimary: currentColor;">
+  <title>Redo Edit Step (S2_Icon_Redo_24_N)</title>
+  <desc>Re-applies an undone edit adjustment</desc>
+  <path d="M15 7l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M20 12H9.5a5.5 5.5 0 0 0 0 11H12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+</svg>

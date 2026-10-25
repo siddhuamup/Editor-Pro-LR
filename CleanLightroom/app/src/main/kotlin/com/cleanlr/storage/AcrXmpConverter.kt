@@ -97,6 +97,11 @@ object AcrXmpConverter {
                   crs:ColorGradeHighlightLum="${cg.highlights.luminance.toInt()}"
                   crs:ColorGradeBlending="${cg.blending.toInt()}"
                   crs:ColorGradeBalance="${cg.balance.toInt()}">
+                  <crs:ToneCurvePV2012>
+                    <rdf:Seq>
+                      ${recipe.curves.composite.joinToString("\n                      ") { "<rdf:li>${it.x.toInt()}, ${it.y.toInt()}</rdf:li>" }}
+                    </rdf:Seq>
+                  </crs:ToneCurvePV2012>
                 </rdf:Description>
               </rdf:RDF>
             </x:xmpmeta>
@@ -224,12 +229,44 @@ object AcrXmpConverter {
             balance = extractFloat("ColorGradeBalance", base.colorGrading.balance)
         )
 
+        fun parseCurvePoints(tag: String): List<CurvePoint>? {
+            val pattern = Pattern.compile("<crs:$tag>\\s*<rdf:Seq>(.*?)</rdf:Seq>\\s*</crs:$tag>", Pattern.DOTALL or Pattern.CASE_INSENSITIVE)
+            val matcher = pattern.matcher(xmpString)
+            if (!matcher.find()) return null
+            val seqContent = matcher.group(1) ?: return null
+            val liPattern = Pattern.compile("<rdf:li>([^<]+)</rdf:li>", Pattern.CASE_INSENSITIVE)
+            val liMatcher = liPattern.matcher(seqContent)
+            val points = mutableListOf<CurvePoint>()
+            while (liMatcher.find()) {
+                val raw = liMatcher.group(1)?.trim() ?: continue
+                val parts = raw.split(",").map { it.trim().toFloatOrNull() }
+                if (parts.size == 2 && parts[0] != null && parts[1] != null) {
+                    points.add(CurvePoint(parts[0]!!, parts[1]!!))
+                }
+            }
+            if (points.isEmpty()) return null
+            val maxCoord = points.maxOfOrNull { maxOf(it.x, it.y) } ?: 0f
+            return if (maxCoord <= 1.0f && points.any { it.x > 0f || it.y > 0f }) {
+                points.map { CurvePoint((it.x * 255f).coerceIn(0f, 255f), (it.y * 255f).coerceIn(0f, 255f)) }
+            } else {
+                points.map { CurvePoint(it.x.coerceIn(0f, 255f), it.y.coerceIn(0f, 255f)) }
+            }
+        }
+
+        val parsedCurves = ToneCurves(
+            composite = parseCurvePoints("ToneCurvePV2012") ?: parseCurvePoints("ToneCurve") ?: base.curves.composite,
+            red = parseCurvePoints("ToneCurvePV2012Red") ?: base.curves.red,
+            green = parseCurvePoints("ToneCurvePV2012Green") ?: base.curves.green,
+            blue = parseCurvePoints("ToneCurvePV2012Blue") ?: base.curves.blue
+        )
+
         return base.copy(
             basic = parsedBasic,
             effects = parsedEffects,
             detail = parsedDetail,
             hsl = parsedHsl,
             colorGrading = parsedColorGrading,
+            curves = parsedCurves,
             presence = PresenceAdjustments(
                 texture = parsedEffects.texture,
                 clarity = parsedEffects.clarity,

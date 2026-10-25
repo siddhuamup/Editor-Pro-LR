@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_Redo_20_N" data-name="Redo (Ctrl+Y)" style="--iconPrimary: currentColor;">
+  <title>Redo (Ctrl+Y) (S2_Icon_Redo_20_N)</title>
+  <desc>Steps forward in the non-destructive edit history</desc>
+  <path d="M12.5 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M16.5 10H8a4.5 4.5 0 0 0 0 9h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+</svg>

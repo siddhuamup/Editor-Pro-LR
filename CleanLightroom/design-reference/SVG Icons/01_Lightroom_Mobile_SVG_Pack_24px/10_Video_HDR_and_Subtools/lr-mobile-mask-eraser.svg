@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_Erase_24_N" data-name="Mask Brush Eraser" style="--iconPrimary: currentColor;">
+  <title>Mask Brush Eraser (S2_Icon_Erase_24_N)</title>
+  <desc>Subtracts painted strokes from an active Brush or Object mask</desc>
+  <path d="M16 4l4 4-9.5 9.5H5.5L3.5 15.5 15 4a.7.7 0 0 1 1 0z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/><line x1="8.5" y1="11.5" x2="13.5" y2="16.5" stroke="currentColor" stroke-width="1.6"/><line x1="4" y1="20" x2="20" y2="20" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+</svg>

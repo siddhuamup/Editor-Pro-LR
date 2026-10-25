@@ -51,20 +51,20 @@ data class EditRecipe(
      * across Presets, Auto Tone, XMP Import, and the 9-Stage GPU pipeline.
      */
     fun syncLegacyFields(): EditRecipe {
-        val syncedVibrance = if (presence.vibrance != 0f && basic.vibrance == 0f) presence.vibrance else basic.vibrance
-        val syncedSaturation = if (presence.saturation != 0f && basic.saturation == 0f) presence.saturation else basic.saturation
+        val syncedVibrance = basic.vibrance
+        val syncedSaturation = basic.saturation
 
-        val syncedTexture = if (effects.texture != 0f && presence.texture == 0f) effects.texture else presence.texture
-        val syncedClarity = if (effects.clarity != 0f && presence.clarity == 0f) effects.clarity else presence.clarity
-        val syncedDehaze = if (effects.dehaze != 0f && presence.dehaze == 0f) effects.dehaze else presence.dehaze
+        val syncedTexture = effects.texture
+        val syncedClarity = effects.clarity
+        val syncedDehaze = effects.dehaze
 
-        val syncedVignetteAmount = if (effects.vignetteAmount != 0f && detail.vignetteAmount == 0f) effects.vignetteAmount else detail.vignetteAmount
-        val syncedVignetteMidpoint = if (effects.vignetteMidpoint != 50f && detail.vignetteMidpoint == 50f) effects.vignetteMidpoint else detail.vignetteMidpoint
-        val syncedVignetteFeather = if (effects.vignetteFeather != 50f && detail.vignetteFeather == 50f) effects.vignetteFeather else detail.vignetteFeather
+        val syncedVignetteAmount = effects.vignetteAmount
+        val syncedVignetteMidpoint = effects.vignetteMidpoint
+        val syncedVignetteFeather = effects.vignetteFeather
 
-        val syncedGrainAmount = if (effects.grainAmount != 0f && detail.grainAmount == 0f) effects.grainAmount else detail.grainAmount
-        val syncedGrainSize = if (effects.grainSize != 25f && detail.grainSize == 25f) effects.grainSize else detail.grainSize
-        val syncedGrainRoughness = if (effects.grainRoughness != 50f && detail.grainRoughness == 50f) effects.grainRoughness else detail.grainRoughness
+        val syncedGrainAmount = effects.grainAmount
+        val syncedGrainSize = effects.grainSize
+        val syncedGrainRoughness = effects.grainRoughness
 
         val newBasic = basic.copy(vibrance = syncedVibrance, saturation = syncedSaturation)
         val newPresence = PresenceAdjustments(

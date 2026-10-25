@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_AutoStraighten_24_N" data-name="Auto Straighten Horizon" style="--iconPrimary: currentColor;">
+  <title>Auto Straighten Horizon (S2_Icon_AutoStraighten_24_N)</title>
+  <desc>Automatically levels tilted horizons in Crop tool</desc>
+  <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="4" y1="14.5" x2="20" y2="9.5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.5 2"/><line x1="3.5" y1="12" x2="20.5" y2="12" stroke="currentColor" stroke-width="1.8"/>
+</svg>

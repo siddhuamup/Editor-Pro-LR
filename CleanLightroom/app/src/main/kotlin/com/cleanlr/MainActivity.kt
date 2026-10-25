@@ -22,7 +22,7 @@ import com.cleanlr.ui.theme.CleanLightroomTheme
 class MainActivity : ComponentActivity() {
 
     private val viewModel: EditorViewModel by viewModels()
-    private var isEditorVisible by mutableStateOf(false)
+    private var isEditorVisible by mutableStateOf(true)
     private lateinit var shortcutsHandler: KeyboardShortcutsHandler
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,6 +85,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (!::shortcutsHandler.isInitialized) return super.onKeyDown(keyCode, event)
+        if (currentFocus is android.widget.EditText) return super.onKeyDown(keyCode, event)
         if (event != null && shortcutsHandler.handleKeyDown(keyCode, event)) {
             return true
         }
@@ -92,6 +94,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        if (!::shortcutsHandler.isInitialized) return super.onKeyUp(keyCode, event)
+        if (currentFocus is android.widget.EditText) return super.onKeyUp(keyCode, event)
         if (event != null && shortcutsHandler.handleKeyUp(keyCode, event)) {
             return true
         }

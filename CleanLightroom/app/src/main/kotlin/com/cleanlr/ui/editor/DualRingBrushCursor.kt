@@ -71,6 +71,13 @@ fun DualRingBrushCursor(
             strokeWidth = strokeWidth
         )
 
+        // Center dot
+        drawCircle(
+            color = Color.White,
+            radius = 1.dp.toPx(),
+            center = actualCenter
+        )
+
         // ---------------------------------------------------------------------
         // 2. Inner Solid Ring (Main Brush Density)
         // ---------------------------------------------------------------------
@@ -91,7 +98,7 @@ fun DualRingBrushCursor(
         // 3. Outer Dashed Ring (Feather Limit)
         // ---------------------------------------------------------------------
         if (featherPercent > 0.01f) {
-            val dashPattern = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), 0f)
+            val dashPattern = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f)
             drawCircle(
                 color = Color.Black.copy(alpha = 0.35f),
                 radius = rOuter,

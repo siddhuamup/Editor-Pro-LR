@@ -1,8 +1,8 @@
-rea/
-
+.idea/
+.kotlin/
+CleanLightroom/.kotlin/
 CleanLightroom/.git-backup/
 CleanLightroom/app/build/
 CleanLightroom/.gradle/
-
-
 CleanLightroom/local.properties
+

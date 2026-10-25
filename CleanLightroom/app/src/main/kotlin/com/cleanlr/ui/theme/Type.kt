@@ -40,3 +40,22 @@ val Typography = Typography(
         color = SpectrumTextSecondary
     )
 )
+
+val SpectrumTabularReadout = TextStyle(
+    fontFamily = FontFamily.Default,
+    fontWeight = FontWeight.Medium,
+    fontSize = 11.sp,
+    lineHeight = 14.sp,
+    letterSpacing = 0.sp,
+    color = SpectrumTextPrimary,
+    fontFeatureSettings = "tnum"
+)
+
+val SpectrumSliderLabelStyle = TextStyle(
+    fontFamily = FontFamily.Default,
+    fontWeight = FontWeight.Medium,
+    fontSize = 11.sp,
+    lineHeight = 15.sp,
+    letterSpacing = 0.2.sp,
+    color = SpectrumSliderLabel
+)

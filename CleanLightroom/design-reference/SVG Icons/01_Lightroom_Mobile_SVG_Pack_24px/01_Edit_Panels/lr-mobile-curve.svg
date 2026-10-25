@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_ToneCurve_24_N" data-name="Tone Curve" style="--iconPrimary: currentColor;">
+  <title>Tone Curve (S2_Icon_ToneCurve_24_N)</title>
+  <desc>Parametric and RGB point curves for tonal range control</desc>
+  <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M3.5 12h17M12 3.5v17" stroke="currentColor" stroke-width="1" stroke-opacity="0.35"/><path d="M4.5 19.5C9.5 19.5 9.5 4.5 19.5 4.5" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" fill="none"/><circle cx="8.2" cy="15.2" r="1.6" fill="currentColor"/><circle cx="15.8" cy="8.8" r="1.6" fill="currentColor"/>
+</svg>

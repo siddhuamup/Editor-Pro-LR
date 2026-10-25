@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_OpticsLensProfile_20_N" data-name="Optics: Enable Lens Profile" style="--iconPrimary: currentColor;">
+  <title>Optics: Enable Lens Profile (S2_Icon_OpticsLensProfile_20_N)</title>
+  <desc>Automatically matches EXIF lens profile to correct distortion and vignetting</desc>
+  <path d="M3.5 4.5c4 1.5 9 1.5 13 0 1.2 3.5 1.2 7.5 0 11-4-1.5-9-1.5-13 0-1.2-3.5-1.2-7.5 0-11z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+</svg>

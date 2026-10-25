@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 234" width="240" height="234" id="Brand_AppIcon_Lr_Mobile" data-name="Lightroom Mobile App Badge" style="--iconPrimary: currentColor;">
+  <title>Lightroom Mobile App Badge (Brand_AppIcon_Lr_Mobile)</title>
+  <desc>Lightroom Mobile iOS/Android app icon with Spectrum mobile indicator</desc>
+  <rect width="240" height="234" rx="52" fill="#001E36" stroke="#31A8FF" stroke-width="6"/><path d="M56 60h22v86h43v19H56V60zm80 30h19v13c4-9 12-15 23-15 3 0 5 .4 7 1v20c-3-.8-6-1.2-9-1.2-10 0-18 6-20 17v40h-20V90z" fill="#31A8FF"/><rect x="176" y="158" width="32" height="48" rx="6" fill="#001E36" stroke="#31A8FF" stroke-width="5"/><circle cx="192" cy="197" r="2.5" fill="#31A8FF"/>
+</svg>

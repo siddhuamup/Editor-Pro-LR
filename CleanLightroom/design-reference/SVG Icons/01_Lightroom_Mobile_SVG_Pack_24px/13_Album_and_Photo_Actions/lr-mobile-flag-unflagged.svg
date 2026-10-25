@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_FlagNeutral_24_N" data-name="Flag: Unflagged (Neutral)" style="--iconPrimary: currentColor;">
+  <title>Flag: Unflagged (Neutral) (S2_Icon_FlagNeutral_24_N)</title>
+  <desc>Resets Pick or Reject flag status back to neutral unflagged</desc>
+  <path d="M6 20V4h11l-2.2 4.5L17 13H6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2.5 2" fill="none"/>
+</svg>

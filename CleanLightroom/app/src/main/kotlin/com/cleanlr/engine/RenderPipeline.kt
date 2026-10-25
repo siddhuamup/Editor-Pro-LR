@@ -141,6 +141,16 @@ class RenderPipeline(private val context: Context) {
     var imageHeight = 0
         private set
 
+    var surfaceWidth = 0
+        private set
+    var surfaceHeight = 0
+        private set
+
+    fun setSurfaceSize(width: Int, height: Int) {
+        surfaceWidth = width
+        surfaceHeight = height
+    }
+
     private var isInitialized = false
 
     fun initGL() {
@@ -389,8 +399,8 @@ class RenderPipeline(private val context: Context) {
     ) {
         val currentViewport = IntArray(4)
         GLES30.glGetIntegerv(GLES30.GL_VIEWPORT, currentViewport, 0)
-        val vpWidth = if (currentViewport[2] > 0) currentViewport[2] else imageWidth
-        val vpHeight = if (currentViewport[3] > 0) currentViewport[3] else imageHeight
+        val vpWidth = if (surfaceWidth > 0) surfaceWidth else if (currentViewport[2] > 0) currentViewport[2] else imageWidth
+        val vpHeight = if (surfaceHeight > 0) surfaceHeight else if (currentViewport[3] > 0) currentViewport[3] else imageHeight
 
         GLES30.glEnable(GLES30.GL_SCISSOR_TEST)
 
@@ -436,8 +446,8 @@ class RenderPipeline(private val context: Context) {
 
         val currentViewport = IntArray(4)
         GLES30.glGetIntegerv(GLES30.GL_VIEWPORT, currentViewport, 0)
-        val viewportWidth = if (currentViewport[2] > 0) currentViewport[2] else imageWidth
-        val viewportHeight = if (currentViewport[3] > 0) currentViewport[3] else imageHeight
+        val viewportWidth = if (surfaceWidth > 0) surfaceWidth else if (currentViewport[2] > 0) currentViewport[2] else imageWidth
+        val viewportHeight = if (surfaceHeight > 0) surfaceHeight else if (currentViewport[3] > 0) currentViewport[3] else imageHeight
 
         // Ensure Ping-Pong FBO capacity (Half-Float RGBA16F)
         pingPong.ensureCapacity(imageWidth, imageHeight, preferHalfFloat = true)

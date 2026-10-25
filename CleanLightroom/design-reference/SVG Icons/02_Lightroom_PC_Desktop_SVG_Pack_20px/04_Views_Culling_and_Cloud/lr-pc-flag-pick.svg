@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_FlagPick_20_N" data-name="Flag as Pick (Z)" style="--iconPrimary: currentColor;">
+  <title>Flag as Pick (Z) (S2_Icon_FlagPick_20_N)</title>
+  <desc>Marks photo as a selected Pick in culling workflow</desc>
+  <path d="M5 17.5V3.5h9.5l-2 4 2 4H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_BadgeVideo_20_N" data-name="Thumbnail Badge: Video Clip" style="--iconPrimary: currentColor;">
+  <title>Thumbnail Badge: Video Clip (S2_Icon_BadgeVideo_20_N)</title>
+  <desc>Video play badge shown with clip duration on grid cells</desc>
+  <rect x="2.5" y="4" width="15" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><polygon points="8,7.2 13,10 8,12.8" fill="currentColor"/>
+</svg>

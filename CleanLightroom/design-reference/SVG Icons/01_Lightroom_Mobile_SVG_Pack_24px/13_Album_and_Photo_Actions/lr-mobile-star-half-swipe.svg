@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_GestureSwipeRate_24_N" data-name="Swipe Gesture Rating" style="--iconPrimary: currentColor;">
+  <title>Swipe Gesture Rating (S2_Icon_GestureSwipeRate_24_N)</title>
+  <desc>Swipe up/down on screen to rapidly assign star ratings and Pick/Reject flags</desc>
+  <path d="M12 4v16M9 7l3-3 3 3M9 17l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>
+</svg>

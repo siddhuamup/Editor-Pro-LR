@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_OverlayTriangle_24_N" data-name="Crop Overlay: Golden Triangle" style="--iconPrimary: currentColor;">
+  <title>Crop Overlay: Golden Triangle (S2_Icon_OverlayTriangle_24_N)</title>
+  <desc>Dynamic triangle composition guide</desc>
+  <rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/><line x1="3.5" y1="19.5" x2="20.5" y2="4.5" stroke="currentColor" stroke-width="1.5"/><line x1="3.5" y1="4.5" x2="11" y2="12.8" stroke="currentColor" stroke-width="1.4"/><line x1="20.5" y1="19.5" x2="13" y2="11.2" stroke="currentColor" stroke-width="1.4"/>
+</svg>

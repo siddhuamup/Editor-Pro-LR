@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_OpenInApp_24_N" data-name="Edit in Photoshop" style="--iconPrimary: currentColor;">
+  <title>Edit in Photoshop (S2_Icon_OpenInApp_24_N)</title>
+  <desc>Sends layered smart object directly to Adobe Photoshop</desc>
+  <path d="M14 4h6v6M20 4l-8.5 8.5M19 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 4 18.5v-12A1.5 1.5 0 0 1 5.5 5H10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

@@ -204,7 +204,7 @@ fun InteractiveHistogram(
     // Tip 131: Collapsible Histogram Bar (24.dp compact ribbon vs 72.dp full height)
     var isCompact by remember { mutableStateOf(false) }
     val animatedHeight by animateDpAsState(
-        targetValue = if (isCompact) 28.dp else 72.dp,
+        targetValue = if (isCompact) 28.dp else 68.dp,
         animationSpec = tween(180),
         label = "histogramHeight"
     )

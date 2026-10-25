@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_CGShadows_24_N" data-name="Color Grading: Shadows Wheel" style="--iconPrimary: currentColor;">
+  <title>Color Grading: Shadows Wheel (S2_Icon_CGShadows_24_N)</title>
+  <desc>Dedicated color wheel for tinting shadow tones</desc>
+  <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M4.5 14.5a8 8 0 0 0 15 0z" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/>
+</svg>

@@ -397,15 +397,18 @@ fun ToneCurveWidget(
                                 val isLast = selectedPointIndex == currentPoints.lastIndex
 
                                 if (isFirst) {
-                                    newX = newX.coerceIn(0f, if (currentPoints.size > 1) currentPoints[1].x - 4f else 128f)
+                                    val maxBoundX = maxOf(0f, if (currentPoints.size > 1) currentPoints[1].x - 1.0f else 128f)
+                                    newX = newX.coerceIn(0f, maxBoundX)
                                     newY = newY.coerceIn(0f, 255f)
                                 } else if (isLast) {
-                                    newX = newX.coerceIn(if (currentPoints.size > 1) currentPoints[currentPoints.size - 2].x + 4f else 128f, 255f)
+                                    val minBoundX = minOf(255f, if (currentPoints.size > 1) currentPoints[currentPoints.size - 2].x + 1.0f else 128f)
+                                    newX = newX.coerceIn(minBoundX, 255f)
                                     newY = newY.coerceIn(0f, 255f)
                                 } else {
-                                    val minBoundX = currentPoints[selectedPointIndex - 1].x + 4.0f
-                                    val maxBoundX = currentPoints[selectedPointIndex + 1].x - 4.0f
+                                    val minBoundX = currentPoints[selectedPointIndex - 1].x + 1.0f
+                                    val maxBoundX = maxOf(minBoundX, currentPoints[selectedPointIndex + 1].x - 1.0f)
                                     newX = newX.coerceIn(minBoundX, maxBoundX)
+                                    newY = newY.coerceIn(0f, 255f)
                                 }
 
                                 val updated = currentPoints.toMutableList()

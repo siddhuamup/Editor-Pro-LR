@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_CG3Way_24_N" data-name="Color Grading: 3-Way View" style="--iconPrimary: currentColor;">
+  <title>Color Grading: 3-Way View (S2_Icon_CG3Way_24_N)</title>
+  <desc>Simultaneous Shadows, Midtones, and Highlights color wheels view</desc>
+  <circle cx="12" cy="7" r="3.8" stroke="currentColor" stroke-width="1.65" fill="none"/><circle cx="7.5" cy="15.5" r="3.8" stroke="currentColor" stroke-width="1.65" fill="none"/><circle cx="16.5" cy="15.5" r="3.8" stroke="currentColor" stroke-width="1.65" fill="none"/>
+</svg>

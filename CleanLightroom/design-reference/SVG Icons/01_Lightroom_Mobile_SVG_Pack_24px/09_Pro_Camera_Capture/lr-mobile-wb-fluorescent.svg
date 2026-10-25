@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_WBFluorescent_24_N" data-name="WB Preset: Fluorescent (4000K)" style="--iconPrimary: currentColor;">
+  <title>WB Preset: Fluorescent (4000K) (S2_Icon_WBFluorescent_24_N)</title>
+  <desc>Compensates for green-cast fluorescent tube lighting</desc>
+  <rect x="3.5" y="9.5" width="17" height="5" rx="2.5" stroke="currentColor" stroke-width="1.75" fill="none"/><path d="M8 5.5l1 2M16 5.5l-1 2M12 4.5v2.5M8 18.5l1-2M16 18.5l-1-2M12 19.5V17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</svg>

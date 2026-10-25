@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_CurvePointMaster_24_N" data-name="Tone Curve: Master RGB Point" style="--iconPrimary: currentColor;">
+  <title>Tone Curve: Master RGB Point (S2_Icon_CurvePointMaster_24_N)</title>
+  <desc>Master luminance & RGB point curve with custom control nodes</desc>
+  <path d="M4 19.5C8.5 19 15.5 5 20 4.5" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" fill="none"/><circle cx="8" cy="15.5" r="2" fill="currentColor"/><circle cx="16" cy="8.5" r="2" fill="currentColor"/>
+</svg>

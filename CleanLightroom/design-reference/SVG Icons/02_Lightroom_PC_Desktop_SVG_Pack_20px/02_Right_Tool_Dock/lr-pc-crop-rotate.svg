@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_CropRotate_20_N" data-name="Crop & Geometry (C)" style="--iconPrimary: currentColor;">
+  <title>Crop & Geometry (C) (S2_Icon_CropRotate_20_N)</title>
+  <desc>Opens Crop, Straighten, Rotate, Flip, and Upright Geometry panel</desc>
+  <path d="M5.5 2.2v11.3a1 1 0 0 0 1 1h11.3M14.5 17.8V6.5a1 1 0 0 0-1-1H2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

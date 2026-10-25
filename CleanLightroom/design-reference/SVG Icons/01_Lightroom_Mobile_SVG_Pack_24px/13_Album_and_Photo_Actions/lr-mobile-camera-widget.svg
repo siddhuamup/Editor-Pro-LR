@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" id="S2_Icon_WidgetCamera_24_N" data-name="Mobile Camera Shortcut Widget" style="--iconPrimary: currentColor;">
+  <title>Mobile Camera Shortcut Widget (S2_Icon_WidgetCamera_24_N)</title>
+  <desc>Home screen quick-launch widget for Pro DNG, Selfie, or Last Edited</desc>
+  <rect x="3.5" y="3.5" width="17" height="17" rx="4" stroke="currentColor" stroke-width="1.75" fill="none"/><circle cx="12" cy="12.5" r="3.2" stroke="currentColor" stroke-width="1.65" fill="none"/><path d="M9.5 6.5h5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+</svg>

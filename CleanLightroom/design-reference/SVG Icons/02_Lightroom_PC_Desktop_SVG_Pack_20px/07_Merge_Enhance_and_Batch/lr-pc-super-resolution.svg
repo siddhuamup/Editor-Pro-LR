@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" id="S2_Icon_SuperResolution_20_N" data-name="Super Resolution (2x Enhance)" style="--iconPrimary: currentColor;">
+  <title>Super Resolution (2x Enhance) (S2_Icon_SuperResolution_20_N)</title>
+  <desc>Doubles horizontal and vertical pixel resolution (4x total megapixels) via AI</desc>
+  <rect x="2.8" y="2.8" width="14.4" height="14.4" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M11 5.5h3.5V9M9 14.5H5.5V11M14.5 5.5L11 9M5.5 14.5L9 11" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
