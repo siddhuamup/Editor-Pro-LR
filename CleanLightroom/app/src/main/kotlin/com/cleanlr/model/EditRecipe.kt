@@ -117,7 +117,16 @@ data class CropAdjustments(
     val flipVertical: Boolean = false,
     val aspectRatio: String = "Free",       // "Free", "Original", "1:1", "4:5", "16:9", "9:16", "3:2", "4:3"
     val verticalPerspective: Float = 0.0f,  // -100f to +100f (Tip 413)
-    val horizontalPerspective: Float = 0.0f // -100f to +100f (Tip 413)
+    val horizontalPerspective: Float = 0.0f, // -100f to +100f (Tip 413)
+    val isExpandEnabled: Boolean = false,
+    val constrainCrop: Boolean = false,
+    val uprightMode: String = "Auto",
+    val distortion: Float = 0.0f,
+    val geometryRotate: Float = 0.0f,
+    val geometryAspect: Float = 0.0f,
+    val geometryScale: Float = 100.0f,
+    val geometryXOffset: Float = 0.0f,
+    val geometryYOffset: Float = 0.0f
 )
 
 @Serializable

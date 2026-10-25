@@ -23,7 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.res.painterResource
 import com.cleanlr.R
@@ -206,7 +206,7 @@ fun LightroomLibraryScreen(
                         }
                     }
                     IconButton(onClick = { showViewOptionsSheet = true }) {
-                        Icon(painter = painterResource(R.drawable.ic_lr_more_menu), contentDescription = "View options and more", tint = Color.White, modifier = Modifier.size(22.dp))
+                        Icon(Icons.Default.MoreVert, contentDescription = "View options and more", tint = Color.White)
                     }
                 }
 
@@ -649,8 +649,8 @@ private fun LibraryNavigationDrawerContent(
 
         HorizontalDivider(color = Color(0xFF2C2C2C))
 
-        // Navigation Items
-        DrawerItem(icon = Icons.Default.AccountCircle, label = "Account", onClick = onCloseDrawer)
+        // Navigation Items (Reference Screenshot 2)
+        DrawerItem(icon = Icons.Default.Person, label = "Account", onClick = onCloseDrawer)
         DrawerItem(
             painter = painterResource(R.drawable.ic_lr_star_filled),
             label = "Premium Features",
@@ -660,15 +660,15 @@ private fun LibraryNavigationDrawerContent(
         )
         DrawerItem(icon = Icons.Default.Science, label = "Early access", onClick = onCloseDrawer)
         DrawerItem(icon = Icons.Default.Settings, label = "Preferences", onClick = onCloseDrawer)
-        DrawerItem(icon = Icons.Default.NewReleases, label = "What's New", onClick = onCloseDrawer)
-        DrawerItem(painter = painterResource(R.drawable.ic_lr_info_rating_overlay), label = "About CleanLightroom", onClick = onCloseDrawer)
-        DrawerItem(painter = painterResource(R.drawable.ic_lr_store_locally_offline), label = "Local storage", onClick = onCloseDrawer)
-        DrawerItem(painter = painterResource(R.drawable.ic_lr_context_help), label = "Help & Support", onClick = onCloseDrawer)
-        DrawerItem(icon = Icons.Default.ThumbUp, label = "Rate CleanLightroom", onClick = onCloseDrawer)
+        DrawerItem(icon = Icons.Default.Campaign, label = "What's New", onClick = onCloseDrawer)
+        DrawerItem(painter = painterResource(R.drawable.ic_lr_mobile_badge), label = "About Lightroom", onClick = onCloseDrawer)
+        DrawerItem(icon = Icons.Default.PhoneAndroid, label = "Local storage", onClick = onCloseDrawer)
+        DrawerItem(icon = Icons.AutoMirrored.Filled.HelpOutline, label = "Help & Support", onClick = onCloseDrawer)
+        DrawerItem(icon = Icons.Default.Star, tint = Color(0xFFFFB300), label = "Rate Lightroom", onClick = onCloseDrawer)
 
         HorizontalDivider(color = Color(0xFF2C2C2C), modifier = Modifier.padding(vertical = 8.dp))
 
-        // Social Icons Row (Screenshot 2)
+        // Social Icons Row (Screenshot 2: Facebook, Instagram, X)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -676,10 +676,9 @@ private fun LibraryNavigationDrawerContent(
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(painter = painterResource(R.drawable.ic_lr_share_export), contentDescription = "Share", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
-            Icon(painter = painterResource(R.drawable.ic_lr_community_tab), contentDescription = "Web", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
-            Icon(painter = painterResource(R.drawable.ic_lr_learn_tab), contentDescription = "Video", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
-            Icon(painter = painterResource(R.drawable.ic_lr_shared_tab), contentDescription = "Forum", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
+            Icon(painter = painterResource(R.drawable.ic_lr_social_facebook), contentDescription = "Facebook", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
+            Icon(painter = painterResource(R.drawable.ic_lr_social_instagram), contentDescription = "Instagram", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
+            Icon(painter = painterResource(R.drawable.ic_lr_social_x), contentDescription = "X", tint = Color(0xFF888888), modifier = Modifier.size(18.dp))
         }
 
         Text(

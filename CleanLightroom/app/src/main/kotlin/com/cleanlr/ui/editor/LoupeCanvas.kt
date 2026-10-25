@@ -277,6 +277,7 @@ fun LoupeCanvas(
     onNextPhoto: (() -> Unit)? = null,
     onPrevPhoto: (() -> Unit)? = null,
     isCropActive: Boolean = false,
+    isExpandEnabled: Boolean = false,
     isCurveActive: Boolean = false,
     curvePoints: List<CurvePoint> = emptyList(),
     curveChannelColor: Color = Color.White,
@@ -582,7 +583,7 @@ fun LoupeCanvas(
         // AUTHENTIC CROP OVERLAY BRACKETS & TABS (Screenshot 083306)
         // ════════════════════════════════════════════════════
         if (isCropActive) {
-            CropOverlayBrackets()
+            CropOverlayBrackets(isExpandEnabled = isExpandEnabled)
         }
 
         // ════════════════════════════════════════════════════
@@ -1076,73 +1077,105 @@ fun LoupeCanvas(
  */
 @Composable
 private fun CropOverlayBrackets(
+    isExpandEnabled: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Canvas(modifier = modifier.fillMaxSize()) {
-        val w = size.width
-        val h = size.height
+    Box(modifier = modifier.fillMaxSize()) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
 
-        val padX = 20.dp.toPx()
-        val padY = 20.dp.toPx()
-        val cropLeft = padX
-        val cropTop = padY
-        val cropRight = w - padX
-        val cropBottom = h - padY
-        val cropW = cropRight - cropLeft
-        val cropH = cropBottom - cropTop
+            val padX = 20.dp.toPx()
+            val padY = 20.dp.toPx()
+            val cropLeft = padX
+            val cropTop = padY
+            val cropRight = w - padX
+            val cropBottom = h - padY
+            val cropW = cropRight - cropLeft
+            val cropH = cropBottom - cropTop
 
-        // Dim letterbox outside crop area
-        val scrimColor = Color.Black.copy(alpha = 0.45f)
-        if (cropLeft > 0f) drawRect(scrimColor, Offset(0f, 0f), Size(cropLeft, h))
-        if (cropRight < w) drawRect(scrimColor, Offset(cropRight, 0f), Size(w - cropRight, h))
-        if (cropTop > 0f) drawRect(scrimColor, Offset(cropLeft, 0f), Size(cropW, cropTop))
-        if (cropBottom < h) drawRect(scrimColor, Offset(cropLeft, cropBottom), Size(cropW, h - cropBottom))
+            // Dim letterbox outside crop area
+            val scrimColor = Color.Black.copy(alpha = if (isExpandEnabled) 0.35f else 0.45f)
+            if (cropLeft > 0f) drawRect(scrimColor, Offset(0f, 0f), Size(cropLeft, h))
+            if (cropRight < w) drawRect(scrimColor, Offset(cropRight, 0f), Size(w - cropRight, h))
+            if (cropTop > 0f) drawRect(scrimColor, Offset(cropLeft, 0f), Size(cropW, cropTop))
+            if (cropBottom < h) drawRect(scrimColor, Offset(cropLeft, cropBottom), Size(cropW, h - cropBottom))
 
-        // Subtle Rule-of-Thirds Grid inside crop
-        val gridColor = Color.White.copy(alpha = 0.22f)
-        val gridStroke = 1.dp.toPx()
-        drawLine(gridColor, Offset(cropLeft + cropW / 3f, cropTop), Offset(cropLeft + cropW / 3f, cropBottom), gridStroke)
-        drawLine(gridColor, Offset(cropLeft + 2 * cropW / 3f, cropTop), Offset(cropLeft + 2 * cropW / 3f, cropBottom), gridStroke)
-        drawLine(gridColor, Offset(cropLeft, cropTop + cropH / 3f), Offset(cropRight, cropTop + cropH / 3f), gridStroke)
-        drawLine(gridColor, Offset(cropLeft, cropTop + 2 * cropH / 3f), Offset(cropRight, cropTop + 2 * cropH / 3f), gridStroke)
+            // Subtle Rule-of-Thirds Grid inside crop
+            val gridColor = Color.White.copy(alpha = 0.22f)
+            val gridStroke = 1.dp.toPx()
+            drawLine(gridColor, Offset(cropLeft + cropW / 3f, cropTop), Offset(cropLeft + cropW / 3f, cropBottom), gridStroke)
+            drawLine(gridColor, Offset(cropLeft + 2 * cropW / 3f, cropTop), Offset(cropLeft + 2 * cropW / 3f, cropBottom), gridStroke)
+            drawLine(gridColor, Offset(cropLeft, cropTop + cropH / 3f), Offset(cropRight, cropTop + cropH / 3f), gridStroke)
+            drawLine(gridColor, Offset(cropLeft, cropTop + 2 * cropH / 3f), Offset(cropRight, cropTop + 2 * cropH / 3f), gridStroke)
 
-        // Thin outer boundary line
-        drawRect(Color.White.copy(alpha = 0.45f), Offset(cropLeft, cropTop), Size(cropW, cropH), style = Stroke(1.dp.toPx()))
+            // Outer boundary line
+            drawRect(
+                if (isExpandEnabled) Color(0xFF1686FF).copy(alpha = 0.7f) else Color.White.copy(alpha = 0.45f),
+                Offset(cropLeft, cropTop),
+                Size(cropW, cropH),
+                style = Stroke(1.dp.toPx())
+            )
 
-        // 4 Corner Brackets (24dp length, 3.5dp stroke, Color.White)
-        val bracketLen = 24.dp.toPx()
-        val bracketStroke = 3.5.dp.toPx()
-        val bracketColor = Color.White
+            // 4 Corner Brackets (24dp length, 3.5dp stroke, Color.White)
+            val bracketLen = 24.dp.toPx()
+            val bracketStroke = 3.5.dp.toPx()
+            val bracketColor = Color.White
 
-        // Top-Left: ┌
-        drawLine(bracketColor, Offset(cropLeft, cropTop), Offset(cropLeft + bracketLen, cropTop), bracketStroke)
-        drawLine(bracketColor, Offset(cropLeft, cropTop), Offset(cropLeft, cropTop + bracketLen), bracketStroke)
+            // Top-Left: ┌
+            drawLine(bracketColor, Offset(cropLeft, cropTop), Offset(cropLeft + bracketLen, cropTop), bracketStroke)
+            drawLine(bracketColor, Offset(cropLeft, cropTop), Offset(cropLeft, cropTop + bracketLen), bracketStroke)
 
-        // Top-Right: ┐
-        drawLine(bracketColor, Offset(cropRight - bracketLen, cropTop), Offset(cropRight, cropTop), bracketStroke)
-        drawLine(bracketColor, Offset(cropRight, cropTop), Offset(cropRight, cropTop + bracketLen), bracketStroke)
+            // Top-Right: ┐
+            drawLine(bracketColor, Offset(cropRight - bracketLen, cropTop), Offset(cropRight, cropTop), bracketStroke)
+            drawLine(bracketColor, Offset(cropRight, cropTop), Offset(cropRight, cropTop + bracketLen), bracketStroke)
 
-        // Bottom-Left: └
-        drawLine(bracketColor, Offset(cropLeft, cropBottom), Offset(cropLeft + bracketLen, cropBottom), bracketStroke)
-        drawLine(bracketColor, Offset(cropLeft, cropBottom - bracketLen), Offset(cropLeft, cropBottom), bracketStroke)
+            // Bottom-Left: └
+            drawLine(bracketColor, Offset(cropLeft, cropBottom), Offset(cropLeft + bracketLen, cropBottom), bracketStroke)
+            drawLine(bracketColor, Offset(cropLeft, cropBottom - bracketLen), Offset(cropLeft, cropBottom), bracketStroke)
 
-        // Bottom-Right: ┘
-        drawLine(bracketColor, Offset(cropRight - bracketLen, cropBottom), Offset(cropRight, cropBottom), bracketStroke)
-        drawLine(bracketColor, Offset(cropRight, cropBottom - bracketLen), Offset(cropRight, cropBottom), bracketStroke)
+            // Bottom-Right: ┘
+            drawLine(bracketColor, Offset(cropRight - bracketLen, cropBottom), Offset(cropRight, cropBottom), bracketStroke)
+            drawLine(bracketColor, Offset(cropRight, cropBottom - bracketLen), Offset(cropRight, cropBottom), bracketStroke)
 
-        // 4 Center Edge Tabs (16dp length, 3.5dp stroke)
-        val tabLen = 16.dp.toPx()
-        val midX = cropLeft + cropW / 2f
-        val midY = cropTop + cropH / 2f
+            // 4 Center Edge Tabs (16dp length, 3.5dp stroke)
+            val tabLen = 16.dp.toPx()
+            val midX = cropLeft + cropW / 2f
+            val midY = cropTop + cropH / 2f
 
-        // Top center ─
-        drawLine(bracketColor, Offset(midX - tabLen / 2f, cropTop), Offset(midX + tabLen / 2f, cropTop), bracketStroke)
-        // Bottom center ─
-        drawLine(bracketColor, Offset(midX - tabLen / 2f, cropBottom), Offset(midX + tabLen / 2f, cropBottom), bracketStroke)
-        // Left center │
-        drawLine(bracketColor, Offset(cropLeft, midY - tabLen / 2f), Offset(cropLeft, midY + tabLen / 2f), bracketStroke)
-        // Right center │
-        drawLine(bracketColor, Offset(cropRight, midY - tabLen / 2f), Offset(cropRight, midY + tabLen / 2f), bracketStroke)
+            // Top center ─
+            drawLine(bracketColor, Offset(midX - tabLen / 2f, cropTop), Offset(midX + tabLen / 2f, cropTop), bracketStroke)
+            // Bottom center ─
+            drawLine(bracketColor, Offset(midX - tabLen / 2f, cropBottom), Offset(midX + tabLen / 2f, cropBottom), bracketStroke)
+            // Left center │
+            drawLine(bracketColor, Offset(cropLeft, midY - tabLen / 2f), Offset(cropLeft, midY + tabLen / 2f), bracketStroke)
+            // Right center │
+            drawLine(bracketColor, Offset(cropRight, midY - tabLen / 2f), Offset(cropRight, midY + tabLen / 2f), bracketStroke)
+        }
+
+        if (isExpandEnabled) {
+            Surface(
+                color = Color(0xDD1E1E1E),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color(0xFF1686FF)),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 28.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "✨ Generative Expand",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
     }
 }
 

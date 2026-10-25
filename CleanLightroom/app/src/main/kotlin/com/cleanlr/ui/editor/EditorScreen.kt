@@ -33,12 +33,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.CompareArrows
-import androidx.compose.material.icons.automirrored.filled.Redo
-import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.res.painterResource
 import com.cleanlr.R
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.ui.draw.scale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -272,7 +272,7 @@ fun EditorScreen(
                         navigationIcon = {
                             IconButton(onClick = { onBack?.invoke() }) {
                                 Icon(
-                                    painter = painterResource(R.drawable.ic_lr_back_chevron),
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Back to library",
                                     tint = SpectrumTextPrimary
                                 )
@@ -379,20 +379,20 @@ fun EditorScreen(
                             }
                         }
 
-                        // Share / Export Icon (Screenshots 4, 6)
+                        // Share / Export Icon (Screenshots 4, 6: standard Android share icon)
                         IconButton(onClick = { showShareSheet = true }) {
                             Icon(
-                                painter = painterResource(R.drawable.ic_lr_share_export),
+                                imageVector = Icons.Default.Share,
                                 contentDescription = "Share and Export",
                                 tint = SpectrumTextPrimary
                             )
                         }
 
-                        // 3-dots Overflow Menu (Screenshots 4, 5)
+                        // 3-dots Overflow Menu (Screenshots 4, 5: 3 vertical dots)
                         Box {
                             IconButton(onClick = { showEditorOverflowMenu = true }) {
                                 Icon(
-                                    painter = painterResource(R.drawable.ic_lr_more_menu),
+                                    imageVector = Icons.Default.MoreVert,
                                     contentDescription = "More options",
                                     tint = SpectrumTextPrimary
                                 )
@@ -609,6 +609,7 @@ fun EditorScreen(
                     showGrid = showGrid,
                     aspectRatioGuide = aspectRatioGuide,
                     isCropActive = (selectedMobileTool == "Crop" || isCropActive),
+                    isExpandEnabled = recipe.crop.isExpandEnabled,
                     isCurveActive = (activeTab == EditorToolTab.CURVES),
                     curvePoints = when (selectedCurveChannel) {
                         com.cleanlr.ui.components.CurveChannel.RGB -> recipe.curves.composite
@@ -825,7 +826,32 @@ fun EditorScreen(
                             onFlip = { viewModel.flipCrop(it) },
                             onStraighten = { viewModel.setStraightenAngle(it) },
                             aspectRatioGuide = aspectRatioGuide,
-                            onAspectRatioSelected = { viewModel.setAspectRatioGuide(it) }
+                            onAspectRatioSelected = { viewModel.setAspectRatioGuide(it) },
+                            onResetCrop = { viewModel.resetCrop() },
+                            isExpandEnabled = recipe.crop.isExpandEnabled,
+                            onExpandToggled = { viewModel.setExpandEnabled(it) },
+                            constrainCrop = recipe.crop.constrainCrop,
+                            onConstrainCropToggled = { viewModel.setConstrainCrop(it) },
+                            uprightMode = recipe.crop.uprightMode,
+                            onUprightModeSelected = { viewModel.setUprightMode(it) },
+                            distortion = recipe.crop.distortion,
+                            onDistortionChanged = { viewModel.setDistortion(it) },
+                            vertical = recipe.crop.verticalPerspective,
+                            onVerticalChanged = { viewModel.setVerticalPerspective(it) },
+                            horizontal = recipe.crop.horizontalPerspective,
+                            onHorizontalChanged = { viewModel.setHorizontalPerspective(it) },
+                            rotate = recipe.crop.geometryRotate,
+                            onRotateChanged = { viewModel.setGeometryRotate(it) },
+                            aspect = recipe.crop.geometryAspect,
+                            onAspectChanged = { viewModel.setGeometryAspect(it) },
+                            scale = recipe.crop.geometryScale,
+                            onScaleChanged = { viewModel.setGeometryScale(it) },
+                            xOffset = recipe.crop.geometryXOffset,
+                            onXOffsetChanged = { viewModel.setGeometryXOffset(it) },
+                            yOffset = recipe.crop.geometryYOffset,
+                            onYOffsetChanged = { viewModel.setGeometryYOffset(it) },
+                            onTouchStart = { viewModel.onSliderTouchStart() },
+                            onTouchEnd = { viewModel.onSliderTouchEnd(it) }
                         )
                         selectedMobileTool == "Remove" -> RemoveToolPanel(
                             brushSize = brushSize,
@@ -1132,12 +1158,12 @@ fun EditorScreen(
                                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Canvas(modifier = Modifier.size(14.dp)) {
-                                                    val r = 2.dp.toPx()
-                                                    drawCircle(Color.White, radius = r, center = Offset(size.width * 0.5f, size.height * 0.25f))
-                                                    drawCircle(Color.White, radius = r, center = Offset(size.width * 0.25f, size.height * 0.75f))
-                                                    drawCircle(Color.White, radius = r, center = Offset(size.width * 0.75f, size.height * 0.75f))
-                                                }
+                                                Icon(
+                                                    painter = painterResource(R.drawable.ic_lr_cg_3way_wheels),
+                                                    contentDescription = "Color Grading",
+                                                    tint = SpectrumTextPrimary,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
                                                 Spacer(modifier = Modifier.width(6.dp))
                                                 Text(
                                                     text = "Grading",
@@ -2519,13 +2545,13 @@ fun EditorScreen(
                                     .background(Color(0xFF2C2C2C)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(painter = painterResource(R.drawable.ic_lr_share_export), contentDescription = "Share", tint = Color.White, modifier = Modifier.size(24.dp))
+                                Icon(imageVector = Icons.Default.Share, contentDescription = "Share", tint = Color.White, modifier = Modifier.size(24.dp))
                             }
                             Spacer(Modifier.height(8.dp))
                             Text("Share", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         }
 
-                        // Export as... circular button
+                        // Export as... circular button (Screenshot 6)
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
@@ -2542,7 +2568,7 @@ fun EditorScreen(
                                     .background(Color(0xFF2C2C2C)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(painter = painterResource(R.drawable.ic_lr_save_to_device), contentDescription = "Export as...", tint = Color.White, modifier = Modifier.size(24.dp))
+                                Icon(painter = painterResource(R.drawable.ic_lr_share_export), contentDescription = "Export as...", tint = Color.White, modifier = Modifier.size(24.dp))
                             }
                             Spacer(Modifier.height(8.dp))
                             Text("Export as...", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
@@ -2572,7 +2598,7 @@ fun EditorScreen(
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(painter = painterResource(R.drawable.ic_lr_more_menu), contentDescription = "Export settings", tint = Color(0xFF888888), modifier = Modifier.size(18.dp))
+                            Icon(imageVector = Icons.Default.Settings, contentDescription = "Export settings", tint = Color(0xFF888888), modifier = Modifier.size(18.dp))
                         }
                     }
 
@@ -2583,7 +2609,7 @@ fun EditorScreen(
                             .padding(vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(painter = painterResource(R.drawable.ic_lr_shared_tab), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        Icon(imageVector = Icons.Default.Link, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(16.dp))
                         Text("Get link", color = Color.White, fontSize = 15.sp)
                     }
@@ -2715,10 +2741,10 @@ private fun DedicatedCommitBottomBar(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF1A1A1A))
+            .background(Color(0xFF121212))
             .navigationBarsPadding()
     ) {
-        HorizontalDivider(color = Color(0xFF2A2A2A))
+        HorizontalDivider(color = Color(0xFF222222))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -2745,7 +2771,7 @@ private fun DedicatedCommitBottomBar(
                 Icon(
                     painter = painterResource(R.drawable.ic_lr_select_checkmark),
                     contentDescription = "Apply",
-                    tint = Color(0xFF1686FF),
+                    tint = Color.White,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -3057,15 +3083,40 @@ private fun CropAndExpandPanel(
     onFlip: (Boolean) -> Unit,
     onStraighten: (Float) -> Unit,
     aspectRatioGuide: String?,
-    onAspectRatioSelected: (String?) -> Unit
+    onAspectRatioSelected: (String?) -> Unit,
+    onResetCrop: () -> Unit = {},
+    isExpandEnabled: Boolean = false,
+    onExpandToggled: (Boolean) -> Unit = {},
+    constrainCrop: Boolean = false,
+    onConstrainCropToggled: (Boolean) -> Unit = {},
+    uprightMode: String = "Auto",
+    onUprightModeSelected: (String) -> Unit = {},
+    distortion: Float = 0f,
+    onDistortionChanged: (Float) -> Unit = {},
+    vertical: Float = 0f,
+    onVerticalChanged: (Float) -> Unit = {},
+    horizontal: Float = 0f,
+    onHorizontalChanged: (Float) -> Unit = {},
+    rotate: Float = 0f,
+    onRotateChanged: (Float) -> Unit = {},
+    aspect: Float = 0f,
+    onAspectChanged: (Float) -> Unit = {},
+    scale: Float = 100f,
+    onScaleChanged: (Float) -> Unit = {},
+    xOffset: Float = 0f,
+    onXOffsetChanged: (Float) -> Unit = {},
+    yOffset: Float = 0f,
+    onYOffsetChanged: (Float) -> Unit = {},
+    onTouchStart: () -> Unit = {},
+    onTouchEnd: (String) -> Unit = {}
 ) {
     val view = LocalView.current
     var page by remember { mutableStateOf("Aspect") }
-    var geometryMode by remember { mutableStateOf("Auto") }
+    var selectedAspectCategory by remember { mutableStateOf(if (aspectRatioGuide == null) "Original" else "Ratios") }
     var isAspectLocked by remember { mutableStateOf(false) }
     var showOverflowFlip by remember { mutableStateOf(false) }
 
-    val ratios = listOf(
+    val standardRatios = listOf(
         "Free" to null,
         "Original" to "Original",
         "1:1" to "1:1",
@@ -3073,42 +3124,68 @@ private fun CropAndExpandPanel(
         "16:9" to "16:9",
         "9:16" to "9:16",
         "3:2" to "3:2",
-        "4:3" to "4:3"
+        "4:3" to "4:3",
+        "2:3" to "2:3",
+        "5:7" to "5:7",
+        "1:2" to "1:2"
     )
-    val geometryModes = listOf("Auto", "Level", "Vertical", "Full", "Guided")
 
-    Column(modifier = Modifier.fillMaxWidth().background(SpectrumSurface)) {
-        // Curved Straighten Dial Arc (Screenshot 11)
+    val instagramRatios = listOf(
+        "1:1 Square" to "1:1",
+        "4:5 Portrait" to "4:5",
+        "16:9 Landscape" to "16:9",
+        "9:16 Reel" to "9:16"
+    )
+
+    val uprightModes = listOf(
+        Triple("Auto", R.drawable.ic_lr_upright_auto, "Auto"),
+        Triple("Level", R.drawable.ic_lr_upright_level, "Level"),
+        Triple("Vertical", R.drawable.ic_lr_upright_vertical, "Vertical"),
+        Triple("Full", R.drawable.ic_lr_upright_full, "Full"),
+        Triple("Guided", R.drawable.ic_lr_upright_guided, "Guided")
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SpectrumSurface)
+    ) {
+        // Curved Straighten Dial Arc (Screenshot 083306)
         CurvedStraightenDial(
             angle = crop.straightenAngle,
             onAngleChange = onStraighten
         )
 
-        // Control Row: Floating Circular Action Buttons (Screenshot 083306)
+        // Control Row: 4 Floating Circular Action Buttons (Screenshot 083306)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 6.dp),
+                .padding(horizontal = 20.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(
                     shape = CircleShape,
-                    color = SpectrumElevated,
+                    color = Color(0xFF262626),
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(42.dp)
                         .clickable { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Fullscreen, contentDescription = "Expand / Fullscreen preview", tint = Color.White, modifier = Modifier.size(20.dp))
+                        Icon(
+                            imageVector = Icons.Default.Fullscreen,
+                            contentDescription = "Expand / Fullscreen preview",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
                 Surface(
                     shape = CircleShape,
-                    color = SpectrumElevated,
+                    color = Color(0xFF262626),
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(42.dp)
                         .clickable {
                             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             isAspectLocked = !isAspectLocked
@@ -3116,43 +3193,53 @@ private fun CropAndExpandPanel(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            if (isAspectLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                            imageVector = if (isAspectLocked) Icons.Default.Lock else Icons.Default.LockOpen,
                             contentDescription = "Aspect lock",
-                            tint = if (isAspectLocked) SpectrumBlue else Color.White,
-                            modifier = Modifier.size(18.dp)
+                            tint = if (isAspectLocked) Color(0xFF1686FF) else Color.White,
+                            modifier = Modifier.size(19.dp)
                         )
                     }
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(
                     shape = CircleShape,
-                    color = SpectrumElevated,
+                    color = Color(0xFF262626),
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(42.dp)
                         .clickable {
                             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             onRotate(true)
                         }
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(painter = painterResource(R.drawable.ic_lr_rotate_right), contentDescription = "Rotate 90 degrees", tint = Color.White, modifier = Modifier.size(20.dp))
+                        Icon(
+                            painter = painterResource(R.drawable.ic_lr_rotate_right),
+                            contentDescription = "Rotate 90 degrees",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
                 Box {
                     Surface(
                         shape = CircleShape,
-                        color = SpectrumElevated,
+                        color = Color(0xFF262626),
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(42.dp)
                             .clickable {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                 showOverflowFlip = true
                             }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(painter = painterResource(R.drawable.ic_lr_more_menu), contentDescription = "More crop tools", tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(
+                                painter = painterResource(R.drawable.ic_lr_more_menu),
+                                contentDescription = "More crop tools",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                     DropdownMenu(
@@ -3167,68 +3254,489 @@ private fun CropAndExpandPanel(
                             text = { Text("Flip Vertical") },
                             onClick = { onFlip(false); showOverflowFlip = false }
                         )
+                        DropdownMenuItem(
+                            text = { Text("Reset Crop") },
+                            onClick = { onResetCrop(); showOverflowFlip = false }
+                        )
                     }
                 }
             }
         }
 
-        // Tabs: [Aspect, Geometry]
+        // Sub-tabs: Aspect | Geometry (Screenshot 083306 & 200441)
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp, bottom = 6.dp),
             horizontalArrangement = Arrangement.Center
         ) {
-            listOf("Aspect", "Geometry").forEach { item ->
+            listOf("Aspect", "Geometry").forEach { tabName ->
+                val isSelected = page == tabName
                 Column(
                     modifier = Modifier
-                        .clickable { page = item }
+                        .clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            page = tabName
+                        }
                         .padding(horizontal = 24.dp, vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(item, color = if (page == item) Color.White else SpectrumTextSecondary, fontSize = 14.sp)
-                    Spacer(Modifier.height(4.dp))
-                    Box(Modifier.width(60.dp).height(2.dp).background(if (page == item) Color.White else Color.Transparent))
+                    Text(
+                        text = tabName,
+                        color = if (isSelected) Color.White else Color(0xFF8E8E93),
+                        fontSize = 15.sp,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Box(
+                        Modifier
+                            .width(56.dp)
+                            .height(2.dp)
+                            .background(if (isSelected) Color.White else Color.Transparent)
+                    )
                 }
             }
         }
 
         if (page == "Aspect") {
+            // Horizontal row of Cards: Expand switch, Original, Ratios, Instagram, Tiktok (Screenshot 083306)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                ratios.forEach { (label, ratio) ->
-                    val selected = (ratio == null && aspectRatioGuide == null) || ratio == aspectRatioGuide
-                    Surface(
-                        color = if (selected) Color(0xFF1686FF) else Color(0xFF2C2C2C),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.clickable { onAspectRatioSelected(ratio) }
+                // 1. Expand Card with Switch toggle
+                Surface(
+                    color = if (isExpandEnabled) Color(0xFF2C2C2E) else Color.Transparent,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (isExpandEnabled) Color(0xFF1686FF) else Color(0xFF383838)),
+                    modifier = Modifier
+                        .width(66.dp)
+                        .height(72.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text(label, color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp))
+                        Switch(
+                            checked = isExpandEnabled,
+                            onCheckedChange = {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                onExpandToggled(it)
+                            },
+                            modifier = Modifier.scale(0.72f),
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF1686FF),
+                                uncheckedThumbColor = Color(0xFFAAAAAA),
+                                uncheckedTrackColor = Color(0xFF333333)
+                            )
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "Expand",
+                            color = if (isExpandEnabled) Color(0xFF1686FF) else Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // 2. Original Card
+                val isOriginalSelected = selectedAspectCategory == "Original"
+                Surface(
+                    color = if (isOriginalSelected) Color(0xFF2C2C2E) else Color.Transparent,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (isOriginalSelected) Color(0xFF555555) else Color(0xFF383838)),
+                    modifier = Modifier
+                        .width(66.dp)
+                        .height(72.dp)
+                        .clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            selectedAspectCategory = "Original"
+                            onAspectRatioSelected("Original")
+                        }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Image,
+                            contentDescription = "Original",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Original",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // 3. Ratios Card
+                val isRatiosSelected = selectedAspectCategory == "Ratios"
+                Surface(
+                    color = if (isRatiosSelected) Color(0xFF2C2C2E) else Color.Transparent,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (isRatiosSelected) Color(0xFF555555) else Color(0xFF383838)),
+                    modifier = Modifier
+                        .width(66.dp)
+                        .height(72.dp)
+                        .clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            selectedAspectCategory = "Ratios"
+                        }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_lr_ratios),
+                            contentDescription = "Ratios",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Ratios",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // 4. Instagram Card
+                val isInstagramSelected = selectedAspectCategory == "Instagram"
+                Surface(
+                    color = if (isInstagramSelected) Color(0xFF2C2C2E) else Color.Transparent,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (isInstagramSelected) Color(0xFF555555) else Color(0xFF383838)),
+                    modifier = Modifier
+                        .width(66.dp)
+                        .height(72.dp)
+                        .clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            selectedAspectCategory = "Instagram"
+                        }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_lr_instagram),
+                            contentDescription = "Instagram",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Instagram",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // 5. Tiktok Card
+                val isTiktokSelected = selectedAspectCategory == "Tiktok"
+                Surface(
+                    color = if (isTiktokSelected) Color(0xFF2C2C2E) else Color.Transparent,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (isTiktokSelected) Color(0xFF555555) else Color(0xFF383838)),
+                    modifier = Modifier
+                        .width(66.dp)
+                        .height(72.dp)
+                        .clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            selectedAspectCategory = "Tiktok"
+                            onAspectRatioSelected("9:16")
+                        }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_lr_tiktok),
+                            contentDescription = "Tiktok",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Tiktok",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
             }
-        } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(7.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                geometryModes.forEach { mode ->
-                    val selected = geometryMode == mode
-                    Surface(
-                        color = if (selected) Color(0xFF1686FF) else Color(0xFF2C2C2C),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.clickable { geometryMode = mode }
-                    ) {
-                        Text(mode, color = Color.White, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp))
+
+            // Sub-ratios Row when Ratios or Instagram is selected
+            if (selectedAspectCategory == "Ratios") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    standardRatios.forEach { (label, ratio) ->
+                        val selected = (ratio == null && aspectRatioGuide == null) || ratio == aspectRatioGuide
+                        Surface(
+                            color = if (selected) Color(0xFF1686FF) else Color(0xFF262626),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                onAspectRatioSelected(ratio)
+                            }
+                        ) {
+                            Text(
+                                text = label,
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                            )
+                        }
                     }
                 }
+            } else if (selectedAspectCategory == "Instagram") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    instagramRatios.forEach { (label, ratio) ->
+                        val selected = ratio == aspectRatioGuide
+                        Surface(
+                            color = if (selected) Color(0xFF1686FF) else Color(0xFF262626),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                onAspectRatioSelected(ratio)
+                            }
+                        ) {
+                            Text(
+                                text = label,
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (isExpandEnabled) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Generative Expand extends your photo",
+                        color = Color(0xFFAAAAAA),
+                        fontSize = 11.sp
+                    )
+                }
+            }
+        } else {
+            // Geometry Tab Content (Screenshot 200441)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 12.dp)
+            ) {
+                // Upright Modes Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    uprightModes.forEach { (mode, iconRes, label) ->
+                        val selected = uprightMode == mode
+                        Surface(
+                            color = if (selected) Color(0xFF2C2C2E) else Color(0xFF1A1A1A),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, if (selected) Color.White else Color(0xFF383838)),
+                            modifier = Modifier
+                                .size(58.dp)
+                                .clickable {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    onUprightModeSelected(mode)
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(iconRes),
+                                    contentDescription = label,
+                                    tint = if (selected) Color.White else Color(0xFFAAAAAA),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.height(3.dp))
+                                Text(
+                                    text = label,
+                                    color = if (selected) Color.White else Color(0xFFAAAAAA),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Constrain Crop Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Constrain Crop",
+                        color = Color.White,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                    Switch(
+                        checked = constrainCrop,
+                        onCheckedChange = {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            onConstrainCropToggled(it)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFF1686FF),
+                            uncheckedThumbColor = Color(0xFFAAAAAA),
+                            uncheckedTrackColor = Color(0xFF333333)
+                        )
+                    )
+                }
+
+                // Manual Transforms Section Header
+                Text(
+                    text = "Manual Transforms",
+                    color = Color(0xFFAAAAAA),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 16.dp, top = 6.dp, bottom = 4.dp)
+                )
+
+                // Manual Transform Sliders
+                RampedSlider(
+                    label = "Distortion",
+                    value = distortion,
+                    minVal = -100f,
+                    maxVal = 100f,
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = onDistortionChanged,
+                    onValueChangeEnd = { onTouchEnd("Distortion") }
+                )
+                RampedSlider(
+                    label = "Vertical",
+                    value = vertical,
+                    minVal = -100f,
+                    maxVal = 100f,
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = onVerticalChanged,
+                    onValueChangeEnd = { onTouchEnd("Vertical") }
+                )
+                RampedSlider(
+                    label = "Horizontal",
+                    value = horizontal,
+                    minVal = -100f,
+                    maxVal = 100f,
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = onHorizontalChanged,
+                    onValueChangeEnd = { onTouchEnd("Horizontal") }
+                )
+                RampedSlider(
+                    label = "Rotate",
+                    value = rotate,
+                    minVal = -45f,
+                    maxVal = 45f,
+                    formatPattern = "%.1f",
+                    unitSuffix = "°",
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = onRotateChanged,
+                    onValueChangeEnd = { onTouchEnd("Rotate") }
+                )
+                RampedSlider(
+                    label = "Aspect",
+                    value = aspect,
+                    minVal = -100f,
+                    maxVal = 100f,
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = onAspectChanged,
+                    onValueChangeEnd = { onTouchEnd("Aspect") }
+                )
+                RampedSlider(
+                    label = "Scale",
+                    value = scale,
+                    minVal = 50f,
+                    maxVal = 150f,
+                    unitSuffix = "%",
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = onScaleChanged,
+                    onValueChangeEnd = { onTouchEnd("Scale") }
+                )
+                RampedSlider(
+                    label = "X Offset",
+                    value = xOffset,
+                    minVal = -100f,
+                    maxVal = 100f,
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = onXOffsetChanged,
+                    onValueChangeEnd = { onTouchEnd("X Offset") }
+                )
+                RampedSlider(
+                    label = "Y Offset",
+                    value = yOffset,
+                    minVal = -100f,
+                    maxVal = 100f,
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = onYOffsetChanged,
+                    onValueChangeEnd = { onTouchEnd("Y Offset") }
+                )
             }
         }
     }

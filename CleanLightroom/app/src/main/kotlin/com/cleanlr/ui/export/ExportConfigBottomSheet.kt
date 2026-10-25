@@ -82,7 +82,7 @@ fun ExportConfigBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.ic_lr_slider_exposure),
+                        painter = painterResource(R.drawable.ic_lr_share_export),
                         contentDescription = null,
                         tint = SpectrumBlue,
                         modifier = Modifier.size(22.dp)

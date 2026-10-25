@@ -849,6 +849,58 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         }
     }
 
+    fun setExpandEnabled(enabled: Boolean) {
+        updateRecipe(if (enabled) "Enable Expand" else "Disable Expand") {
+            it.copy(crop = it.crop.copy(isExpandEnabled = enabled))
+        }
+    }
+
+    fun setConstrainCrop(constrain: Boolean) {
+        updateRecipe("Constrain Crop: $constrain") {
+            it.copy(crop = it.crop.copy(constrainCrop = constrain))
+        }
+    }
+
+    fun setUprightMode(mode: String) {
+        updateRecipe("Upright: $mode") {
+            it.copy(crop = it.crop.copy(uprightMode = mode))
+        }
+    }
+
+    fun setDistortion(distortion: Float) {
+        updateRecipe {
+            it.copy(crop = it.crop.copy(distortion = distortion))
+        }
+    }
+
+    fun setVerticalPerspective(vert: Float) {
+        updateRecipe { it.copy(crop = it.crop.copy(verticalPerspective = vert)) }
+    }
+
+    fun setHorizontalPerspective(horiz: Float) {
+        updateRecipe { it.copy(crop = it.crop.copy(horizontalPerspective = horiz)) }
+    }
+
+    fun setGeometryRotate(rot: Float) {
+        updateRecipe { it.copy(crop = it.crop.copy(geometryRotate = rot)) }
+    }
+
+    fun setGeometryAspect(aspect: Float) {
+        updateRecipe { it.copy(crop = it.crop.copy(geometryAspect = aspect)) }
+    }
+
+    fun setGeometryScale(scale: Float) {
+        updateRecipe { it.copy(crop = it.crop.copy(geometryScale = scale)) }
+    }
+
+    fun setGeometryXOffset(xOff: Float) {
+        updateRecipe { it.copy(crop = it.crop.copy(geometryXOffset = xOff)) }
+    }
+
+    fun setGeometryYOffset(yOff: Float) {
+        updateRecipe { it.copy(crop = it.crop.copy(geometryYOffset = yOff)) }
+    }
+
     override fun setActiveTool(tool: ActiveTool?) {
         _activeTool.value = tool
     }
