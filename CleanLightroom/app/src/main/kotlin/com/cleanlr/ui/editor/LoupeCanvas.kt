@@ -1101,15 +1101,7 @@ private fun CropOverlayBrackets(
             if (cropTop > 0f) drawRect(scrimColor, Offset(cropLeft, 0f), Size(cropW, cropTop))
             if (cropBottom < h) drawRect(scrimColor, Offset(cropLeft, cropBottom), Size(cropW, h - cropBottom))
 
-            // Subtle Rule-of-Thirds Grid inside crop
-            val gridColor = Color.White.copy(alpha = 0.22f)
-            val gridStroke = 1.dp.toPx()
-            drawLine(gridColor, Offset(cropLeft + cropW / 3f, cropTop), Offset(cropLeft + cropW / 3f, cropBottom), gridStroke)
-            drawLine(gridColor, Offset(cropLeft + 2 * cropW / 3f, cropTop), Offset(cropLeft + 2 * cropW / 3f, cropBottom), gridStroke)
-            drawLine(gridColor, Offset(cropLeft, cropTop + cropH / 3f), Offset(cropRight, cropTop + cropH / 3f), gridStroke)
-            drawLine(gridColor, Offset(cropLeft, cropTop + 2 * cropH / 3f), Offset(cropRight, cropTop + 2 * cropH / 3f), gridStroke)
-
-            // Outer boundary line
+            // Thin outer boundary line
             drawRect(
                 if (isExpandEnabled) Color(0xFF1686FF).copy(alpha = 0.7f) else Color.White.copy(alpha = 0.45f),
                 Offset(cropLeft, cropTop),

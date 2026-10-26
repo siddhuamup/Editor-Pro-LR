@@ -9,5 +9,5 @@ rea/
 *.png
 CleanLightroom/*.png
 CleanLightroom/dump.xml
-
+.tmp.driveupload
 
