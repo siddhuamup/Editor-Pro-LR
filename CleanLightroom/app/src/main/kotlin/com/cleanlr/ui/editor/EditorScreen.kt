@@ -761,7 +761,7 @@ fun EditorScreen(
                         } else {
                             when (panelSnapState) {
                                 PanelSnapState.COLLAPSED -> 0.dp
-                                PanelSnapState.COMPACT -> if (selectedMobileTool in listOf("Crop", "Presets")) 260.dp else 210.dp
+                                PanelSnapState.COMPACT -> if (selectedMobileTool == "Crop") 300.dp else if (selectedMobileTool == "Presets") 260.dp else 210.dp
                                 PanelSnapState.EXPANDED -> 380.dp
                             }
                         }
@@ -3166,7 +3166,7 @@ private fun CropAndExpandPanel(
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .background(SpectrumSurface)
     ) {
         // Curved Straighten Dial Arc (Screenshot 083306)
@@ -3578,6 +3578,7 @@ private fun CropAndExpandPanel(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(bottom = 12.dp)
             ) {
