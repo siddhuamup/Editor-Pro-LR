@@ -121,6 +121,23 @@ object MaskEvaluator {
                     GradientEvaluator.evaluateLinearGradient(skyMask, width, height)
                 }
             }
+            is SubMask.AIBackground -> {
+                if (sourceBitmap != null) {
+                    val subject = LiteRTSegmentationHelper.segmentTarget(sourceBitmap, LiteRTSegmentationHelper.TargetClass.SUBJECT, width, height)
+                    FloatArray(width * height) { i -> (1.0f - subject[i]).coerceIn(0.0f, 1.0f) }
+                } else {
+                    val centerMask = SubMask.RadialGradient(
+                        id = subMask.id,
+                        centerX = 0.5f,
+                        centerY = 0.55f,
+                        radiusX = 0.25f,
+                        radiusY = 0.35f,
+                        feather = 30f,
+                        isInverted = true
+                    )
+                    GradientEvaluator.evaluateRadialGradient(centerMask, width, height)
+                }
+            }
             is SubMask.ColorRange -> {
                 val out = FloatArray(width * height)
                 if (sourceBitmap != null) {

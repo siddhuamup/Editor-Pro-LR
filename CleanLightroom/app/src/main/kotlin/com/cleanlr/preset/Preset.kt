@@ -15,7 +15,8 @@ data class Preset(
     val name: String,
     val group: String,
     val recipe: EditRecipe,
-    val description: String = ""
+    val description: String = "",
+    val isCustom: Boolean = false
 )
 
 /**

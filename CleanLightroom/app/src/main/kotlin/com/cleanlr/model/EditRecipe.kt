@@ -168,6 +168,8 @@ data class EffectsAdjustments(
     val vignetteAmount: Float = 0.0f,   // -100f to +100f
     val vignetteMidpoint: Float = 50.0f,// 0f to 100f (50 default)
     val vignetteFeather: Float = 50.0f, // 0f to 100f (50 default)
+    val vignetteRoundness: Float = 0.0f,// -100f to +100f (0 default)
+    val vignetteHighlights: Float = 0.0f,// 0f to 100f (0 default)
     val grainAmount: Float = 0.0f,      // 0f to 100f
     val grainSize: Float = 25.0f,       // 0f to 100f (25 default)
     val grainRoughness: Float = 50.0f   // 0f to 100f (50 default)
@@ -189,7 +191,11 @@ data class DetailAdjustments(
     val sharpenDetail: Float = 25.0f,   // 0f to 100f (25 default)
     val sharpenMasking: Float = 0.0f,   // 0f to 100f (0 default)
     val luminanceNoise: Float = 0.0f,   // 0f to 100f (0 default)
+    val luminanceDetail: Float = 50.0f, // 0f to 100f (50 default)
+    val luminanceContrast: Float = 0.0f,// 0f to 100f (0 default)
     val colorNoise: Float = 25.0f,      // 0f to 100f (25 default)
+    val colorDetail: Float = 50.0f,     // 0f to 100f (50 default)
+    val colorSmoothness: Float = 50.0f, // 0f to 100f (50 default)
     // Backward compatibility aliases
     val masking: Float = sharpenMasking,
     val noiseReduction: Float = luminanceNoise,
@@ -340,6 +346,14 @@ sealed class SubMask {
 
     @Serializable
     data class AISky(
+        override val id: String,
+        override val isInverted: Boolean = false,
+        override val combineMode: MaskCombineMode = MaskCombineMode.ADD,
+        val maskAssetPath: String? = null
+    ) : SubMask()
+
+    @Serializable
+    data class AIBackground(
         override val id: String,
         override val isInverted: Boolean = false,
         override val combineMode: MaskCombineMode = MaskCombineMode.ADD,
