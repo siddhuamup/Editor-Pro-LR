@@ -677,8 +677,10 @@ fun CreateNewMaskBottomSheet(
     onDismissRequest: () -> Unit,
     onSelectSubMask: (SubMask) -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
+        sheetState = sheetState,
         containerColor = Color(0xFF1E1E1E),
         contentColor = Color.White,
         dragHandle = null,

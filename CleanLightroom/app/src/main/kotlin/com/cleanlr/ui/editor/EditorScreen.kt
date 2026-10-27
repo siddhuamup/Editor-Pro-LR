@@ -276,6 +276,64 @@ fun EditorScreen(
                             }
                         }
                     }
+                } else if (activeTab == EditorToolTab.PROFILES) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Transparent)
+                            .statusBarsPadding()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = { }, modifier = Modifier.size(36.dp)) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_lr_context_help),
+                                    contentDescription = "Help",
+                                    tint = Color.White.copy(alpha = 0.9f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                } else if (activeTab == EditorToolTab.BLUR) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Transparent)
+                            .statusBarsPadding()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = { }, modifier = Modifier.size(36.dp)) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_lr_context_help),
+                                    contentDescription = "Help",
+                                    tint = Color.White.copy(alpha = 0.9f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            IconButton(onClick = { viewModel.toggleComparingOriginal() }, modifier = Modifier.size(36.dp)) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_lr_compare_before_after),
+                                    contentDescription = "Compare original",
+                                    tint = if (isComparingOriginal) SpectrumBlue else Color.White.copy(alpha = 0.9f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
                 } else {
                     TopAppBar(
                         modifier = Modifier.height(50.dp),
@@ -3069,7 +3127,7 @@ private fun MobilePrimaryToolbar(
         "Actions" to R.drawable.ic_lr_quick_actions,
         "Presets" to R.drawable.ic_lr_presets,
         "Crop" to R.drawable.ic_lr_crop,
-        "Edit" to R.drawable.ic_lr_slider_exposure,
+        "Edit" to R.drawable.ic_lr_tune,
         "Masking" to R.drawable.ic_lr_masking,
         "Remove" to R.drawable.ic_lr_heal
     )
@@ -3128,7 +3186,7 @@ private fun MobilePrimaryToolbar(
         }
     } else {
         // Active Editing Docked Toolbar (Reference Screenshots 7, 8, 13, 20, 34, 35)
-        // Docked edge-to-edge, icon-only, active tool enclosed in vibrant blue rounded square
+        // Docked edge-to-edge, icon-only, active tool enclosed in vibrant blue rounded square with indicator dot
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -3139,7 +3197,7 @@ private fun MobilePrimaryToolbar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .height(60.dp)
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -3152,19 +3210,31 @@ private fun MobilePrimaryToolbar(
                         contentAlignment = Alignment.Center
                     ) {
                         if (active) {
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFF1686FF))
-                                    .clickable { onToolSelected(label) },
-                                contentAlignment = Alignment.Center
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
-                                Icon(
-                                    painter = painterResource(iconRes),
-                                    contentDescription = label,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color(0xFF1473E6))
+                                        .clickable { onToolSelected(label) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(iconRes),
+                                        contentDescription = label,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(3.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White)
                                 )
                             }
                         } else {
