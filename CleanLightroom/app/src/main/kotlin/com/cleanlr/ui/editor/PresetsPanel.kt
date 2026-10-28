@@ -88,14 +88,18 @@ fun PresetsPanel(
     ) {
         // 1. Sub-Tabs Header: Recommended | Premium | Yours (Screenshots 083251, 083253, 083256)
         if (openedCollection == null) {
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .background(Color(0xFF1E1E1E))
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     listOf("Recommended", "Premium", "Yours").forEach { tabName ->
                         val isSelected = activeSubTab == tabName
                         Column(
@@ -104,7 +108,7 @@ fun PresetsPanel(
                                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                     activeSubTab = tabName
                                 }
-                                .padding(vertical = 6.dp),
+                                .padding(top = 14.dp, bottom = 10.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
@@ -113,50 +117,18 @@ fun PresetsPanel(
                                 fontSize = 14.sp,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                             )
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.height(8.dp))
                             Box(
                                 Modifier
-                                    .width(if (tabName == "Recommended") 90.dp else if (tabName == "Premium") 60.dp else 45.dp)
+                                    .width(if (tabName == "Recommended") 95.dp else if (tabName == "Premium") 60.dp else 45.dp)
                                     .height(2.dp)
                                     .background(if (isSelected) Color.White else Color.Transparent)
                             )
                         }
                     }
                 }
-
-                // Action buttons: Save Preset (+) and Import XMP
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(
-                        onClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                            onSaveCurrentAsPreset()
-                        },
-                        modifier = Modifier.size(30.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_lr_create_preset),
-                            contentDescription = "Save Preset",
-                            tint = Color.White,
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                            onImportXmpPreset()
-                        },
-                        modifier = Modifier.size(30.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_lr_import_add),
-                            contentDescription = "Import XMP",
-                            tint = Color.White,
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                }
             }
-            HorizontalDivider(color = Color(0xFF262626), thickness = 1.dp)
+            HorizontalDivider(color = Color(0xFF2E2E2E), thickness = 1.dp)
         } else {
             // Collection Navigation Header
             Row(

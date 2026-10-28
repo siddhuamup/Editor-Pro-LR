@@ -351,19 +351,12 @@ fun EditorScreen(
                             containerColor = SpectrumSurface
                         ),
                     actions = {
-                        // Mask overlay toggle in Masking mode (Screenshot 34)
-                        if (selectedMobileTool == "Masking") {
-                            IconButton(onClick = { viewModel.toggleMaskOverlay() }) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_lr_mask_hide_eye),
-                                    contentDescription = "Toggle mask overlay",
-                                    tint = if (isMaskOverlayVisible) SpectrumBlue else SpectrumIconDisabled
-                                )
-                            }
-                        }
+                        val isPresetsOrActions = selectedMobileTool in listOf("Presets", "Actions")
+                        val isMasking = selectedMobileTool == "Masking"
+                        val isCurvesOrSubColor = activeTab == EditorToolTab.CURVES || (activeTab == EditorToolTab.COLOR && colorSubTab in listOf("MIXER", "GRADING"))
 
                         // HDR Mode Pill Badge (Screenshot 14)
-                        if (isHdrModeActive || recipe.isHdrEnabled) {
+                        if (!isPresetsOrActions && (isHdrModeActive || recipe.isHdrEnabled)) {
                             Surface(
                                 color = SpectrumBlue,
                                 shape = RoundedCornerShape(4.dp),
@@ -379,15 +372,15 @@ fun EditorScreen(
                             }
                         }
 
-                        // Undo with dropdown arrow & long-press history (Screenshots 14, 34)
-                        if (canUndo) {
+                        // Undo with dropdown arrow & long-press history (Screenshots 14, 34, 35)
+                        if (!isPresetsOrActions) {
                             Box {
                                 Row(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(4.dp))
                                         .pointerInput(canUndo) {
                                             detectTapGestures(
-                                                onTap = { viewModel.undo() },
+                                                onTap = { if (canUndo) viewModel.undo() },
                                                 onLongPress = {
                                                     view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                                                     showHistoryMenu = true
@@ -400,13 +393,13 @@ fun EditorScreen(
                                     Icon(
                                         painter = painterResource(R.drawable.ic_lr_undo),
                                         contentDescription = "Undo (Tap) / History (Long-Press)",
-                                        tint = SpectrumTextPrimary,
+                                        tint = if (canUndo) SpectrumTextPrimary else SpectrumIconDisabled,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Icon(
                                         imageVector = Icons.Default.ArrowDropDown,
                                         contentDescription = null,
-                                        tint = SpectrumTextPrimary,
+                                        tint = if (canUndo) SpectrumTextPrimary else SpectrumIconDisabled,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -447,6 +440,18 @@ fun EditorScreen(
                             }
                         }
 
+                        // Compare Before/After Icon (Shown in Edit and Remove, hidden in Masking, Curves, Color Mixer, Presets, Actions)
+                        if (!isPresetsOrActions && !isMasking && !isCurvesOrSubColor) {
+                            IconButton(onClick = { viewModel.toggleComparingOriginal() }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_lr_compare_before_after),
+                                    contentDescription = "Compare before/after",
+                                    tint = if (isComparingOriginal) SpectrumBlue else SpectrumTextPrimary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
                         // Share / Export Icon (Screenshots 4, 6: standard Android share icon)
                         IconButton(onClick = { showShareSheet = true }) {
                             Icon(
@@ -454,6 +459,17 @@ fun EditorScreen(
                                 contentDescription = "Share and Export",
                                 tint = SpectrumTextPrimary
                             )
+                        }
+
+                        // Mask overlay toggle in Masking mode (Screenshot 34: Placed right after Share and before ⋮)
+                        if (isMasking) {
+                            IconButton(onClick = { viewModel.toggleMaskOverlay() }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_lr_mask_hide_eye),
+                                    contentDescription = "Toggle mask overlay",
+                                    tint = if (isMaskOverlayVisible) SpectrumBlue else SpectrumIconDisabled
+                                )
+                            }
                         }
 
                         // 3-dots Overflow Menu (Screenshots 4, 5: 3 vertical dots)
@@ -597,16 +613,6 @@ fun EditorScreen(
                         title = "Profiles",
                         onCancel = { viewModel.setActiveTab(EditorToolTab.LIGHT) },
                         onConfirm = { viewModel.setActiveTab(EditorToolTab.LIGHT) }
-                    )
-                    EditorToolTab.CURVES -> DedicatedCommitBottomBar(
-                        title = "Curve",
-                        onCancel = { viewModel.setActiveTab(EditorToolTab.LIGHT) },
-                        onConfirm = { viewModel.setActiveTab(EditorToolTab.LIGHT) }
-                    )
-                    EditorToolTab.COLOR -> DedicatedCommitBottomBar(
-                        title = if (colorSubTab == "MIXER") "Color Mixer" else "Color Grading",
-                        onCancel = { colorSubTab = "WB" },
-                        onConfirm = { colorSubTab = "WB" }
                     )
                     else -> {}
                 }
@@ -845,7 +851,7 @@ fun EditorScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.ic_lr_distracting_people),
+                                painter = painterResource(R.drawable.ic_lr_extra_people),
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(18.dp)
@@ -977,7 +983,7 @@ fun EditorScreen(
                         } else {
                             when (panelSnapState) {
                                 PanelSnapState.COLLAPSED -> 0.dp
-                                PanelSnapState.COMPACT -> if (selectedMobileTool == "Crop") 300.dp else if (selectedMobileTool == "Presets") 260.dp else if (selectedMobileTool == "Remove") 170.dp else 210.dp
+                                PanelSnapState.COMPACT -> if (selectedMobileTool == "Crop") 300.dp else if (selectedMobileTool == "Presets") 260.dp else if (selectedMobileTool == "Remove") 220.dp else 210.dp
                                 PanelSnapState.EXPANDED -> 380.dp
                             }
                         }
@@ -999,7 +1005,7 @@ fun EditorScreen(
                 )
 
                 if (!isCleanScreenMode && animatedPanelHeight > 0.dp && selectedMobileTool != null) {
-                    if (selectedMobileTool != "Crop") {
+                    if (selectedMobileTool == "Edit" && !isDedicatedSubMode) {
                         // Tip 7: Pill Drag Handle (32.dp x 4.dp, #484848, corner radius 2.dp)
                         Box(
                             modifier = Modifier
@@ -2713,70 +2719,105 @@ fun EditorScreen(
             ModalBottomSheet(
                 onDismissRequest = { showShareSheet = false },
                 containerColor = Color(0xFF1E1E1E),
-                dragHandle = {
-                    Box(
-                        modifier = Modifier
-                            .padding(vertical = 10.dp)
-                            .size(width = 36.dp, height = 4.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(Color(0xFF555555))
-                    )
-                }
+                dragHandle = null
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .padding(bottom = 32.dp)
+                        .padding(bottom = 28.dp)
                 ) {
-                    // Header Row: Thumbnail + Info + Close Button
+                    // Header Row (Screenshot 083231: [←] Share 1 Photo ... [Select All])
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp),
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFF333333)),
-                            contentAlignment = Alignment.Center
+                        IconButton(
+                            onClick = { showShareSheet = false },
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Image,
-                                contentDescription = null,
-                                tint = Color(0xFF888888),
-                                modifier = Modifier.size(24.dp)
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color.White
                             )
                         }
-                        Spacer(Modifier.width(14.dp))
-                        Column(modifier = Modifier.weight(1f)) {
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = "Share 1 Photo",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Surface(
+                            color = Color(0xFF2C2C2E),
+                            shape = RoundedCornerShape(20.dp),
+                            border = BorderStroke(1.dp, Color(0xFF444444)),
+                            modifier = Modifier.clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            }
+                        ) {
                             Text(
-                                text = "Original Photo",
+                                text = "Select All",
                                 color = Color.White,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp)
                             )
-                            Text(
-                                text = "Full resolution • JPEG / RAW",
-                                color = Color(0xFFAAAAAA),
-                                fontSize = 12.sp
-                            )
-                        }
-                        IconButton(onClick = { showShareSheet = false }) {
-                            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
                         }
                     }
 
-                    // Quick Actions: Circular Buttons [Share | Export as...]
+                    // Photo Carousel with blue selection border & checkbox (Screenshot 083231)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.72f)
+                                .aspectRatio(16f / 10f)
+                                .clip(RoundedCornerShape(4.dp))
+                                .border(2.5.dp, Color(0xFF1473E6), RoundedCornerShape(4.dp))
+                                .background(Color.Black),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (bitmap != null) {
+                                Image(
+                                    bitmap = bitmap!!.asImageBitmap(),
+                                    contentDescription = "Selected photo",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Surface(
+                            color = Color(0xFF1473E6),
+                            shape = RoundedCornerShape(2.dp),
+                            modifier = Modifier.size(18.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.padding(2.dp)
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = Color(0xFF282828), thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
+
+                    // Quick Actions: Circular Buttons [Share | Export as...] (Screenshot 083231)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 12.dp),
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        // Share circular button
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
@@ -2784,22 +2825,22 @@ fun EditorScreen(
                                     showShareSheet = false
                                     viewModel.shareLastExport(context)
                                 }
-                                .padding(horizontal = 24.dp)
+                                .padding(horizontal = 32.dp)
                         ) {
                             Box(
                                 modifier = Modifier
                                     .size(56.dp)
-                                    .clip(androidx.compose.foundation.shape.CircleShape)
-                                    .background(Color(0xFF2C2C2C)),
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF262628))
+                                    .border(1.dp, Color(0xFF383838), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(imageVector = Icons.Default.Share, contentDescription = "Share", tint = Color.White, modifier = Modifier.size(24.dp))
                             }
                             Spacer(Modifier.height(8.dp))
-                            Text("Share", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Text("Share", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Normal)
                         }
 
-                        // Export as... circular button (Screenshot 6)
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
@@ -2807,95 +2848,95 @@ fun EditorScreen(
                                     showShareSheet = false
                                     showExportConfigSheet = true
                                 }
-                                .padding(horizontal = 24.dp)
+                                .padding(horizontal = 32.dp)
                         ) {
                             Box(
                                 modifier = Modifier
                                     .size(56.dp)
-                                    .clip(androidx.compose.foundation.shape.CircleShape)
-                                    .background(Color(0xFF2C2C2C)),
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF262628))
+                                    .border(1.dp, Color(0xFF383838), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(painter = painterResource(R.drawable.ic_lr_share_export), contentDescription = "Export as...", tint = Color.White, modifier = Modifier.size(24.dp))
                             }
                             Spacer(Modifier.height(8.dp))
-                            Text("Export as...", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Text("Export as...", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Normal)
                         }
                     }
 
-                    HorizontalDivider(color = Color(0xFF333333), modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(color = Color(0xFF282828), thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
 
-                    // Options List
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                showShareSheet = false
-                                viewModel.exportImage(com.cleanlr.export.ExportConfig())
-                            }
-                            .padding(vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(painter = painterResource(R.drawable.ic_lr_save_to_device), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                        Spacer(Modifier.width(16.dp))
-                        Text("Save copy to device", color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                        IconButton(
-                            onClick = {
-                                showShareSheet = false
-                                showExportConfigSheet = true
-                            },
-                            modifier = Modifier.size(32.dp)
+                    // Options List (Screenshot 083231)
+                    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showShareSheet = false
+                                    viewModel.exportImage(com.cleanlr.export.ExportConfig())
+                                }
+                                .padding(vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(imageVector = Icons.Default.Settings, contentDescription = "Export settings", tint = Color(0xFF888888), modifier = Modifier.size(18.dp))
+                            Icon(painter = painterResource(R.drawable.ic_lr_save_to_device), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                            Spacer(Modifier.width(18.dp))
+                            Text("Save copy to device", color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                            IconButton(
+                                onClick = {
+                                    showShareSheet = false
+                                    showExportConfigSheet = true
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Settings, contentDescription = "Export settings", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
+                            }
                         }
-                    }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showShareSheet = false }
-                            .padding(vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(imageVector = Icons.Default.Link, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                        Spacer(Modifier.width(16.dp))
-                        Text("Get link", color = Color.White, fontSize = 15.sp)
-                    }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showShareSheet = false }
+                                .padding(vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.Link, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                            Spacer(Modifier.width(18.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Get shareable link", color = Color.White, fontSize = 15.sp)
+                                Text("Create and share customized albums", color = Color(0xFF8E8E93), fontSize = 12.sp)
+                            }
+                        }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showShareSheet = false }
-                            .padding(vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(painter = painterResource(R.drawable.ic_lr_edit_replay_video), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                        Spacer(Modifier.width(16.dp))
-                        Text("Create edit replay", color = Color.White, fontSize = 15.sp)
-                    }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showShareSheet = false }
+                                .padding(vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(painter = painterResource(R.drawable.ic_lr_edit_replay_video), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                            Spacer(Modifier.width(18.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Create edit replay", color = Color.White, fontSize = 15.sp)
+                                Text("Save and share a video of your edits", color = Color(0xFF8E8E93), fontSize = 12.sp)
+                            }
+                        }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showShareSheet = false }
-                            .padding(vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(painter = painterResource(R.drawable.ic_lr_community_tab), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                        Spacer(Modifier.width(16.dp))
-                        Text("Post to Community", color = Color.White, fontSize = 15.sp)
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showShareSheet = false }
-                            .padding(vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(painter = painterResource(R.drawable.ic_lr_add_to_album), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                        Spacer(Modifier.width(16.dp))
-                        Text("Invite to edit", color = Color.White, fontSize = 15.sp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showShareSheet = false }
+                                .padding(vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(painter = painterResource(R.drawable.ic_lr_community_tab), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                            Spacer(Modifier.width(18.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Post to Community", color = Color.White, fontSize = 15.sp)
+                                Text("Share your edits and get remixes", color = Color(0xFF8E8E93), fontSize = 12.sp)
+                            }
+                        }
                     }
                 }
             }
@@ -3129,7 +3170,7 @@ private fun MobilePrimaryToolbar(
         "Crop" to R.drawable.ic_lr_crop,
         "Edit" to R.drawable.ic_lr_tune,
         "Masking" to R.drawable.ic_lr_masking,
-        "Remove" to R.drawable.ic_lr_heal
+        "Remove" to R.drawable.ic_lr_eraser
     )
 
     if (selectedTool == null) {
@@ -3210,44 +3251,46 @@ private fun MobilePrimaryToolbar(
                         contentAlignment = Alignment.Center
                     ) {
                         if (active) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(42.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(Color(0xFF1473E6))
-                                        .clickable { onToolSelected(label) },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        painter = painterResource(iconRes),
-                                        contentDescription = label,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .size(3.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.White)
-                                )
-                            }
-                        } else {
-                            IconButton(
-                                onClick = { onToolSelected(label) },
-                                modifier = Modifier.size(42.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFF1473E6))
+                                    .clickable { onToolSelected(label) },
+                                contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     painter = painterResource(iconRes),
                                     contentDescription = label,
-                                    tint = Color(0xFF8E8E93),
+                                    tint = Color.White,
                                     modifier = Modifier.size(22.dp)
                                 )
+                            }
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                IconButton(
+                                    onClick = { onToolSelected(label) },
+                                    modifier = Modifier.size(42.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(iconRes),
+                                        contentDescription = label,
+                                        tint = Color(0xFF8E8E93),
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                if (label == "Edit") {
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(3.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.White)
+                                    )
+                                }
                             }
                         }
                     }
@@ -4050,40 +4093,19 @@ private fun RemoveToolPanel(
                 )
             }
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Size",
-                        color = Color.White,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = localBrushSize.toInt().toString(),
-                        color = Color.White,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                Slider(
+            Box(modifier = Modifier.weight(1f)) {
+                RampedSlider(
+                    label = "Size",
                     value = localBrushSize,
+                    minVal = 1f,
+                    maxVal = 100f,
+                    defaultValue = 10f,
+                    isBipolar = false,
+                    formatPattern = "%.0f",
                     onValueChange = {
                         localBrushSize = it
                         onBrushSizeChange(it)
-                    },
-                    valueRange = 1f..100f,
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.White,
-                        activeTrackColor = Color.White,
-                        inactiveTrackColor = Color(0xFF444444)
-                    )
+                    }
                 )
             }
         }

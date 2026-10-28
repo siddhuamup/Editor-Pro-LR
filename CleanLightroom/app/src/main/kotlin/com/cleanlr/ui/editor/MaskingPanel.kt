@@ -681,7 +681,7 @@ fun CreateNewMaskBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        containerColor = Color(0xFF1E1E1E),
+        containerColor = Color(0xFF141414),
         contentColor = Color.White,
         dragHandle = null,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
@@ -690,14 +690,12 @@ fun CreateNewMaskBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Header Row: "Create new Mask" + Help Icon
+            // Header Row: "Create new Mask" + Help Icon (Screenshot 083730)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 6.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -710,94 +708,103 @@ fun CreateNewMaskBottomSheet(
                 Icon(
                     painter = painterResource(R.drawable.ic_lr_context_help),
                     contentDescription = "Help",
-                    tint = Color(0xFF888888),
+                    tint = Color(0xFF8E8E93),
                     modifier = Modifier.size(20.dp)
                 )
             }
 
-            // Group 1: AI (Select Subject, Select Sky, Select Background) with cloud icon
-            MaskSheetItem(
-                title = "Select Subject",
-                iconRes = R.drawable.ic_lr_mask_subject,
-                showCloud = true,
-                onClick = { onSelectSubMask(SubMask.AISubject(id = UUID.randomUUID().toString())) }
-            )
-            MaskSheetItem(
-                title = "Select Sky",
-                iconRes = R.drawable.ic_lr_mask_sky,
-                showCloud = true,
-                onClick = { onSelectSubMask(SubMask.AISky(id = UUID.randomUUID().toString())) }
-            )
-            MaskSheetItem(
-                title = "Select Background",
-                iconRes = R.drawable.ic_lr_mask_background,
-                showCloud = true,
-                onClick = { onSelectSubMask(SubMask.AIBackground(id = UUID.randomUUID().toString())) }
-            )
+            HorizontalDivider(color = Color(0xFF282828), thickness = 1.dp)
 
-            // Centered subtle divider
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                contentAlignment = Alignment.Center
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Group 1: AI (Select Subject, Select Sky, Select Background) with cloud icon
+                MaskSheetItem(
+                    title = "Select Subject",
+                    iconRes = R.drawable.ic_lr_mask_subject,
+                    showCloud = true,
+                    onClick = { onSelectSubMask(SubMask.AISubject(id = UUID.randomUUID().toString())) }
+                )
+                MaskSheetItem(
+                    title = "Select Sky",
+                    iconRes = R.drawable.ic_lr_mask_sky,
+                    showCloud = true,
+                    onClick = { onSelectSubMask(SubMask.AISky(id = UUID.randomUUID().toString())) }
+                )
+                MaskSheetItem(
+                    title = "Select Background",
+                    iconRes = R.drawable.ic_lr_mask_background,
+                    showCloud = true,
+                    onClick = { onSelectSubMask(SubMask.AIBackground(id = UUID.randomUUID().toString())) }
+                )
+
+                // Centered subtle divider
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                        .height(1.dp)
-                        .background(Color(0xFF333333))
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.65f)
+                            .height(1.dp)
+                            .background(Color(0xFF333333))
+                    )
+                }
+
+                // Group 2: Manual (Brush, Linear Gradient, Radial Gradient)
+                MaskSheetItem(
+                    title = "Brush",
+                    iconRes = R.drawable.ic_lr_mask_brush,
+                    showCloud = false,
+                    onClick = { onSelectSubMask(SubMask.Brush(id = UUID.randomUUID().toString())) }
                 )
-            }
+                MaskSheetItem(
+                    title = "Linear Gradient",
+                    iconRes = R.drawable.ic_lr_mask_linear_gradient,
+                    showCloud = false,
+                    onClick = { onSelectSubMask(SubMask.LinearGradient(id = UUID.randomUUID().toString(), startX = 0f, startY = 0f, endX = 0f, endY = 1f)) }
+                )
+                MaskSheetItem(
+                    title = "Radial Gradient",
+                    iconRes = R.drawable.ic_lr_mask_radial_gradient,
+                    showCloud = false,
+                    onClick = { onSelectSubMask(SubMask.RadialGradient(id = UUID.randomUUID().toString())) }
+                )
 
-            // Group 2: Manual (Brush, Linear Gradient, Radial Gradient)
-            MaskSheetItem(
-                title = "Brush",
-                iconRes = R.drawable.ic_lr_mask_brush,
-                showCloud = false,
-                onClick = { onSelectSubMask(SubMask.Brush(id = UUID.randomUUID().toString())) }
-            )
-            MaskSheetItem(
-                title = "Linear Gradient",
-                iconRes = R.drawable.ic_lr_mask_linear_gradient,
-                showCloud = false,
-                onClick = { onSelectSubMask(SubMask.LinearGradient(id = UUID.randomUUID().toString(), startX = 0f, startY = 0f, endX = 0f, endY = 1f)) }
-            )
-            MaskSheetItem(
-                title = "Radial Gradient",
-                iconRes = R.drawable.ic_lr_mask_radial_gradient,
-                showCloud = false,
-                onClick = { onSelectSubMask(SubMask.RadialGradient(id = UUID.randomUUID().toString())) }
-            )
-
-            // Centered subtle divider
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                contentAlignment = Alignment.Center
-            ) {
+                // Centered subtle divider
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                        .height(1.dp)
-                        .background(Color(0xFF333333))
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.65f)
+                            .height(1.dp)
+                            .background(Color(0xFF333333))
+                    )
+                }
+
+                // Group 3: Range (Color Range, Luminance Range)
+                MaskSheetItem(
+                    title = "Color Range",
+                    iconRes = R.drawable.ic_lr_mask_color_range,
+                    showCloud = false,
+                    onClick = { onSelectSubMask(SubMask.ColorRange(id = UUID.randomUUID().toString())) }
+                )
+                MaskSheetItem(
+                    title = "Luminance Range",
+                    iconRes = R.drawable.ic_lr_mask_luminance_range,
+                    showCloud = false,
+                    onClick = { onSelectSubMask(SubMask.LuminanceRange(id = UUID.randomUUID().toString())) }
                 )
             }
-
-            // Group 3: Range (Color Range, Luminance Range)
-            MaskSheetItem(
-                title = "Color Range",
-                iconRes = R.drawable.ic_lr_mask_color_range,
-                showCloud = false,
-                onClick = { onSelectSubMask(SubMask.ColorRange(id = UUID.randomUUID().toString())) }
-            )
-            MaskSheetItem(
-                title = "Luminance Range",
-                iconRes = R.drawable.ic_lr_mask_luminance_range,
-                showCloud = false,
-                onClick = { onSelectSubMask(SubMask.LuminanceRange(id = UUID.randomUUID().toString())) }
-            )
         }
     }
 }
@@ -810,38 +817,38 @@ private fun MaskSheetItem(
     onClick: () -> Unit
 ) {
     Surface(
-        color = Color(0xFF262626),
-        shape = RoundedCornerShape(8.dp),
+        color = Color(0xFF222222),
+        shape = RoundedCornerShape(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .height(52.dp)
             .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 14.dp),
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 painter = painterResource(iconRes),
                 contentDescription = title,
                 tint = Color(0xFFD4D4D4),
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(22.dp)
             )
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = title,
                 color = Color.White,
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )
             if (showCloud) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_lr_lightroom_cloud_tab),
+                    painter = painterResource(R.drawable.ic_lr_cloud_filled),
                     contentDescription = "Cloud AI",
-                    tint = Color(0xFF888888),
+                    tint = Color(0xFFA0A0A0),
                     modifier = Modifier.size(20.dp)
                 )
             }

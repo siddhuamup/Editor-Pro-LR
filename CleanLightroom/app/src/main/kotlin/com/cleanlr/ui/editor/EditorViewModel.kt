@@ -255,8 +255,8 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val _maskOverlayColor = MutableStateFlow(MaskOverlayColor.RED)
     val maskOverlayColor: StateFlow<MaskOverlayColor> = _maskOverlayColor.asStateFlow()
 
-    // Brush Parameter States
-    private val _brushSize = MutableStateFlow(50.0f)
+    // Brush Parameter States (Default 10.0f matching Screenshot 083752)
+    private val _brushSize = MutableStateFlow(10.0f)
     val brushSize: StateFlow<Float> = _brushSize.asStateFlow()
 
     private val _brushFeather = MutableStateFlow(50.0f)

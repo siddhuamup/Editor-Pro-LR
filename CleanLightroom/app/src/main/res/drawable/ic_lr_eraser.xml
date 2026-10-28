@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+    <!-- Solid rubber tip at bottom-left -->
+    <path
+        android:pathData="M3.4,15.5 L8.5,20.6 L12.4,16.7 L7.3,11.6 Z"
+        android:fillColor="#FFFFFFFF" />
+    <!-- Outlined sleeve at top-right -->
+    <path
+        android:pathData="M7.3,11.6 L12.4,16.7 L19.8,9.3 C20.4,8.7 20.4,7.7 19.8,7.1 L16.9,4.2 C16.3,3.6 15.3,3.6 14.7,4.2 L7.3,11.6 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.75"
+        android:strokeLineJoin="round" />
+    <!-- Diagonal seam between rubber and sleeve -->
+    <path
+        android:pathData="M7.3,11.6 L12.4,16.7"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.75" />
+</vector>

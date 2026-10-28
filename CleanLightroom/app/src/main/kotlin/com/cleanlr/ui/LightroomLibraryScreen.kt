@@ -192,9 +192,6 @@ fun LightroomLibraryScreen(
                     }
                     Spacer(Modifier.weight(1f))
                     if (workspace == LightroomWorkspace.LIGHTROOM) {
-                        IconButton(onClick = { }) {
-                            Icon(painter = painterResource(R.drawable.ic_lr_star_filled), contentDescription = "Premium features", tint = Color(0xFF1686FF), modifier = Modifier.size(22.dp))
-                        }
                         IconButton(onClick = { searchOpen = !searchOpen }) {
                             Icon(painter = painterResource(R.drawable.ic_lr_search_bar), contentDescription = "Search", tint = Color.White, modifier = Modifier.size(22.dp))
                         }
@@ -306,9 +303,11 @@ fun LightroomLibraryScreen(
                             }
                         }
 
-                        // Sort Button (Screenshot 1)
-                        IconButton(onClick = { }) {
-                            Icon(painter = painterResource(R.drawable.ic_lr_sort_order), contentDescription = "Sort photos", tint = Color.White, modifier = Modifier.size(20.dp))
+                        // Sort Button (Shown only in Gallery workspace: Screenshot 082951 vs 083018)
+                        if (workspace == LightroomWorkspace.GALLERY) {
+                            IconButton(onClick = { }) {
+                                Icon(painter = painterResource(R.drawable.ic_lr_sort_order), contentDescription = "Sort photos", tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
                         }
                     }
 
