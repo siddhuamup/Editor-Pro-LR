@@ -37,7 +37,9 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.res.painterResource
 import com.cleanlr.R
-import androidx.compose.material.icons.outlined.Image
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.scale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -486,8 +488,8 @@ fun EditorScreen(
                                 expanded = showEditorOverflowMenu,
                                 onDismissRequest = { showEditorOverflowMenu = false },
                                 modifier = Modifier
-                                    .background(SpectrumElevated)
-                                    .border(1.dp, SpectrumInnerBorder, RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF1E1E1E))
+                                    .border(1.dp, Color(0xFF333333), RoundedCornerShape(8.dp))
                             ) {
                                 DropdownMenuItem(
                                     text = {
@@ -2716,14 +2718,17 @@ fun EditorScreen(
     }
 
         if (showShareSheet) {
+            val shareSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ModalBottomSheet(
                 onDismissRequest = { showShareSheet = false },
+                sheetState = shareSheetState,
                 containerColor = Color(0xFF1E1E1E),
                 dragHandle = null
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                         .padding(bottom = 28.dp)
                 ) {
                     // Header Row (Screenshot 083231: [←] Share 1 Photo ... [Select All])
@@ -2778,7 +2783,7 @@ fun EditorScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(0.72f)
+                                .fillMaxWidth(0.55f)
                                 .aspectRatio(16f / 10f)
                                 .clip(RoundedCornerShape(4.dp))
                                 .border(2.5.dp, Color(0xFF1473E6), RoundedCornerShape(4.dp))
@@ -3678,7 +3683,7 @@ private fun CropAndExpandPanel(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Image,
+                            imageVector = Icons.Default.CropOriginal,
                             contentDescription = "Original",
                             tint = Color.White,
                             modifier = Modifier.size(24.dp)
