@@ -37,6 +37,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.res.painterResource
 import com.cleanlr.R
+import com.cleanlr.model.*
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -172,6 +173,7 @@ fun EditorScreen(
     var showResetDialog by remember { mutableStateOf(false) }
     var selectedMobileTool by remember { mutableStateOf<String?>("Edit") }
     var showCreateMaskSheet by remember { mutableStateOf(false) }
+    var selectedMaskCategory by remember { mutableStateOf(LocalAdjustmentCategory.LIGHT) }
     var isLensBlurDepthDetecting by remember { mutableStateOf(true) }
 
     var isHdrModeActive by remember { mutableStateOf(false) }
@@ -342,7 +344,7 @@ fun EditorScreen(
                         navigationIcon = {
                             IconButton(onClick = { onBack?.invoke() }) {
                                 Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    painter = painterResource(R.drawable.ic_lr_back_chevron),
                                     contentDescription = "Back to library",
                                     tint = SpectrumTextPrimary
                                 )
@@ -457,7 +459,7 @@ fun EditorScreen(
                         // Share / Export Icon (Screenshots 4, 6: standard Android share icon)
                         IconButton(onClick = { showShareSheet = true }) {
                             Icon(
-                                imageVector = Icons.Default.Share,
+                                painter = painterResource(R.drawable.ic_lr_share_export),
                                 contentDescription = "Share and Export",
                                 tint = SpectrumTextPrimary
                             )
@@ -478,7 +480,7 @@ fun EditorScreen(
                         Box {
                             IconButton(onClick = { showEditorOverflowMenu = true }) {
                                 Icon(
-                                    imageVector = Icons.Default.MoreVert,
+                                    painter = painterResource(R.drawable.ic_lr_more_vert),
                                     contentDescription = "More options",
                                     tint = SpectrumTextPrimary
                                 )
@@ -791,48 +793,29 @@ fun EditorScreen(
                     }
                 }
 
-                // Floating right-docked New Mask FAB Card (Reference Screenshot 083741)
+                // Floating Mask Dock (Reference Screenshot 083741)
                 if (selectedMobileTool == "Masking" && !isCleanScreenMode) {
-                    Surface(
-                        color = Color(0xFF222222),
-                        shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp),
-                        border = BorderStroke(1.dp, Color(0xFF333333)),
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(bottom = 16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(3.dp)
-                                    .height(28.dp)
-                                    .clip(RoundedCornerShape(1.5.dp))
-                                    .background(Color.White)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Box(
-                                modifier = Modifier
-                                    .size(46.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF1473E6))
-                                    .clickable {
-                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                        showCreateMaskSheet = true
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.Add,
-                                    contentDescription = "Create new Mask",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(24.dp)
-                                )
+                    FloatingMaskDock(
+                        masks = recipe.masks,
+                        activeMaskIndex = activeMaskLayerIndex,
+                        onSelectMask = { viewModel.selectMaskLayer(it) },
+                        onToggleLayer = { idx ->
+                            val layer = recipe.masks.getOrNull(idx)
+                            if (layer != null) {
+                                viewModel.updateMaskLayer(layer.copy(enabled = !layer.enabled))
                             }
-                        }
-                    }
+                        },
+                        onInvertMask = { idx -> viewModel.invertMaskLayer(idx) },
+                        onDuplicateMask = { idx -> viewModel.duplicateMaskLayer(idx) },
+                        onDeleteMask = { idx -> viewModel.deleteMaskLayer(idx) },
+                        onAddNewMaskClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            showCreateMaskSheet = true
+                        },
+                        modifier = Modifier
+                            .align(if (recipe.masks.isEmpty()) Alignment.BottomEnd else Alignment.CenterEnd)
+                            .padding(bottom = if (recipe.masks.isEmpty()) 16.dp else 0.dp)
+                    )
                 }
 
                 // Floating pill: "Remove extra people" (Reference Screenshot 083752)
@@ -2256,16 +2239,13 @@ fun EditorScreen(
                         }
 
                         EditorToolTab.MASKS -> {
-                            MaskingPanel(
+                            MaskingSlidersPanel(
                                 layers = recipe.masks,
                                 activeLayerIndex = activeMaskLayerIndex,
-                                onSelectLayer = { viewModel.selectMaskLayer(it) },
-                                onAddLayer = { subMask -> viewModel.addMaskLayer(subMask) },
-                                onAddSubMaskToActive = { subMask -> viewModel.addSubMaskToActive(subMask) },
+                                selectedCategory = selectedMaskCategory,
                                 onUpdateLayerAdjustments = { layer -> viewModel.updateMaskLayer(layer) },
                                 onDeleteActiveLayer = { viewModel.deleteActiveMaskLayer() },
-                                isOverlayVisible = isMaskOverlayVisible,
-                                onToggleOverlay = { viewModel.toggleMaskOverlay() }
+                                onAddSubMaskToActive = { subMask -> viewModel.addSubMaskToActive(subMask) }
                             )
                         }
                         }
@@ -2405,35 +2385,41 @@ fun EditorScreen(
                                 Spacer(modifier = Modifier.height(6.dp))
                             }
                         }
-                    } else if (selectedMobileTool == "Masking" && recipe.masks.isEmpty()) {
-                        // Resting state for Masking tool (Reference Screenshot 083741)
-                        // Shows dimmed sub-category tabs: Light, Color, Effects, Detail, Optics
+                    } else if (selectedMobileTool == "Masking") {
+                        // Resting & Active state for Masking tool (Reference Screenshot 083741)
+                        // Shows sub-category tabs: Light, Color, Effects, Detail, Optics
                         val maskTabs = listOf(
-                            "Light" to R.drawable.ic_lr_light,
-                            "Color" to R.drawable.ic_lr_color,
-                            "Effects" to R.drawable.ic_lr_effects,
-                            "Detail" to R.drawable.ic_lr_detail,
-                            "Optics" to R.drawable.ic_lr_optics
+                            "Light" to (R.drawable.ic_lr_light to LocalAdjustmentCategory.LIGHT),
+                            "Color" to (R.drawable.ic_lr_color to LocalAdjustmentCategory.COLOR),
+                            "Effects" to (R.drawable.ic_lr_effects to LocalAdjustmentCategory.EFFECTS),
+                            "Detail" to (R.drawable.ic_lr_detail to LocalAdjustmentCategory.DETAIL),
+                            "Optics" to (R.drawable.ic_lr_optics to null)
                         )
-                        items(maskTabs) { (title, iconRes) ->
+                        val isDimmed = recipe.masks.isEmpty()
+                        items(maskTabs) { (title, tabData) ->
+                            val (iconRes, category) = tabData
+                            val isSelected = !isDimmed && category != null && selectedMaskCategory == category
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier
+                                    .clickable(enabled = !isDimmed && category != null) {
+                                        category?.let { selectedMaskCategory = it }
+                                    }
                                     .padding(horizontal = 10.dp, vertical = 4.dp)
-                                    .graphicsLayer { alpha = 0.35f }
+                                    .graphicsLayer { alpha = if (isDimmed) 0.35f else 1.0f }
                             ) {
                                 Icon(
                                     painter = painterResource(iconRes),
                                     contentDescription = title,
-                                    tint = SpectrumIconNormal,
+                                    tint = if (isSelected) SpectrumBlue else SpectrumIconNormal,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = title,
-                                    color = SpectrumTextSecondary,
+                                    color = if (isSelected) SpectrumBlue else SpectrumTextSecondary,
                                     fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                             }
@@ -2743,7 +2729,7 @@ fun EditorScreen(
                             modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                painter = painterResource(R.drawable.ic_lr_back_chevron),
                                 contentDescription = "Back",
                                 tint = Color.White
                             )
@@ -2806,7 +2792,7 @@ fun EditorScreen(
                             modifier = Modifier.size(18.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Check,
+                                painter = painterResource(R.drawable.ic_lr_select_checkmark),
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.padding(2.dp)
@@ -2840,7 +2826,7 @@ fun EditorScreen(
                                     .border(1.dp, Color(0xFF383838), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(imageVector = Icons.Default.Share, contentDescription = "Share", tint = Color.White, modifier = Modifier.size(24.dp))
+                                Icon(painter = painterResource(R.drawable.ic_lr_share_export), contentDescription = "Share", tint = Color.White, modifier = Modifier.size(24.dp))
                             }
                             Spacer(Modifier.height(8.dp))
                             Text("Share", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Normal)
@@ -3049,7 +3035,7 @@ private fun DedicatedCommitBottomBar(
         ) {
             IconButton(onClick = onCancel) {
                 Icon(
-                    imageVector = Icons.Default.Close,
+                    painter = painterResource(R.drawable.ic_lr_close),
                     contentDescription = "Cancel",
                     tint = Color.White,
                     modifier = Modifier.size(24.dp)
@@ -3063,7 +3049,7 @@ private fun DedicatedCommitBottomBar(
             )
             IconButton(onClick = onConfirm) {
                 Icon(
-                    imageVector = Icons.Default.Check,
+                    painter = painterResource(R.drawable.ic_lr_select_checkmark),
                     contentDescription = "Apply",
                     tint = Color.White,
                     modifier = Modifier.size(24.dp)
@@ -4463,7 +4449,7 @@ private fun ProfilesPanel(
 
             IconButton(onClick = { }, modifier = Modifier.size(28.dp)) {
                 Icon(
-                    imageVector = Icons.Default.MoreVert,
+                    painter = painterResource(R.drawable.ic_lr_more_vert),
                     contentDescription = "Options",
                     tint = Color(0xFF888888),
                     modifier = Modifier.size(18.dp)

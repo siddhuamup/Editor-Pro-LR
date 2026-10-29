@@ -1138,6 +1138,50 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         }
     }
 
+    fun deleteMaskLayer(idx: Int) {
+        val currentLayers = _recipe.value.masks.toMutableList()
+        if (idx in currentLayers.indices) {
+            currentLayers.removeAt(idx)
+            updateRecipe("Delete Mask") { it.copy(masks = currentLayers) }
+            _activeMaskLayerIndex.value = (idx - 1).coerceAtLeast(0)
+        }
+    }
+
+    fun invertMaskLayer(idx: Int) {
+        val currentLayers = _recipe.value.masks.toMutableList()
+        if (idx in currentLayers.indices) {
+            val layer = currentLayers[idx]
+            val invertedSubMasks = layer.subMasks.map { sub ->
+                when (sub) {
+                    is SubMask.Brush -> sub.copy(isInverted = !sub.isInverted)
+                    is SubMask.LinearGradient -> sub.copy(isInverted = !sub.isInverted)
+                    is SubMask.RadialGradient -> sub.copy(isInverted = !sub.isInverted)
+                    is SubMask.AISubject -> sub.copy(isInverted = !sub.isInverted)
+                    is SubMask.AISky -> sub.copy(isInverted = !sub.isInverted)
+                    is SubMask.AIBackground -> sub.copy(isInverted = !sub.isInverted)
+                    is SubMask.ColorRange -> sub.copy(isInverted = !sub.isInverted)
+                    is SubMask.LuminanceRange -> sub.copy(isInverted = !sub.isInverted)
+                }
+            }
+            currentLayers[idx] = layer.copy(subMasks = invertedSubMasks)
+            updateRecipe("Invert Mask") { it.copy(masks = currentLayers) }
+        }
+    }
+
+    fun duplicateMaskLayer(idx: Int) {
+        val currentLayers = _recipe.value.masks.toMutableList()
+        if (idx in currentLayers.indices) {
+            val layer = currentLayers[idx]
+            val duplicated = layer.copy(
+                id = java.util.UUID.randomUUID().toString(),
+                name = "${layer.name.ifEmpty { "Mask" }} Copy"
+            )
+            currentLayers.add(idx + 1, duplicated)
+            _activeMaskLayerIndex.value = idx + 1
+            updateRecipe("Duplicate Mask") { it.copy(masks = currentLayers) }
+        }
+    }
+
     // =========================================================================
     // Tips 1–35 Darkroom Ergonomics & Surface Controls
     // =========================================================================

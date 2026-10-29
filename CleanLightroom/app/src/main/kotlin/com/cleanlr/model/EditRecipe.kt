@@ -295,7 +295,9 @@ data class MaskLayer(
     val enabled: Boolean = true,
     val opacity: Float = 1.0f,
     val subMasks: List<SubMask> = emptyList(),
-    val localAdjustments: BasicAdjustments = BasicAdjustments()
+    val localAdjustments: BasicAdjustments = BasicAdjustments(),
+    val effectsAdjustments: EffectsAdjustments = EffectsAdjustments(),
+    val detailAdjustments: DetailAdjustments = DetailAdjustments()
 )
 
 @Serializable

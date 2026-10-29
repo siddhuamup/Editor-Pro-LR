@@ -203,7 +203,7 @@ fun LightroomLibraryScreen(
                         }
                     }
                     IconButton(onClick = { showViewOptionsSheet = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "View options and more", tint = Color.White)
+                        Icon(painter = painterResource(R.drawable.ic_lr_more_vert), contentDescription = "View options and more", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
 
@@ -661,9 +661,9 @@ private fun LibraryNavigationDrawerContent(
         DrawerItem(icon = Icons.Default.Settings, label = "Preferences", onClick = onCloseDrawer)
         DrawerItem(icon = Icons.Default.Campaign, label = "What's New", onClick = onCloseDrawer)
         DrawerItem(painter = painterResource(R.drawable.ic_lr_mobile_badge), label = "About Lightroom", onClick = onCloseDrawer)
-        DrawerItem(icon = Icons.Default.PhoneAndroid, label = "Local storage", onClick = onCloseDrawer)
-        DrawerItem(icon = Icons.AutoMirrored.Filled.HelpOutline, label = "Help & Support", onClick = onCloseDrawer)
-        DrawerItem(icon = Icons.Default.Star, tint = Color(0xFFFFB300), label = "Rate Lightroom", onClick = onCloseDrawer)
+        DrawerItem(painter = painterResource(R.drawable.ic_lr_device_tab), label = "Local storage", onClick = onCloseDrawer)
+        DrawerItem(painter = painterResource(R.drawable.ic_lr_context_help), label = "Help & Support", onClick = onCloseDrawer)
+        DrawerItem(painter = painterResource(R.drawable.ic_lr_star_filled), tint = Color(0xFFFFB300), label = "Rate Lightroom", onClick = onCloseDrawer)
 
         HorizontalDivider(color = Color(0xFF2C2C2C), modifier = Modifier.padding(vertical = 8.dp))
 
