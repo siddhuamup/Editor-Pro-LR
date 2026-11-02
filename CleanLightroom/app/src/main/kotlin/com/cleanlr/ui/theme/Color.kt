@@ -6,12 +6,12 @@ import androidx.compose.ui.graphics.Color
 // Adobe Spectrum Dark Theme Tokens (Normative Spec: PDF Part A Section 1)
 // =============================================================================
 
-// Canvas Background (loupe_background): #121212 (फोटोच्या मागे असणारा मुख्य कॅनव्हास)
-val loupe_background = Color(0xFF121212)
+// Canvas Background (loupe_background): #000000 (फोटोच्या मागे असणारा मुख्य कॅनव्हास - Pure Black for OLED)
+val loupe_background = Color(0xFF000000)
 val SpectrumCanvas = loupe_background
 
-// Surface Panels (spectrum_surface_dark): #1E1E1E (बॉटम बार आणि अॅडजस्टमेंट पॅनेल्स)
-val spectrum_surface_dark = Color(0xFF1E1E1E)
+// Surface Panels (spectrum_surface_dark): #1D1D1D (बॉटम बार आणि अॅडजस्टमेंट पॅनेल्स)
+val spectrum_surface_dark = Color(0xFF1D1D1D)
 val SpectrumSurface = spectrum_surface_dark
 
 // Surface Elevated (spectrum_surface_elevated): #2A2A2A (फ्लोटिंग टूल्स, कार्ड्स आणि डायलॉग्स)
@@ -22,12 +22,13 @@ val SpectrumElevated = spectrum_surface_elevated
 val loupe_bottombar_border = Color(0xFF383838)
 val SpectrumBorder = loupe_bottombar_border
 
-// Primary Accent (spectrum_400_blue): #1473E6 (अॅक्टिव्ह स्लाइडर ट्रॅक, सेव्ह बटण, चेकबॉक्स)
+// Primary Accent (spectrum_400_blue): #1473E6 (सेव्ह बटण, चेकबॉक्स)
 val spectrum_400_blue = Color(0xFF1473E6)
-val SpectrumBlue = spectrum_400_blue
 
-// Hover / Active Accent (spectrum_500_blue): #2680EB (प्रेस्ड / हायलाइटेड स्टेट)
+// Active Blue Accent (spectrum_500_blue): #2680EB (अॅक्टिव्ह टूल्स, हायलाइट्स, सिलेक्टेड स्टेट्स)
 val spectrum_500_blue = Color(0xFF2680EB)
+val SpectrumBlue = Color(0xFF2680EB)
+val SpectrumBlueActive = Color(0xFF2680EB)
 val SpectrumBlueHover = spectrum_500_blue
 
 // Text Primary (spectrum_text_primary): #FFFFFF (मुख्य लेबल्स, स्लाइडर व्हॅल्यूज)
@@ -101,7 +102,7 @@ val SpectrumTopHighlight = Color(0xFF3E3E3E)
 val SdrNitLockedWhite = Color(0xFFB0B0B0)
 
 // Tip 23: Active modification indicator dot
-val SpectrumActiveDot = Color(0xFF1473E6)
+val SpectrumActiveDot = Color(0xFF2680EB)
 
 // Tip 29 & 30: Typography & Value states
 val SpectrumSliderLabel = Color(0xFFB0B0B0)

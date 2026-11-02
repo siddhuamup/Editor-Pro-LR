@@ -6,6 +6,7 @@ import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -32,10 +33,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
-import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import com.cleanlr.R
 import com.cleanlr.model.*
 import androidx.compose.foundation.Image
@@ -171,7 +171,7 @@ fun EditorScreen(
     var showShareSheet by remember { mutableStateOf(false) }
     var showExportConfigSheet by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
-    var selectedMobileTool by remember { mutableStateOf<String?>("Edit") }
+    var selectedMobileTool by rememberSaveable { mutableStateOf<String?>("Edit") }
     var showCreateMaskSheet by remember { mutableStateOf(false) }
     var selectedMaskCategory by remember { mutableStateOf(LocalAdjustmentCategory.LIGHT) }
     var isLensBlurDepthDetecting by remember { mutableStateOf(true) }
@@ -231,6 +231,20 @@ fun EditorScreen(
             }
             viewModel.startBatchExport(items)
         }
+    }
+
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    if (isLandscape) {
+        EditorScreenLandscape(
+            viewModel = viewModel,
+            modifier = modifier,
+            selectedMobileTool = selectedMobileTool,
+            onSelectMobileTool = { selectedMobileTool = it },
+            onBack = onBack
+        )
+        return
     }
 
     Scaffold(
@@ -401,7 +415,7 @@ fun EditorScreen(
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Icon(
-                                        imageVector = Icons.Default.ArrowDropDown,
+                                        painter = painterResource(R.drawable.ic_lr_chevron_down),
                                         contentDescription = null,
                                         tint = if (canUndo) SpectrumTextPrimary else SpectrumIconDisabled,
                                         modifier = Modifier.size(16.dp)
@@ -585,7 +599,7 @@ fun EditorScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.AccountCircle, contentDescription = null, tint = SpectrumTextSecondary, modifier = Modifier.size(18.dp))
+                                            Icon(painter = painterResource(R.drawable.ic_lr_mask_people), contentDescription = null, tint = SpectrumTextSecondary, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(12.dp))
                                             Text("Your profile", color = SpectrumTextSecondary, fontSize = 14.sp)
                                         }
@@ -1489,7 +1503,7 @@ fun EditorScreen(
                                                 )
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Icon(
-                                                    imageVector = Icons.Default.ArrowDropDown,
+                                                    painter = painterResource(R.drawable.ic_lr_chevron_down),
                                                     contentDescription = "Select White Balance Preset",
                                                     tint = SpectrumTextSecondary,
                                                     modifier = Modifier.size(18.dp)
@@ -2258,11 +2272,11 @@ fun EditorScreen(
             // Category Tool Tabs Bar — Adobe Lightroom Mobile Signature Style (Screenshots 7, 13, 20, 34)
             // Rendered directly beneath the active controls panel, right above the primary bottom navigation
             if (!isCleanScreenMode && !isDedicatedSubMode && selectedMobileTool in listOf("Edit", "Actions", "Masking")) {
-                HorizontalDivider(color = SpectrumBorder, thickness = 1.dp)
+                HorizontalDivider(color = Color(0xFF242424), thickness = 0.5.dp)
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(SpectrumSurface)
+                        .background(spectrum_surface_dark)
                         .padding(vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(horizontal = 14.dp),
@@ -2339,7 +2353,7 @@ fun EditorScreen(
                                     .padding(horizontal = 4.dp)
                                     .width(1.dp)
                                     .height(24.dp)
-                                    .background(Color(0xFF383838))
+                                    .background(Color(0xFF242424))
                             )
                         }
                         val maskActions = listOf(
@@ -2465,7 +2479,7 @@ fun EditorScreen(
 
                         items(visibleTabs) { tab ->
                             val isSelected = tab == activeTab
-                            val isModified = viewModel.isTabModified(tab)
+                            val isModified = remember(recipe, tab) { viewModel.isTabModified(tab) }
                             val isBypassed = bypassedTabs.contains(tab)
                             val tabIconRes = when (tab) {
                                 EditorToolTab.CROP -> R.drawable.ic_lr_crop
@@ -2484,7 +2498,6 @@ fun EditorScreen(
                             Surface(
                                 color = if (isSelected) Color(0xFF2C2C2C) else Color.Transparent,
                                 shape = RoundedCornerShape(8.dp),
-                                border = if (isSelected) BorderStroke(1.dp, Color(0xFF3E3E3E)) else null,
                                 modifier = Modifier
                                     .pointerInput(tab) {
                                         detectTapGestures(
@@ -2516,20 +2529,32 @@ fun EditorScreen(
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = tab.title,
-                                        color = if (isSelected) Color.White else if (isBypassed) SpectrumIconDisabled else SpectrumTextSecondary,
-                                        fontSize = 10.sp,
-                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                    )
-                                    // Tips 23 & 24: Active or Modified Indicator Dot
-                                    if (isSelected || isModified) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = tab.title,
+                                            color = if (isSelected) Color.White else if (isBypassed) SpectrumIconDisabled else SpectrumTextSecondary,
+                                            fontSize = 10.sp,
+                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                        )
+                                        if (isModified) {
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(4.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF2680EB))
+                                            )
+                                        }
+                                    }
+                                    if (isSelected) {
                                         Spacer(modifier = Modifier.height(3.dp))
                                         Box(
                                             modifier = Modifier
                                                 .size(4.dp)
-                                                .clip(androidx.compose.foundation.shape.CircleShape)
-                                                .background(if (isSelected) Color(0xFF1686FF) else if (isBypassed) Color.Gray else SpectrumActiveDot)
+                                                .clip(CircleShape)
+                                                .background(Color(0xFF2680EB))
                                         )
                                     } else {
                                         Spacer(modifier = Modifier.height(7.dp))
@@ -2823,7 +2848,7 @@ fun EditorScreen(
                                     .size(56.dp)
                                     .clip(CircleShape)
                                     .background(Color(0xFF262628))
-                                    .border(1.dp, Color(0xFF383838), CircleShape),
+                                    .border(0.5.dp, Color(0xFF242424), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(painter = painterResource(R.drawable.ic_lr_share_export), contentDescription = "Share", tint = Color.White, modifier = Modifier.size(24.dp))
@@ -2846,7 +2871,7 @@ fun EditorScreen(
                                     .size(56.dp)
                                     .clip(CircleShape)
                                     .background(Color(0xFF262628))
-                                    .border(1.dp, Color(0xFF383838), CircleShape),
+                                    .border(0.5.dp, Color(0xFF242424), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(painter = painterResource(R.drawable.ic_lr_share_export), contentDescription = "Export as...", tint = Color.White, modifier = Modifier.size(24.dp))
@@ -2880,7 +2905,7 @@ fun EditorScreen(
                                 },
                                 modifier = Modifier.size(32.dp)
                             ) {
-                                Icon(imageVector = Icons.Default.Settings, contentDescription = "Export settings", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
+                                Icon(painter = painterResource(R.drawable.ic_lr_more_options), contentDescription = "Export settings", tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
                             }
                         }
 
@@ -2891,7 +2916,7 @@ fun EditorScreen(
                                 .padding(vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(imageVector = Icons.Default.Link, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                            Icon(painter = painterResource(R.drawable.ic_lr_aspect_ratio), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.width(18.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("Get shareable link", color = Color.White, fontSize = 15.sp)
@@ -3072,7 +3097,7 @@ private fun ActionsPanel(
         Surface(
             color = Color(0xFF222222),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, Color(0xFF333333)),
+            border = BorderStroke(0.5.dp, Color(0xFF242424)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
@@ -3133,7 +3158,7 @@ private fun ActionsPanel(
                 Surface(
                     color = Color(0xFF262626),
                     shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, Color(0xFF383838)),
+                    border = BorderStroke(0.5.dp, Color(0xFF242424)),
                     modifier = Modifier.clickable { onQuickMask(label) }
                 ) {
                     Row(
@@ -3159,9 +3184,9 @@ private fun MobilePrimaryToolbar(
         "Actions" to R.drawable.ic_lr_quick_actions,
         "Presets" to R.drawable.ic_lr_presets,
         "Crop" to R.drawable.ic_lr_crop,
-        "Edit" to R.drawable.ic_lr_tune,
+        "Edit" to R.drawable.ic_lr_light,
         "Masking" to R.drawable.ic_lr_masking,
-        "Remove" to R.drawable.ic_lr_eraser
+        "Remove" to R.drawable.ic_lr_generative_remove
     )
 
     if (selectedTool == null) {
@@ -3174,9 +3199,9 @@ private fun MobilePrimaryToolbar(
             contentAlignment = Alignment.Center
         ) {
             Surface(
-                color = Color(0xFF1E1E1E),
+                color = spectrum_surface_dark,
                 shape = RoundedCornerShape(28.dp),
-                border = BorderStroke(1.dp, Color(0xFF333333)),
+                border = BorderStroke(0.5.dp, Color(0xFF242424)),
                 shadowElevation = 8.dp
             ) {
                 Row(
@@ -3222,10 +3247,10 @@ private fun MobilePrimaryToolbar(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF121212))
+                .background(spectrum_surface_dark)
                 .navigationBarsPadding()
         ) {
-            HorizontalDivider(color = Color(0xFF242424), thickness = 1.dp)
+            HorizontalDivider(color = Color(0xFF242424), thickness = 0.5.dp)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -3371,9 +3396,14 @@ private fun CurvedStraightenDial(
         ) {
             Text(
                 text = String.format(java.util.Locale.US, "%.2f°", angle),
-                color = if (angle != 0f) Color(0xFF1686FF) else Color.White,
+                color = if (angle != 0f) Color(0xFF38A9FF) else Color(0xFF8E8E8E),
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                style = TextStyle(
+                    fontFeatureSettings = "tnum",
+                    textAlign = TextAlign.Center
+                ),
+                modifier = Modifier.widthIn(min = 48.dp)
             )
         }
     }
@@ -3478,7 +3508,7 @@ private fun CropAndExpandPanel(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Default.Fullscreen,
+                                painter = painterResource(R.drawable.ic_lr_hold_original_gesture),
                                 contentDescription = "Expand / Fullscreen preview",
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp)
@@ -3497,7 +3527,7 @@ private fun CropAndExpandPanel(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = if (isAspectLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                                painter = painterResource(if (isAspectLocked) R.drawable.ic_lr_lock else R.drawable.ic_lr_unlock),
                                 contentDescription = "Aspect lock",
                                 tint = if (isAspectLocked) Color(0xFF1686FF) else Color.White,
                                 modifier = Modifier.size(19.dp)
@@ -3519,7 +3549,7 @@ private fun CropAndExpandPanel(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Default.Refresh,
+                                painter = painterResource(R.drawable.ic_lr_generative_refresh),
                                 contentDescription = "Rotate 90 degrees",
                                 tint = Color.White,
                                 modifier = Modifier.size(22.dp)
@@ -3669,7 +3699,7 @@ private fun CropAndExpandPanel(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.CropOriginal,
+                            painter = painterResource(R.drawable.ic_lr_aspect_ratio),
                             contentDescription = "Original",
                             tint = Color.White,
                             modifier = Modifier.size(24.dp)
@@ -3882,7 +3912,7 @@ private fun CropAndExpandPanel(
                         Surface(
                             color = if (selected) Color(0xFF2C2C2E) else Color(0xFF1A1A1A),
                             shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, if (selected) Color.White else Color(0xFF383838)),
+                            border = BorderStroke(1.dp, if (selected) Color.White else Color(0xFF242424)),
                             modifier = Modifier
                                 .size(58.dp)
                                 .clickable {
@@ -4166,14 +4196,14 @@ private fun RemoveToolPanel(
             Surface(
                 color = Color(0xFF222222),
                 shape = RoundedCornerShape(6.dp),
-                border = BorderStroke(1.dp, Color(0xFF333333))
+                border = BorderStroke(0.5.dp, Color(0xFF242424))
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        Icons.Default.Edit,
+                        painter = painterResource(R.drawable.ic_lr_mask_brush),
                         contentDescription = null,
                         tint = Color(0xFF666666),
                         modifier = Modifier.size(14.dp)
@@ -4204,7 +4234,7 @@ private fun LensBlurPanel(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(SpectrumSurface)
+            .background(spectrum_surface_dark)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -4221,11 +4251,17 @@ private fun LensBlurPanel(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
+                val isModified = abs(blurAmount) > 0.001f
                 Text(
-                    text = if (blurAmount >= 0) "+ ${blurAmount.toInt()}" else "${blurAmount.toInt()}",
-                    color = Color.White,
+                    text = if (blurAmount > 0.001f) "+${blurAmount.toInt()}" else "${blurAmount.toInt()}",
+                    color = if (isModified) Color(0xFF38A9FF) else Color(0xFF8E8E8E),
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    style = TextStyle(
+                        fontFeatureSettings = "tnum",
+                        textAlign = TextAlign.End
+                    ),
+                    modifier = Modifier.widthIn(min = 40.dp)
                 )
             }
             Slider(
@@ -4418,7 +4454,7 @@ private fun ProfilesPanel(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(SpectrumSurface)
+            .background(spectrum_surface_dark)
             .padding(horizontal = 14.dp, vertical = 6.dp)
     ) {
         // Header Row: "Basic ⌄" + Three-dots overflow
@@ -4440,7 +4476,7 @@ private fun ProfilesPanel(
                     fontWeight = FontWeight.SemiBold
                 )
                 Icon(
-                    Icons.Default.ArrowDropDown,
+                    painter = painterResource(R.drawable.ic_lr_chevron_down),
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
@@ -4489,7 +4525,7 @@ private fun ProfilesPanel(
                 Surface(
                     color = Color(0xFF1E1E1E),
                     shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.5.dp, if (isSelected) Color(0xFF1473E6) else Color(0xFF333333)),
+                    border = BorderStroke(1.5.dp, if (isSelected) Color(0xFF2680EB) else Color(0xFF242424)),
                     modifier = Modifier
                         .width(108.dp)
                         .height(96.dp)
@@ -4526,7 +4562,7 @@ private fun ProfilesPanel(
                         // Star icon on top right for favorite (e.g. on Monochrome in Screenshot 083723)
                         if (isMonochrome) {
                             Icon(
-                                Icons.Default.Star,
+                                painter = painterResource(R.drawable.ic_lr_star_filled),
                                 contentDescription = "Favorite",
                                 tint = Color.White,
                                 modifier = Modifier
@@ -4696,9 +4732,10 @@ private fun CropToolsPanel(
                         ) {
                             Text(
                                 text = String.format(java.util.Locale.US, "%.1f°", crop.straightenAngle),
-                                color = if (crop.straightenAngle != 0f) SpectrumBlue else SpectrumTextSecondary,
+                                color = if (crop.straightenAngle != 0f) Color(0xFF38A9FF) else Color(0xFF8E8E8E),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
+                                style = TextStyle(fontFeatureSettings = "tnum"),
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
