@@ -65,8 +65,8 @@ class TestTier1FeatureCoverage:
     def test_t1_06_dock_surface_token_parity(self, adb: ADBHelper, clean_screen):
         """Verifies bottom tool dock matches Adobe Spectrum darkroom surface (#1D1D1D / #121212)."""
         img, _ = adb.capture_screenshot()
-        # Sample bottom dock area (center-x, height - 50)
-        dock_rgb = ColorVerifier.sample_pixel(img, img.width // 2, img.height - 50)
+        # Sample bottom dock area safely away from center gesture pill (e.g. width // 4)
+        dock_rgb = ColorVerifier.sample_pixel(img, img.width // 4, img.height - 50)
         lum = ColorVerifier.relative_luminance(dock_rgb)
         # Spectrum Darkroom surfaces must be dark (luminance < 0.10, RGB channels < 45)
         assert all(c < 45 for c in dock_rgb), (
@@ -166,25 +166,42 @@ class TestTier1FeatureCoverage:
     def test_t1_16_masking_mode_entry(self, adb: ADBHelper, clean_screen):
         """Verifies tapping Masking in dock enters Masking mode."""
         ui = adb.dump_ui()
-        mask_dock = ui.find_one(desc="Masking") or ui.find_one(text="Masking")
-        assert mask_dock is not None, "Masking tool dock item not found!"
-        adb.tap_element(mask_dock)
-        time.sleep(1.0)
-        ui_mask = adb.dump_ui()
+        if not (ui.exists(desc="Create new Mask") or ui.exists(desc="Add Mask")):
+            mask_dock = ui.find_one(desc="Masking") or ui.find_one(text="Masking")
+            assert mask_dock is not None, "Masking tool dock item not found!"
+            adb.tap_element(mask_dock)
+            time.sleep(1.0)
+            ui_mask = adb.dump_ui()
+        else:
+            ui_mask = ui
         assert ui_mask.exists(desc="Create new Mask") or ui_mask.exists(desc="Add Mask"), (
             "Masking mode did not display Create new Mask action!"
         )
 
-    def test_t1_17_create_new_mask_button_rendered(self, adb: ADBHelper, clean_screen):
+    def test_t1_17_create_new_mask_button_rendered(self, adb: ADBHelper):
         """Verifies the floating + FAB / Create new Mask button is present on canvas."""
         ui = adb.dump_ui()
         fab = ui.find_one(desc="Create new Mask") or ui.find_one(desc="Add Mask")
+        if not fab:
+            mask_dock = ui.find_one(desc="Masking") or ui.find_one(text="Masking")
+            if mask_dock:
+                adb.tap_element(mask_dock)
+                time.sleep(1.0)
+                ui = adb.dump_ui()
+                fab = ui.find_one(desc="Create new Mask") or ui.find_one(desc="Add Mask")
         assert fab is not None, "Floating '+' FAB / Create new Mask button is not rendered!"
 
-    def test_t1_18_create_mask_modal_sheet_open(self, adb: ADBHelper, clean_screen):
+    def test_t1_18_create_mask_modal_sheet_open(self, adb: ADBHelper):
         """Verifies tapping + FAB opens the 'Create new Mask' bottom sheet."""
         ui = adb.dump_ui()
         fab = ui.find_one(desc="Create new Mask") or ui.find_one(desc="Add Mask")
+        if not fab:
+            mask_dock = ui.find_one(desc="Masking") or ui.find_one(text="Masking")
+            if mask_dock:
+                adb.tap_element(mask_dock)
+                time.sleep(1.0)
+                ui = adb.dump_ui()
+                fab = ui.find_one(desc="Create new Mask") or ui.find_one(desc="Add Mask")
         assert fab is not None, "FAB not found"
         adb.tap_element(fab)
         time.sleep(1.0)
@@ -207,7 +224,7 @@ class TestTier1FeatureCoverage:
         subject_tool = ui.find_one(text="Select Subject") or ui.find_one(desc="Select Subject")
         if subject_tool:
             adb.tap_element(subject_tool)
-            time.sleep(1.0)
+            adb.wait_for_ui(lambda u: u.exists(text="Mask 1") or u.exists(desc="Mask 1"), timeout_s=5.0)
         ui_layer = adb.dump_ui()
         assert ui_layer.exists(text="Mask 1") or ui_layer.exists(desc="Mask 1"), "Mask 1 layer not created!"
         for category in ["Light", "Color", "Effects", "Detail", "Optics"]:

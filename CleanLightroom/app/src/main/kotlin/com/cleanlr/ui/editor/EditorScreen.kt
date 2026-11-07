@@ -3184,7 +3184,7 @@ private fun MobilePrimaryToolbar(
         "Actions" to R.drawable.ic_lr_quick_actions,
         "Presets" to R.drawable.ic_lr_presets,
         "Crop" to R.drawable.ic_lr_crop,
-        "Edit" to R.drawable.ic_lr_light,
+        "Edit" to R.drawable.ic_lr_edit_sliders,
         "Masking" to R.drawable.ic_lr_masking,
         "Remove" to R.drawable.ic_lr_generative_remove
     )

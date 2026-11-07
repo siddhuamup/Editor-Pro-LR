@@ -29,6 +29,10 @@ class TestTier4RealWorldScenarios:
         # Step 2: Open Edit tool in primary dock
         ui = adb.dump_ui()
         edit_tool = ui.find_one(desc="Edit") or ui.find_one(text="Edit")
+        if not edit_tool:
+            adb.wait_for_ui(lambda u: u.exists(desc="Edit") or u.exists(text="Edit"), timeout_s=5.0)
+            ui = adb.dump_ui()
+            edit_tool = ui.find_one(desc="Edit") or ui.find_one(text="Edit")
         assert edit_tool is not None, "Edit tool not found"
         adb.tap_element(edit_tool, delay_s=0.8)
 
@@ -111,6 +115,16 @@ class TestTier4RealWorldScenarios:
         mask_tool = ui.find_one(desc="Masking") or ui.find_one(text="Masking")
         if mask_tool:
             adb.tap_element(mask_tool, delay_s=0.8)
+
+        # If no mask layer exists yet, create one
+        ui = adb.dump_ui()
+        fab = ui.find_one(desc="Create new Mask") or ui.find_one(desc="Add Mask")
+        if fab:
+            adb.tap_element(fab, delay_s=0.8)
+            ui_sheet = adb.dump_ui()
+            subj = ui_sheet.find_one(text="Select Subject") or ui_sheet.find_one(desc="Select Subject")
+            if subj:
+                adb.tap_element(subj, delay_s=1.0)
 
         # Step 3: Check adjustment tabs (Light, Color, Effects, Detail, Optics)
         ui_mask = adb.dump_ui()

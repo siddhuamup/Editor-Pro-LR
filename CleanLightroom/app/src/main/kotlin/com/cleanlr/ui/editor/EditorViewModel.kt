@@ -1112,6 +1112,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     fun addSubMaskToActive(subMask: SubMask) {
         val currentLayers = _recipe.value.masks.toMutableList()
         val idx = _activeMaskLayerIndex.value
+        if (currentLayers.isEmpty()) return
         if (idx in currentLayers.indices) {
             val layer = currentLayers[idx]
             currentLayers[idx] = layer.copy(subMasks = layer.subMasks + subMask)
@@ -1122,6 +1123,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     fun updateMaskLayer(layer: MaskLayer) {
         val currentLayers = _recipe.value.masks.toMutableList()
         val idx = _activeMaskLayerIndex.value
+        if (currentLayers.isEmpty()) return
         if (idx in currentLayers.indices) {
             currentLayers[idx] = layer
             updateRecipe("Update Mask Adjustments") { it.copy(masks = currentLayers) }
@@ -1131,6 +1133,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     fun deleteActiveMaskLayer() {
         val currentLayers = _recipe.value.masks.toMutableList()
         val idx = _activeMaskLayerIndex.value
+        if (currentLayers.isEmpty()) return
         if (idx in currentLayers.indices) {
             currentLayers.removeAt(idx)
             updateRecipe("Delete Mask") { it.copy(masks = currentLayers) }
@@ -1140,6 +1143,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     fun deleteMaskLayer(idx: Int) {
         val currentLayers = _recipe.value.masks.toMutableList()
+        if (currentLayers.isEmpty()) return
         if (idx in currentLayers.indices) {
             currentLayers.removeAt(idx)
             updateRecipe("Delete Mask") { it.copy(masks = currentLayers) }
@@ -1149,6 +1153,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     fun invertMaskLayer(idx: Int) {
         val currentLayers = _recipe.value.masks.toMutableList()
+        if (currentLayers.isEmpty()) return
         if (idx in currentLayers.indices) {
             val layer = currentLayers[idx]
             val invertedSubMasks = layer.subMasks.map { sub ->
@@ -1170,6 +1175,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     fun duplicateMaskLayer(idx: Int) {
         val currentLayers = _recipe.value.masks.toMutableList()
+        if (currentLayers.isEmpty()) return
         if (idx in currentLayers.indices) {
             val layer = currentLayers[idx]
             val duplicated = layer.copy(

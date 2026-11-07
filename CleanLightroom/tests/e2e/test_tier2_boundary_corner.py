@@ -173,16 +173,17 @@ class TestTier2BoundaryCornerCases:
         """Verifies Mask Opacity slider boundary clamps properly."""
         ui = adb.dump_ui()
         opacity_node = ui.find_one(desc="Mask Opacity") or ui.find_one(text="Mask Opacity")
-        # Ensure opacity label or slider exists if mask is active
         if opacity_node:
             assert opacity_node.bounds[1][0] > opacity_node.bounds[0][0], "Zero width opacity slider bounds!"
+        assert adb.is_app_foreground(), "App terminated checking opacity bounds!"
 
     def test_t2_18_mask_opacity_slider_boundary_hundred(self, adb: ADBHelper):
         """Verifies 100% is displayed as default opacity on new mask creation."""
         ui = adb.dump_ui()
-        pct_node = ui.find_one(text="100") or ui.find_one(desc="100 %")
+        pct_node = ui.find_one(text="100") or ui.find_one(desc="100 %") or ui.find_one(text="100 %")
         if pct_node:
-            assert pct_node is not None, "100% opacity not found"
+            assert pct_node.bounds[1][0] >= pct_node.bounds[0][0], "Invalid bounds for 100% readout"
+        assert adb.is_app_foreground(), "App terminated checking 100% opacity readout!"
 
     def test_t2_19_mask_double_invert_idempotence(self, adb: ADBHelper):
         """Verifies Invert button can be toggled without crash or UI corruption."""
@@ -246,6 +247,11 @@ class TestTier2BoundaryCornerCases:
         adb.set_orientation(1, settle_delay_s=1.0)
         assert adb.is_app_foreground(), "App crashed rotating during Crop mode!"
         adb.set_orientation(0, settle_delay_s=0.5)
+        # Dismiss Crop mode
+        ui_cancel = adb.dump_ui()
+        cancel_btn = ui_cancel.find_one(desc="Cancel") or ui_cancel.find_one(text="Cancel")
+        if cancel_btn:
+            adb.tap_element(cancel_btn, delay_s=0.5)
 
     def test_t2_25_canvas_aspect_ratio_bounds_stability(self, adb: ADBHelper):
         """Canvas width and height remain positive non-zero across orientation changes."""

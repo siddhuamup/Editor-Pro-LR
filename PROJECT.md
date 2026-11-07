@@ -44,8 +44,8 @@ CleanLightroom is a high-fidelity Android photo editing application built with J
 | M1 | Build Unblock & Core Contracts | Fix 0-byte XML files, sync MaskingPanel composables, standardize Color tokens, verify clean compilation | none | DONE |
 | M2 | Authentic SVG Icons & UI Styling | Replace Material icon fallbacks, correct primary dock icons, add sub-tool modified dots, unify surface backgrounds | M1 | DONE |
 | M3 | Complete Masking Panel Subsystem | Complete Create Mask sheet, ruby red overlay, floating layer dock, combine modes, opacity slider, 5 adjustment tabs | M1 | DONE |
-| M4 | Responsive Landscape Adaptation | Implement Compose orientation handling, multi-column landscape layout (canvas left, vertical rails right) | M2, M3 | IN_PROGRESS |
-| M5 | E2E Testing & Visual Parity Verification | Run comprehensive automated test suite, capture emulator-5554 screenshots in portrait & landscape, verify visual parity | M4 | PLANNED |
+| M4 | Responsive Landscape Adaptation | Implement Compose orientation handling, multi-column landscape layout (canvas left, vertical rails right) | M2, M3 | DONE |
+| M5 | E2E Testing & Visual Parity Verification | Run comprehensive automated test suite, capture emulator-5554 screenshots in portrait & landscape, verify visual parity | M4 | IN_PROGRESS |
 
 ---
 

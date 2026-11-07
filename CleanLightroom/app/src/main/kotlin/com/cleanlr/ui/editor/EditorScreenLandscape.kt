@@ -925,20 +925,14 @@ internal fun LandscapeAdjustmentColumn(
                         onCropPageSelected = onSelectCropPage,
                         selectedAspectCategory = selectedAspectCategory,
                         onAspectCategorySelected = onSelectAspectCategory,
-                        aspectRatioGuide = aspectRatioGuide?.label,
-                        onAspectRatioSelected = { guideLabel ->
-                            val guide = com.cleanlr.model.AspectRatioGuide.entries.find { it.label == guideLabel }
-                            viewModel.setAspectRatioGuide(guide)
-                        },
+                        aspectRatioGuide = aspectRatioGuide,
+                        onAspectRatioSelected = { viewModel.setAspectRatioGuide(it) },
                         isExpandEnabled = recipe.crop.isExpandEnabled,
-                        onExpandToggled = { viewModel.setCropExpandEnabled(it) },
+                        onExpandToggled = { viewModel.setExpandEnabled(it) },
                         constrainCrop = recipe.crop.constrainCrop,
-                        onConstrainCropToggled = { viewModel.setCropConstrain(it) },
-                        uprightMode = recipe.crop.uprightMode.name,
-                        onUprightModeSelected = { modeStr ->
-                            val mode = com.cleanlr.model.UprightMode.entries.find { it.name == modeStr } ?: com.cleanlr.model.UprightMode.OFF
-                            viewModel.setUprightMode(mode)
-                        },
+                        onConstrainCropToggled = { viewModel.setConstrainCrop(it) },
+                        uprightMode = recipe.crop.uprightMode,
+                        onUprightModeSelected = { viewModel.setUprightMode(it) },
                         distortion = recipe.crop.distortion,
                         onDistortionChanged = { viewModel.updateRecipe("Distortion") { r -> r.copy(crop = r.crop.copy(distortion = it)) } },
                         vertical = recipe.crop.verticalPerspective,
@@ -984,16 +978,25 @@ internal fun LandscapeAdjustmentColumn(
                         activePreset = activePreset,
                         presetAmount = presetAmount,
                         onSelectPreset = { viewModel.applyPreset(it) },
-                        onPresetAmountChange = { viewModel.setPresetAmount(it) }
+                        onPresetAmountChange = { viewModel.adjustPresetAmount(it) }
                     )
                 }
 
                 "Actions" -> {
                     ActionsLandscapeAdjustmentPanel(
-                        onAutoTone = { viewModel.applyAutoTone() },
+                        onAutoTone = { viewModel.autoTone() },
                         onQuickAction = { action ->
                             when (action) {
-                                "B&W" -> viewModel.toggleBlackAndWhite()
+                                "B&W" -> {
+                                    val isBw = (recipe.basic.saturation <= -99.9f)
+                                    viewModel.updateRecipe(if (isBw) "Exit B&W" else "Enter B&W") {
+                                        val nextSat = if (isBw) 0f else -100f
+                                        it.copy(
+                                            basic = it.basic.copy(saturation = nextSat),
+                                            presence = it.presence.copy(saturation = nextSat)
+                                        ).syncLegacyFields()
+                                    }
+                                }
                                 else -> {}
                             }
                         }
@@ -1216,8 +1219,8 @@ internal fun LandscapePrimaryDockRail(
                 "Actions" to R.drawable.ic_lr_quick_actions,
                 "Presets" to R.drawable.ic_lr_presets,
                 "Crop" to R.drawable.ic_lr_crop,
-                "Edit" to R.drawable.ic_lr_light,
-                "Masking" to R.drawable.ic_lr_mask_brush,
+                "Edit" to R.drawable.ic_lr_edit_sliders,
+                "Masking" to R.drawable.ic_lr_masking,
                 "Remove" to R.drawable.ic_lr_generative_remove
             )
 
@@ -1262,7 +1265,7 @@ internal fun LandscapeDialogsAndSheets(
         CreateNewMaskBottomSheet(
             onDismissRequest = onDismissCreateMaskSheet,
             onSelectSubMask = { subMask ->
-                viewModel.addSubMaskToActive(subMask)
+                viewModel.addMaskLayer(subMask)
                 onDismissCreateMaskSheet()
             }
         )

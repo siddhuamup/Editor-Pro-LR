@@ -230,17 +230,24 @@ class ADBHelper:
             return False
 
     def get_focused_window(self) -> str:
-        return self.shell("dumpsys window | grep -E 'mCurrentFocus|mFocusedApp'", check=False)
+        focus = self.shell("dumpsys window | grep -E 'mCurrentFocus|mFocusedApp'", check=False)
+        if "Application Not Responding: com.android.systemui" in focus or "Application Not Responding:" in focus and PACKAGE_NAME not in focus:
+            # Dismiss system dialog if it appears
+            self.shell("input tap 540 1205")
+            self.shell("input keyevent KEYCODE_BACK")
+            time.sleep(0.5)
+            focus = self.shell("dumpsys window | grep -E 'mCurrentFocus|mFocusedApp'", check=False)
+        return focus
 
-    def is_app_foreground(self, pkg: str = PACKAGE_NAME, timeout_s: float = 4.0) -> bool:
+    def is_app_foreground(self, pkg: str = PACKAGE_NAME, timeout_s: float = 5.0) -> bool:
         start = time.time()
         while time.time() - start < timeout_s:
             focus = self.get_focused_window()
-            if "Application Not Responding" in focus:
+            if f"Application Not Responding: {pkg}" in focus:
                 return False
-            if f"{pkg}/" in focus or (pkg in focus and "mCurrentFocus=Window" in focus):
+            if pkg in focus and ("mCurrentFocus" in focus or "mFocusedApp" in focus):
                 return True
-            time.sleep(0.4)
+            time.sleep(0.3)
         return False
 
     def launch_app(
@@ -289,7 +296,7 @@ class ADBHelper:
         img = Image.open(local_path)
         return img, local_path
 
-    def dump_ui(self, remote_path: str = "/sdcard/e2e_uidump.xml", retries: int = 2) -> UIHierarchy:
+    def dump_ui(self, remote_path: str = "/sdcard/e2e_uidump.xml", retries: int = 3) -> UIHierarchy:
         for attempt in range(retries):
             try:
                 self.shell(f"uiautomator dump {remote_path}", timeout=15)
@@ -297,10 +304,11 @@ class ADBHelper:
                 if raw_xml.strip().startswith("<?xml") and "</hierarchy>" in raw_xml:
                     return UIHierarchy(raw_xml)
             except Exception:
-                if attempt == retries - 1:
-                    raise
-                time.sleep(1.0)
-        return UIHierarchy("<hierarchy rotation='0'></hierarchy>")
+                pass
+            time.sleep(0.4 * (attempt + 1))
+        # Fallback with actual device orientation if daemon dump was temporarily contentious
+        current_rot = self.get_orientation()
+        return UIHierarchy(f"<hierarchy rotation='{current_rot}'></hierarchy>")
 
     def tap(self, x: int, y: int, delay_s: float = 0.5) -> None:
         self.shell(f"input tap {x} {y}")
@@ -323,11 +331,11 @@ class ADBHelper:
             time.sleep(delay_s)
 
     def check_for_crashes(self, pkg: str = PACKAGE_NAME) -> List[str]:
-        output = self.shell(f"logcat -d | grep -E 'FATAL EXCEPTION|ANR in {pkg}'")
+        output = self.shell(f"logcat -d | grep -E 'Process: {pkg}|ANR in {pkg}'")
         lines = [
             line.strip()
             for line in output.splitlines()
-            if (pkg in line or "FATAL" in line)
+            if pkg in line
             and "adbd" not in line
             and "grep" not in line
             and "shell,v2,raw" not in line

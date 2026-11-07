@@ -927,7 +927,7 @@ fun MaskingSlidersPanel(
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
                 .padding(bottom = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             LocalAdjustmentCategory.values().forEach { cat ->
@@ -935,7 +935,7 @@ fun MaskingSlidersPanel(
                 Text(
                     text = cat.title.uppercase(),
                     color = if (isCatSelected) Color(0xFF38A9FF) else Color(0xFF8E8E8E),
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = if (isCatSelected) FontWeight.Bold else FontWeight.Medium,
                     modifier = Modifier
                         .clickable {

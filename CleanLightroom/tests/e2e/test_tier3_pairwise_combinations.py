@@ -22,12 +22,17 @@ class TestTier3PairwiseCombinations:
     def test_t3_01_pairwise_edit_and_masking(self, adb: ADBHelper, clean_screen):
         """Verifies global Edit adjustments and Masking layers coexist seamlessly."""
         ui = adb.dump_ui()
-        edit_tool = ui.find_one(desc="Edit") or ui.find_one(text="Edit")
-        if edit_tool:
-            adb.tap_element(edit_tool, delay_s=0.8)
+        if not (ui.exists(text="Exposure") or ui.exists(desc="Exposure")):
+            edit_tool = ui.find_one(desc="Edit") or ui.find_one(text="Edit")
+            if edit_tool:
+                adb.tap_element(edit_tool, delay_s=0.8)
         # Switch directly to Masking
         ui = adb.dump_ui()
         mask_tool = ui.find_one(desc="Masking") or ui.find_one(text="Masking")
+        if not mask_tool:
+            adb.wait_for_ui(lambda u: u.exists(desc="Masking") or u.exists(text="Masking"), timeout_s=4.0)
+            ui = adb.dump_ui()
+            mask_tool = ui.find_one(desc="Masking") or ui.find_one(text="Masking")
         assert mask_tool is not None, "Masking tool not accessible while in Edit mode!"
         adb.tap_element(mask_tool, delay_s=0.8)
         assert len(adb.check_for_crashes(PACKAGE_NAME)) == 0, "Crash switching Edit -> Masking!"
@@ -132,6 +137,7 @@ class TestTier3PairwiseCombinations:
         back_btn = ui.find_one(desc="Back to library")
         if back_btn:
             adb.tap_element(back_btn, delay_s=0.8)
-        # Relaunch MainActivity to re-enter Editor
-        adb.launch_app(PACKAGE_NAME, MAIN_ACTIVITY, wait_s=1.0)
+        # Restart MainActivity to re-enter Editor
+        adb.restart_app(PACKAGE_NAME, MAIN_ACTIVITY, wait_s=1.5)
+        adb.wait_for_ui(lambda u: u.exists(desc="Edit") or u.exists(text="Edit"), timeout_s=5.0)
         assert adb.is_app_foreground(), "App failed to re-open Editor!"

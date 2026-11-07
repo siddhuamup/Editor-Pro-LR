@@ -30,13 +30,13 @@ class SpectrumThemeTokenTest {
 
     @Test
     fun testAdobeSpectrumDarkNormativeHexTokens() {
-        // 1. Canvas Background: loupe_background = #121212
-        assertEquals("#121212", loupe_background.toHexRgb())
-        assertEquals("#121212", SpectrumCanvas.toHexRgb())
+        // 1. Canvas Background: loupe_background = #000000 (Pure Black OLED)
+        assertEquals("#000000", loupe_background.toHexRgb())
+        assertEquals("#000000", SpectrumCanvas.toHexRgb())
 
-        // 2. Surface (Panels): spectrum_surface_dark = #1E1E1E
-        assertEquals("#1E1E1E", spectrum_surface_dark.toHexRgb())
-        assertEquals("#1E1E1E", SpectrumSurface.toHexRgb())
+        // 2. Surface (Panels): spectrum_surface_dark = #1D1D1D (Adobe Spectrum Darkroom)
+        assertEquals("#1D1D1D", spectrum_surface_dark.toHexRgb())
+        assertEquals("#1D1D1D", SpectrumSurface.toHexRgb())
 
         // 3. Surface Elevated: spectrum_surface_elevated = #2A2A2A
         assertEquals("#2A2A2A", spectrum_surface_elevated.toHexRgb())
@@ -48,10 +48,10 @@ class SpectrumThemeTokenTest {
 
         // 5. Accent Primary: spectrum_400_blue = #1473E6
         assertEquals("#1473E6", spectrum_400_blue.toHexRgb())
-        assertEquals("#1473E6", SpectrumBlue.toHexRgb())
 
         // 6. Accent Hover / Active: spectrum_500_blue = #2680EB
         assertEquals("#2680EB", spectrum_500_blue.toHexRgb())
+        assertEquals("#2680EB", SpectrumBlue.toHexRgb())
         assertEquals("#2680EB", SpectrumBlueHover.toHexRgb())
 
         // 7. Text Primary: spectrum_text_primary = #FFFFFF

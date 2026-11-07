@@ -38,6 +38,11 @@ def clean_screen(adb):
     if not adb.is_app_foreground():
         adb.launch_app(PACKAGE_NAME, MAIN_ACTIVITY)
     ui = adb.dump_ui()
+    # If stranded in LibraryScreen (e.g. after back button navigation), restart to enter Editor
+    if not ui.find_one(desc="Edit") and not ui.find_one(text="Edit"):
+        adb.restart_app(PACKAGE_NAME, MAIN_ACTIVITY, wait_s=1.5)
+        adb.wait_for_ui(lambda u: u.exists(desc="Edit") or u.exists(text="Edit"), timeout_s=6.0)
+        ui = adb.dump_ui()
     # If in Crop or a modal mode with Cancel button, dismiss it
     cancel_btn = ui.find_one(desc="Cancel") or ui.find_one(text="Cancel")
     if cancel_btn:
