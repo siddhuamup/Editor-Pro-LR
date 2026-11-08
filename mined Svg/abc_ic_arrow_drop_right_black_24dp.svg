@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24.0 24.0" width="24" height="24">
   <g transform="translate(12 12) rotate(90) translate(-12 -12)">
-    <path d="M7,14 L12,9 L17,14 L7,14 Z" fill="#ffffff" />
+    <path d="M7,14 L12,9 L17,14 L7,14 Z" fill="#000000" />
     <path d="M0,0 L24,0 L24,24 L0,24 L0,0 Z" fill="none" />
   </g>
 </svg>

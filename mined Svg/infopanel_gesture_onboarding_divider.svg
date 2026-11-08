@@ -6,6 +6,6 @@
     </clipPath>
   </defs>
   <g clip-path="url(#clip_1)">
-    <path d="M0,0V389H2V0H0Z" fill="res/Lm1.xml" />
+    <path d="M0,0V389H2V0H0Z" fill="#ffffff" />
   </g>
 </svg>

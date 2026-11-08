@@ -14,6 +14,7 @@ Validates all SVG files inside the target directory:
 import os
 import sys
 import argparse
+import re
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -21,6 +22,16 @@ GRAPHICAL_TAGS = {
     "path", "g", "circle", "rect", "line",
     "polygon", "polyline", "ellipse", "use", "image"
 }
+
+# W3C SVG 1.1 / SVG 2 standard paint color syntax:
+# - Hex color: #(3, 4, 6, 8 hex digits)
+# - Keyword: 'none' (transparent / no paint)
+# - Keyword: 'currentColor' (case-insensitive)
+# - Functional reference: url(#id) pointing to internal defs (clipPath/gradient)
+VALID_COLOR_REGEX = re.compile(
+    r"^(#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|none|currentColor|url\(#[a-zA-Z0-9_\-]+\))$",
+    re.IGNORECASE
+)
 
 def verify_single_svg(filepath: Path):
     """
@@ -69,6 +80,17 @@ def verify_single_svg(filepath: Path):
                     errors.append("Gate 4 FAIL: <path> element has empty 'd' attribute")
                     break
 
+    # Gate 4: Strict paint/color attribute validation on all elements (fill and stroke)
+    for el in root.iter():
+        tag = el.tag.split("}")[-1]
+        for attr in ("fill", "stroke"):
+            if attr in el.attrib:
+                val = el.attrib[attr].strip()
+                if not VALID_COLOR_REGEX.match(val):
+                    errors.append(
+                        f"Gate 4 FAIL: <{tag}> has invalid {attr} paint attribute '{val}'"
+                    )
+
     return len(errors) == 0, errors
 
 def main():
@@ -107,13 +129,14 @@ def main():
             failures.append((svg_file.name, errs))
 
     pass_percentage = (passed_count / total_count) * 100
+    gate4_status = "PASSED" if failed_count == 0 else "FAILED"
 
     print("\n" + "=" * 75)
     print("TEST HARNESS RESULTS SUMMARY")
     print(f"  Gate 1 (Existence & Size > 0)    : PASSED ({passed_count}/{total_count})")
     print(f"  Gate 2 (Well-formed XML DOM)     : PASSED ({passed_count}/{total_count})")
     print(f"  Gate 3 (Root <svg> & Coordinate) : PASSED ({passed_count}/{total_count})")
-    print(f"  Gate 4 (Visual Path Geometry)    : PASSED ({passed_count}/{total_count})")
+    print(f"  Gate 4 (Path Geometry & Paint)   : {gate4_status} ({passed_count}/{total_count})")
     print(f"  Gate 5 (Batch Count >= 1000)     : {'PASSED' if total_count >= 1000 else 'FAILED'} (Total: {total_count})")
     print("-" * 75)
     print(f"  Total SVGs Scanned : {total_count}")

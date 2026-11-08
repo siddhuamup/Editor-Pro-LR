@@ -319,8 +319,11 @@ class ADBHelper:
         img = Image.open(local_path)
         return img, local_path
 
-    def dump_ui(self, remote_path: str = "/sdcard/e2e_uidump.xml", retries: int = 3) -> UIHierarchy:
-        """Dumps UI hierarchy with daemon contention recovery and backoff retry."""
+    def dump_ui(self, remote_path: str = "/sdcard/e2e_uidump.xml", retries: int = 4) -> UIHierarchy:
+        """Dumps UI hierarchy with daemon contention recovery and backoff retry.
+        Ensures a non-empty UI hierarchy is returned or raises RuntimeError on failure.
+        """
+        last_error: Optional[Exception] = None
         for attempt in range(retries):
             try:
                 # Remove previous dump to prevent reading stale XML
@@ -328,15 +331,19 @@ class ADBHelper:
                 self.shell(f"uiautomator dump {remote_path}", timeout=15)
                 raw_xml = self.shell(f"cat {remote_path}", check=False)
                 if raw_xml.strip().startswith("<?xml") and "</hierarchy>" in raw_xml:
-                    return UIHierarchy(raw_xml)
-            except Exception:
+                    hierarchy = UIHierarchy(raw_xml)
+                    if hierarchy.elements:
+                        return hierarchy
+            except Exception as e:
+                last_error = e
                 # UiAutomationService contention / exit code 137: clean up stuck daemon
                 self.shell("pkill -f uiautomator", check=False)
-            time.sleep(0.3 + 0.2 * (attempt + 1))
+            time.sleep(0.4 + 0.2 * (attempt + 1))
         
-        # Fallback with verified device orientation if daemon dump was temporarily contentious
-        current_rot = self.get_orientation()
-        return UIHierarchy(f"<hierarchy rotation='{current_rot}'></hierarchy>")
+        raise RuntimeError(
+            f"Failed to dump UI hierarchy after {retries} attempts (last error: {last_error}). "
+            f"Device UI hierarchy was empty or uiautomator daemon was unresponsive."
+        )
 
     def tap(self, x: int, y: int, delay_s: float = 0.5) -> None:
         self.shell(f"input tap {x} {y}")
@@ -359,19 +366,49 @@ class ADBHelper:
             time.sleep(delay_s)
 
     def check_for_crashes(self, pkg: str = PACKAGE_NAME) -> List[str]:
+        """Filters specifically for actual crash logs (FATAL EXCEPTION, ANR, SIGSEGV, AndroidRuntime: FATAL)
+        associated with pkg rather than arbitrary lines mentioning pkg name.
+        """
         try:
-            output = self.shell("logcat -d -t 1000", check=False, timeout=6)
+            # Check crash buffer first; fallback to main if empty
+            output = self.shell("logcat -d -b crash -t 300", check=False, timeout=6)
+            if not output.strip():
+                output = self.shell("logcat -d -t 300", check=False, timeout=6)
         except Exception:
             return []
-        lines = [
-            line.strip()
-            for line in output.splitlines()
-            if pkg in line
-            and "adbd" not in line
-            and "grep" not in line
-            and "shell,v2,raw" not in line
-        ]
-        return lines
+
+        crashes = []
+        lines = output.splitlines()
+        for idx, line in enumerate(lines):
+            line_str = line.strip()
+            if not line_str:
+                continue
+
+            # 1. ANR specifically targeting pkg
+            if f"ANR in {pkg}" in line_str:
+                crashes.append(line_str)
+                continue
+
+            # 2. Native SIGSEGV crash associated with pkg
+            if "SIGSEGV" in line_str:
+                window = "\n".join(lines[max(0, idx - 5) : min(len(lines), idx + 6)])
+                if pkg in window:
+                    crashes.append(line_str)
+                    continue
+
+            # 3. Java FATAL EXCEPTION / AndroidRuntime: FATAL associated with pkg
+            if "FATAL EXCEPTION" in line_str or "AndroidRuntime: FATAL" in line_str:
+                window = "\n".join(lines[max(0, idx - 2) : min(len(lines), idx + 8)])
+                if f"Process: {pkg}" in window or pkg in window:
+                    crashes.append(line_str)
+                    continue
+
+            # 4. Explicit crash header with pkg process designation
+            if f"Process: {pkg}" in line_str and ("FATAL" in line_str or "CRASH" in line_str):
+                crashes.append(line_str)
+                continue
+
+        return list(dict.fromkeys(crashes))
 
     def clear_logcat(self) -> None:
         self.shell("logcat -c")

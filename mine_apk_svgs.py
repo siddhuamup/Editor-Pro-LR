@@ -106,6 +106,10 @@ def parse_arsc(arsc_data: bytes):
                             val_str = f'{val:g}{unit}'
                         elif 28 <= v_type <= 31: # color
                             val_str = f'#{v_data:08X}'
+                        elif v_type == 1: # reference
+                            val_str = f'@0x{v_data:08x}'
+                        elif v_type == 2: # attr reference
+                            val_str = f'?0x{v_data:08x}'
                         else:
                             val_str = str(v_data)
                             
@@ -113,7 +117,24 @@ def parse_arsc(arsc_data: bytes):
                             res_map[res_key] = val_str
                             
         pos += c_size
-        
+
+    # Pre-seed Android framework standard colors
+    res_map['@0x0106000d'] = '#00000000'  # @android:color/transparent
+    res_map['@0x0106000b'] = '#FFFFFFFF'  # @android:color/white
+    res_map['@0x0106000c'] = '#FF000000'  # @android:color/black
+
+    # Transitive resolution for references in res_map
+    for k in list(res_map.keys()):
+        v = res_map[k]
+        visited = {k}
+        while isinstance(v, str) and v.startswith('@0x') and v.lower() in res_map:
+            next_v = res_map[v.lower()]
+            if next_v in visited or next_v == v:
+                break
+            visited.add(next_v)
+            v = next_v
+        res_map[k] = v
+
     return file_to_keys, res_map
 
 def decode_axml_to_dict_tree(data: bytes, res_map: dict):
@@ -177,7 +198,7 @@ def decode_axml_to_dict_tree(data: bytes, res_map: dict):
                     val_str = str(a_v_data)
                     
                 # Resolve indirect resource reference
-                if val_str.startswith('@0x'):
+                if val_str.startswith('@0x') or val_str.startswith('?0x'):
                     val_str = res_map.get(val_str.lower(), val_str)
                     
                 attribs[attr_name] = val_str
@@ -215,37 +236,64 @@ def safe_float(val, fallback=0.0) -> float:
 def parse_color(c_str: str, alpha_mult=1.0):
     """
     Parses Android color representation into (hex_color, opacity).
-    Handles #AARRGGBB, #RRGGBB, theme refs (?attr/..., @color/...), and transparent cutouts.
+    Guarantees every return is a valid W3C SVG <paint> value:
+    - Transparent cutouts / 0-alpha / 17170445 (@android:color/transparent) -> ('none', 0.0)
+    - #AARRGGBB, #RRGGBB, #ARGB, #RGB -> valid lowercase hex and calculated opacity
+    - 'none', 'currentColor', 'url(...)' -> preserved as-is
+    - Unresolved decimal IDs (e.g. 2130970235), theme refs (?attr, @0x, ?0x),
+      or ColorStateList/Gradient XML file paths (res/color/..., res/bDm.xml) -> ('#ffffff', alpha)
+    - Safe fallback: ('#ffffff', alpha)
     """
     if not c_str:
         return None, None
     c_str = str(c_str).strip()
     
-    # Theme references or unresolved refs default to clean opaque white (Lightroom icon color)
-    if c_str.startswith('?') or c_str.startswith('@'):
-        return '#ffffff', round(1.0 * alpha_mult, 3)
-        
+    # 1. Transparent cutouts, zero alpha, or @android:color/transparent (17170445 = 0x0106000d)
+    if (c_str in ('0x0', '#00000000', '17170445', '@0x0106000d', 'transparent')
+            or c_str.lower() in ('@android:color/transparent', '@0x0106000d')
+            or alpha_mult == 0):
+        return 'none', 0.0
+
+    # 2. Hex color strings (#AARRGGBB, #RRGGBB, #ARGB, #RGB)
     if c_str.startswith('#'):
         h = c_str[1:]
         if len(h) == 8: # #AARRGGBB
-            alpha = (int(h[0:2], 16) / 255.0) * alpha_mult
-            if alpha == 0:
-                return 'none', 0.0
-            return f'#{h[2:8].lower()}', round(alpha, 3)
+            try:
+                alpha = (int(h[0:2], 16) / 255.0) * alpha_mult
+                if alpha <= 0.001:
+                    return 'none', 0.0
+                return f'#{h[2:8].lower()}', round(alpha, 3)
+            except ValueError:
+                return '#ffffff', round(1.0 * alpha_mult, 3)
         elif len(h) == 6: # #RRGGBB
-            return f'#{h.lower()}', round(1.0 * alpha_mult, 3)
+            if all(ch in '0123456789abcdefABCDEF' for ch in h):
+                return f'#{h.lower()}', round(1.0 * alpha_mult, 3)
+            return '#ffffff', round(1.0 * alpha_mult, 3)
         elif len(h) == 4: # #ARGB
-            alpha = (int(h[0]*2, 16) / 255.0) * alpha_mult
-            if alpha == 0:
-                return 'none', 0.0
-            return f'#{h[1]*2}{h[2]*2}{h[3]*2}'.lower(), round(alpha, 3)
+            try:
+                alpha = (int(h[0]*2, 16) / 255.0) * alpha_mult
+                if alpha <= 0.001:
+                    return 'none', 0.0
+                return f'#{h[1]*2}{h[2]*2}{h[3]*2}'.lower(), round(alpha, 3)
+            except ValueError:
+                return '#ffffff', round(1.0 * alpha_mult, 3)
         elif len(h) == 3: # #RGB
-            return f'#{h[0]*2}{h[1]*2}{h[2]*2}'.lower(), round(1.0 * alpha_mult, 3)
-            
-    if c_str in ('0x0', '#00000000'):
-        return 'none', 0.0
-        
-    return c_str, round(1.0 * alpha_mult, 3)
+            if all(ch in '0123456789abcdefABCDEF' for ch in h):
+                return f'#{h[0]*2}{h[1]*2}{h[2]*2}'.lower(), round(1.0 * alpha_mult, 3)
+            return '#ffffff', round(1.0 * alpha_mult, 3)
+
+    # 3. Valid W3C paint keywords or url references
+    if c_str in ('none', 'currentColor'):
+        return c_str, round(1.0 * alpha_mult, 3)
+    if c_str.startswith('url('):
+        return c_str, round(1.0 * alpha_mult, 3)
+
+    # 4. Fallback for all other values:
+    # - Decimal resource IDs (e.g. 2130970235)
+    # - Theme / attribute references (?attr/..., @0x..., ?0x...)
+    # - ColorStateList XMLs (res/color/....xml) or gradient paths (res/bDm.xml)
+    # Defaults cleanly to Adobe Lightroom standard icon color: opaque white (#ffffff)
+    return '#ffffff', round(1.0 * alpha_mult, 3)
 
 def convert_vector_node_to_svg(root_node: dict) -> ET.Element:
     """Converts a parsed VectorDrawable AST into a standard W3C SVG ElementTree."""
