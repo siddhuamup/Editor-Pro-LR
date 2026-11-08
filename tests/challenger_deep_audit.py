@@ -15,6 +15,10 @@ import struct
 import zipfile
 import re
 from pathlib import Path
+
+# Add project root to sys.path so mine_apk_svgs can be imported
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 
