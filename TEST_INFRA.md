@@ -1,41 +1,33 @@
-# E2E Test Infra: CleanLightroom Mobile
+# E2E Test Infra: Lightroom APK SVG Icon Mining & Verification
 
 ## Test Philosophy
-- Opaque-box, requirement-driven. Direct verification of user-facing UI, layout, and rendering on `emulator-5554`.
-- Methodology: Category-Partition + Boundary Value Analysis + Pairwise Feature Combinations + Real-World Workload Testing.
+- Requirement-driven, opaque-box and structural verification.
+- Validates that every extracted vector asset in `mined Svg/` meets W3C SVG standards, has non-zero size, is well-formed XML, contains visual elements, and accurately represents the original vector drawables from `Lightroom.apk`.
 
-## Feature Inventory
-| # | Feature | Source (requirement) | Tier 1 | Tier 2 | Tier 3 |
-|---|---------|---------------------|:------:|:------:|:------:|
-| 1 | Build & Launch | ORIGINAL_REQUEST §1 | 5 | 5 | ✓ |
-| 2 | Design Tokens & Surfaces | ORIGINAL_REQUEST §1 | 5 | 5 | ✓ |
-| 3 | SVG Icon Parity | ORIGINAL_REQUEST §1 | 5 | 5 | ✓ |
-| 4 | Masking Panel Sub-modes | ORIGINAL_REQUEST §2 | 5 | 5 | ✓ |
-| 5 | Screen Orientation Adaptation | ORIGINAL_REQUEST §3 | 5 | 5 | ✓ |
+## Feature Inventory & Test Coverage
+| # | Feature | Requirement | Tier 1 | Tier 2 | Tier 3 | Tier 4 |
+|---|---------|-------------|:------:|:------:|:------:|:------:|
+| 1 | APK Ingestion & Extraction | R1: Extract all icon assets | ✓ | ✓ | ✓ | ✓ |
+| 2 | Name Deobfuscation | Canonical naming from ARSC | ✓ | ✓ | ✓ | ✓ |
+| 3 | Well-formed XML/SVG | AC: Clean XML parsing | ✓ | ✓ | ✓ | ✓ |
+| 4 | File Size > 0 Bytes | AC: Non-empty files | ✓ | ✓ | ✓ | ✓ |
+| 5 | Visual Content Presence | Path data and elements | ✓ | ✓ | ✓ | ✓ |
+| 6 | Sizing & ViewBox | Valid viewBox and dimensions | ✓ | ✓ | ✓ | ✓ |
+| 7 | Transparency & Colors | Correct alpha/fill rendering | ✓ | ✓ | ✓ | ✓ |
 
 ## Test Architecture
-- Test Runner: Python test runner invoking ADB commands against `emulator-5554`.
-- Test Harness:
-  - Orientation controller: `settings put system user_rotation [0|1]`.
-  - Screenshot capture: `screencap -p /sdcard/capture.png` pulled to local inspection directory.
-  - UI Dumper: `uiautomator dump` to verify presence of specific component text, bounds, and resource IDs.
-- Pass/Fail Semantics:
-  - Zero crashes/ANRs during launch and mode transitions.
-  - Pixel color sampling matches authentic spectrum tokens (`#1D1D1D` dock surface, `#2680EB` active tint).
-  - Exact orientation dimensions: Portrait canvas centered above dock, Landscape canvas on left (`X = 0..1780`) with adjustment rails on right (`X = 1780..2712`).
+- **Test Runner**: Python script `verify_mined_svgs.py --dir "mined Svg"`
+- **Pass/Fail Semantics**:
+  - Exit code `0`: All files meet all 5 validation gates (100% pass rate).
+  - Exit code `1`: Any file is missing, empty, malformed, or missing visual elements.
+- **Directory Layout**:
+  - Input: `C:\Users\Siddhu\Downloads\Lightroom.apk`
+  - Output: `c:\Users\Siddhu\Desktop\apps testing\mined Svg\*.svg`
+  - Test Script: `c:\Users\Siddhu\Desktop\apps testing\verify_mined_svgs.py`
 
-## Real-World Application Scenarios (Tier 4)
-| # | Scenario | Features Exercised | Complexity |
-|---|----------|--------------------|------------|
-| 1 | Portrait Primary Workflow | Library navigation -> Editor open -> Adjust Light sliders -> Compare before/after | High |
-| 2 | Masking Creation & Editing | Open Masking -> Tap (+) -> Select Subject -> Verify ruby red overlay -> Adjust mask exposure | High |
-| 3 | Landscape Orientation Pivot | Rotate emulator to landscape -> Verify 3-rail right layout -> Select Edit sub-tools | High |
-| 4 | Masking in Landscape | Open Masking in landscape -> Check 5 adjustment tabs in right column -> Invert mask | High |
-| 5 | Crop & Aspect Ratio in Both Orientations | Open Crop in portrait -> Rotate to landscape -> Change aspect ratio to 1:1 -> Verify canvas letterbox | High |
-
-## Coverage Thresholds
-- Tier 1: ≥5 per feature (25 tests)
-- Tier 2: ≥5 per feature (25 tests)
-- Tier 3: pairwise interaction coverage across tools and orientations (10 tests)
-- Tier 4: ≥5 realistic application scenarios (5 tests)
-- **Total: 65 E2E Verification Tests**
+## Verification Gates
+- **Gate 1**: File Existence & Size (`os.path.getsize(f) > 0`).
+- **Gate 2**: XML Well-Formedness (`xml.etree.ElementTree.parse(f)` succeeds with 0 syntax errors).
+- **Gate 3**: Root Tag & Coordinates (`root.tag == "svg"`, valid `viewBox` and/or `width`/`height`).
+- **Gate 4**: Graphical Elements (`<path>`, `<g>`, etc. present with non-empty `d` path data).
+- **Gate 5**: Global Batch Assertion (`total_count > 1000`, `failed_count == 0`).

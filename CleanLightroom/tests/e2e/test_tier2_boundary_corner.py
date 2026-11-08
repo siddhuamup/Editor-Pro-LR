@@ -171,18 +171,58 @@ class TestTier2BoundaryCornerCases:
 
     def test_t2_17_mask_opacity_slider_boundary_zero(self, adb: ADBHelper):
         """Verifies Mask Opacity slider boundary clamps properly."""
-        ui = adb.dump_ui()
+        # Wait up to 3.0s for Mask Opacity slider in hierarchy
+        ui = adb.wait_for_ui(
+            lambda u: u.find_one(desc="Mask Opacity") is not None or u.find_one(text="Mask Opacity") is not None,
+            timeout_s=3.0,
+        ) or adb.dump_ui()
         opacity_node = ui.find_one(desc="Mask Opacity") or ui.find_one(text="Mask Opacity")
-        if opacity_node:
-            assert opacity_node.bounds[1][0] > opacity_node.bounds[0][0], "Zero width opacity slider bounds!"
+        
+        # If masking mode is not open or mask layer not yet created, ensure layer exists
+        if not opacity_node:
+            mask_tool = ui.find_one(desc="Masking") or ui.find_one(text="Masking")
+            if mask_tool:
+                adb.tap_element(mask_tool, delay_s=0.6)
+                ui = adb.dump_ui()
+            fab = ui.find_one(desc="Create new Mask") or ui.find_one(desc="Add Mask")
+            if fab:
+                adb.tap_element(fab, delay_s=0.6)
+                ui = adb.dump_ui()
+                brush_btn = ui.find_one(text="Brush") or ui.find_one(desc="Brush")
+                if brush_btn:
+                    adb.tap_element(brush_btn, delay_s=0.6)
+                    ui = adb.dump_ui()
+            opacity_node = ui.find_one(desc="Mask Opacity") or ui.find_one(text="Mask Opacity")
+
+        assert opacity_node is not None, "Mask Opacity slider element missing in hierarchy!"
+        assert opacity_node.bounds[1][0] > opacity_node.bounds[0][0], (
+            f"Zero width opacity slider bounds: {opacity_node.bounds}"
+        )
         assert adb.is_app_foreground(), "App terminated checking opacity bounds!"
 
     def test_t2_18_mask_opacity_slider_boundary_hundred(self, adb: ADBHelper):
         """Verifies 100% is displayed as default opacity on new mask creation."""
-        ui = adb.dump_ui()
-        pct_node = ui.find_one(text="100") or ui.find_one(desc="100 %") or ui.find_one(text="100 %")
-        if pct_node:
-            assert pct_node.bounds[1][0] >= pct_node.bounds[0][0], "Invalid bounds for 100% readout"
+        # Wait up to 3.0s for 100% readout in hierarchy
+        ui = adb.wait_for_ui(
+            lambda u: any(
+                u.find_one(text=pattern) is not None or u.find_one(desc=pattern) is not None
+                for pattern in ["100%", "100 %", "100"]
+            ),
+            timeout_s=3.0,
+        ) or adb.dump_ui()
+        
+        pct_node = (
+            ui.find_one(text="100%")
+            or ui.find_one(text="100 %")
+            or ui.find_one(text="100")
+            or ui.find_one(desc="100%")
+            or ui.find_one(desc="100 %")
+            or ui.find_one(desc="100")
+        )
+        assert pct_node is not None, "100% opacity readout node missing in Masking hierarchy!"
+        assert pct_node.bounds[1][0] > pct_node.bounds[0][0], (
+            f"Invalid bounds for 100% readout: {pct_node.bounds}"
+        )
         assert adb.is_app_foreground(), "App terminated checking 100% opacity readout!"
 
     def test_t2_19_mask_double_invert_idempotence(self, adb: ADBHelper):

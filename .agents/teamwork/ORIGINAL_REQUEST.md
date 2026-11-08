@@ -1,38 +1,27 @@
 # Original User Request
 
-## Approved Task Prompt — 2026-10-29T06:47:19Z
+## Approved Task Prompt — 2026-11-07T18:49:27Z
 
-The user has approved the task prompt and answered all interview questions:
-1. Primary Purpose: (a) Production app refinement
-2. Remaining Tasks Scope: (b) Focus strictly on the UI refinement, SVG icon replacements, and Masking panel completion explicitly mentioned
-3. Verification Mechanism: (a) Build and run the app on the active emulator (emulator-5554), capture screenshots across vertical and horizontal modes, and compare against reference images
-4. Team Restrictions: (e) None of these: no restrictions, any approach that works
+Extract and mine all SVG icons from the original APK file "C:\Users\Siddhu\Downloads\Lightroom.apk" using REA and reverse engineering tools.
 
-User's exact request:
-"use parellel agent :- ultra refine ui. ui vr ajun kaam karychi garaj ahe UI la mi atta 60/100 marks deil kaaran ui ajun exact match nahiye je SVG icons references images(orignal UI) madhe astil tech use kar . masking panl  vr ajun khup kaam karne baki ahe , ui & feature build kelyavr rea/ ne orignal apk varun help ghe ani build kartanna pan help ghe. design reference folder madhe ui che reference screenshot ahet je ki orignal application madhun ghetle ahet ani tyach design refence folder madhe horizhontal UI che pan screenshot ahet tyat jashe ui ahe tasach ui vertcle cha pan ahe fkt screen rotate hote. ani svg icon compalsory nahiye ki reference madhunach use karyche jashe exact ui vr ahe tasa use kar. ani last prompt madhun je tasks remaining astil te pan complete karun ghe"
+Integrity mode: development
 
-Please begin parallel team execution immediately.
+## Requirements
 
-## Follow-up — 2026-11-02T05:00:09Z
+### R1. APK Asset Extraction
+Extract all icon and vector assets from the original APK file located at `C:\Users\Siddhu\Downloads\Lightroom.apk`.
 
-Server restarted after a TLS timeout. Please continue your work on Milestone 4 (Responsive Landscape Adaptation / EditorScreenLandscape.kt) and Milestone 5 (Final E2E & Parity Verification on emulator-5554).
+### R2. SVG Conversion and Output Organization
+Convert all extracted vector icons into valid standard `.svg` files and save them in a new folder named `mined Svg`.
 
-## Follow-up — 2026-11-04T16:25:51Z
+## Acceptance Criteria
 
-User requested to resume the task:
-"ultra refine ui. ui vr ajun kaam karychi garaj ahe UI la mi atta 60/100 marks deil kaaran ui ajun exact match nahiye je SVG icons references images(orignal UI) madhe astil tech use kar . masking panl vr ajun khup kaam karne baki ahe , ui & feature build kelyavr rea/ ne orignal apk varun help ghe ani build kartanna pan help ghe. design reference folder madhe ui che reference screenshot ahet je ki orignal application madhun ghetle ahet ani tyach design refence folder madhe horizhontal UI che pan screenshot ahet tyat jashe ui ahe tasach ui vertcle cha pan ahe fkt screen rotate hote. ani svg icon compalsory nahiye ki reference madhunach use karyche jashe exact ui vr ahe tasa use kar. ani last prompt madhun je tasks remaining astil te pan complete karun ghe"
+### Verification and Asset Validity
+- [ ] All icon and vector assets from `C:\Users\Siddhu\Downloads\Lightroom.apk` are extracted and stored as `.svg` files inside the `mined Svg` directory.
+- [ ] Every extracted `.svg` file is non-empty (> 0 bytes) and validates as well-formed SVG/XML.
+- [ ] A programmatic verification test script executes and confirms that all generated SVG files parse cleanly and are valid.
 
-Latest System State:
-1. Milestone 4 modularization has been completely resolved:
-   - `EditorScreenLandscape.kt` is cleanly decomposed into `LandscapeCanvasWorkspace`, `LandscapeAdjustmentColumn`, `LandscapeSubToolRail`, `LandscapePrimaryDockRail`, and `LandscapeDialogsAndSheets`.
-   - All 12 sub-panels are in `LandscapeAdjustmentPanels.kt`.
-   - All method bindings and types have been aligned with `EditorScreen.kt` and `MaskingPanel.kt`.
-2. `./gradlew.bat compileDebugKotlin` is verified: BUILD SUCCESSFUL (0 errors).
-3. `./gradlew.bat testDebugUnitTest --tests com.cleanlr.ui.editor.LandscapeOrientationAdaptationTest` is verified: BUILD SUCCESSFUL (0 errors).
-4. DEX register overflow (`VerifyError`) is completely eliminated.
-5. Device `emulator-5554` is attached and available for Milestone 5:
-   - Install APK (`gradlew installDebug`)
-   - Execute E2E automated test suite
-   - Capture portrait and landscape screenshots and verify 100/100 visual and functional parity against the design-reference folders.
 
-Please resume execution immediately, complete Milestone 5 verification on `emulator-5554`, and compile the final victory report.
+## Follow-up — 2026-11-08T09:54:09Z
+
+Please continue the teamwork run to complete the remediation and final verification of the SVG icons.

@@ -24,7 +24,9 @@ class TestTier4RealWorldScenarios:
         Library navigation -> Editor open -> Adjust Light sliders -> Compare before/after.
         """
         # Step 1: Ensure in EditorScreen
-        assert adb.is_app_foreground(), "App not in foreground"
+        if not adb.is_app_foreground(timeout_s=5.0):
+            adb.launch_app(PACKAGE_NAME, MAIN_ACTIVITY, wait_s=2.0)
+        assert adb.is_app_foreground(timeout_s=5.0), "App not in foreground"
 
         # Step 2: Open Edit tool in primary dock
         ui = adb.dump_ui()

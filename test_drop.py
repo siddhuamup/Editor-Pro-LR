@@ -1,0 +1,10 @@
+import os
+
+svg_content = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="200" height="200">
+  <rect width="24" height="24" fill="#1e1e1e"/>
+  <path d="M12 3.5s6.5 6.8 6.5 11.2a6.5 6.5 0 1 1-13 0C5.5 10.3 12 3.5 12 3.5z" fill="#ffffff"/>
+</svg>"""
+
+with open("test_drop.svg", "w") as f:
+    f.write(svg_content)
+print("test_drop.svg written")

@@ -266,24 +266,47 @@ class ADBHelper:
         self.stop_app(pkg)
         self.launch_app(pkg, act, wait_s=wait_s)
 
-    def set_orientation(self, rotation: int, settle_delay_s: float = 1.0, timeout_s: float = 5.0) -> None:
-        """Sets screen orientation: 0 for Portrait, 1 for Landscape (90 deg counter-clockwise)."""
+    ROTATION_NAMES = {
+        0: "ROTATION_0",
+        1: "ROTATION_90",
+        2: "ROTATION_180",
+        3: "ROTATION_270",
+    }
+
+    def set_orientation(self, rotation: int, settle_delay_s: float = 0.5, timeout_s: float = 6.0) -> None:
+        """Sets screen orientation: 0 for Portrait, 1 for Landscape (90 deg counter-clockwise).
+        Actively polls Window Manager until mCurrentRotation and mRotation have settled.
+        """
         if rotation not in (0, 1):
             raise ValueError(f"Invalid rotation {rotation}; only 0 (portrait) or 1 (landscape) supported.")
+        
+        target_name = self.ROTATION_NAMES.get(rotation, "ROTATION_0")
         self.shell(
             f"settings put system accelerometer_rotation 0; settings put system user_rotation {rotation}"
         )
-        time.sleep(settle_delay_s)
+        
         start = time.time()
         while time.time() - start < timeout_s:
-            out = self.shell("dumpsys window | grep 'mRotation='")
-            if f"mRotation={rotation}" in out:
+            out = self.shell("dumpsys window", check=False)
+            # Both display configuration and rotation controller must match
+            if f"mCurrentRotation={target_name}" in out and f"mRotation={rotation}" in out:
                 break
-            time.sleep(0.3)
-        time.sleep(0.5)
+            time.sleep(0.15)
+        
+        # Brief stabilization sleep for Compose layout pass and animations to finish settling
+        time.sleep(settle_delay_s)
 
     def get_orientation(self) -> int:
-        val = self.shell("settings get system user_rotation")
+        """Reads current orientation from window manager or system settings."""
+        out = self.shell("dumpsys window", check=False)
+        for line in out.splitlines():
+            if "mRotation=" in line and "mDeferred" in line:
+                for token in line.split():
+                    if token.startswith("mRotation="):
+                        val = token.split("=")[1]
+                        if val.isdigit():
+                            return int(val)
+        val = self.shell("settings get system user_rotation", check=False)
         return int(val.strip()) if val.strip().isdigit() else 0
 
     def capture_screenshot(self, local_path: Optional[str] = None) -> Tuple[Image.Image, str]:
@@ -297,16 +320,21 @@ class ADBHelper:
         return img, local_path
 
     def dump_ui(self, remote_path: str = "/sdcard/e2e_uidump.xml", retries: int = 3) -> UIHierarchy:
+        """Dumps UI hierarchy with daemon contention recovery and backoff retry."""
         for attempt in range(retries):
             try:
+                # Remove previous dump to prevent reading stale XML
+                self.shell(f"rm -f {remote_path}", check=False)
                 self.shell(f"uiautomator dump {remote_path}", timeout=15)
-                raw_xml = self.shell(f"cat {remote_path}")
+                raw_xml = self.shell(f"cat {remote_path}", check=False)
                 if raw_xml.strip().startswith("<?xml") and "</hierarchy>" in raw_xml:
                     return UIHierarchy(raw_xml)
             except Exception:
-                pass
-            time.sleep(0.4 * (attempt + 1))
-        # Fallback with actual device orientation if daemon dump was temporarily contentious
+                # UiAutomationService contention / exit code 137: clean up stuck daemon
+                self.shell("pkill -f uiautomator", check=False)
+            time.sleep(0.3 + 0.2 * (attempt + 1))
+        
+        # Fallback with verified device orientation if daemon dump was temporarily contentious
         current_rot = self.get_orientation()
         return UIHierarchy(f"<hierarchy rotation='{current_rot}'></hierarchy>")
 
@@ -331,7 +359,10 @@ class ADBHelper:
             time.sleep(delay_s)
 
     def check_for_crashes(self, pkg: str = PACKAGE_NAME) -> List[str]:
-        output = self.shell(f"logcat -d | grep -E 'Process: {pkg}|ANR in {pkg}'")
+        try:
+            output = self.shell("logcat -d -t 1000", check=False, timeout=6)
+        except Exception:
+            return []
         lines = [
             line.strip()
             for line in output.splitlines()

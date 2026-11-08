@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10.0 6.0" width="10" height="6">
+  <path d="M0,0h10v6h-10z" fill="res/color/adobe_spectrum_bottomsheet_chevron_tint.xml" fill-opacity="0.000" />
+  <path d="M10,1A1,1 0,0 0,9 0a0.985,0.985 0,0 0,-0.695 0.305L5.012,3.598 1.719,0.305A1,1 0,0 0,0.281 1.695c0.008,0.008 4.024,4.024 4.024,4.024A0.958,0.958 0,0 0,5 6a1.012,1.012 0,0 0,0.719 -0.281l0,-0 3.999,-3.999A0.955,0.955 0,0 0,10 1Z" fill="res/color/adobe_spectrum_bottomsheet_chevron_tint.xml" />
+</svg>

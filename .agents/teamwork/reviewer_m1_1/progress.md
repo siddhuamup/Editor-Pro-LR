@@ -1,16 +1,13 @@
-# Progress: Reviewer Milestone 1
+# Progress — reviewer_m1_1
 
-Last visited: 2026-10-29T08:03:00Z
-Status: Completed - Verdict: APPROVE
+Last visited: 2026-11-08T09:20:30Z
 
-## Tasks
-- [x] Initialized workspace and briefing
-- [x] Read ORIGINAL_REQUEST.md, PROJECT.md, and worker_m1/handoff.md
-- [x] Inspect 3 XML drawables for validity and vector specs (Passed: valid 24dp VectorDrawables with proper pathData and stroke/fill)
-- [x] Inspect MaskingPanel.kt for contract compliance and Compose best practices (Passed: FloatingMaskDock, MaskingSlidersPanel, CreateNewMaskBottomSheet properly implemented and overloaded)
-- [x] Inspect Color.kt for color token standardization (Passed: spectrum_surface_dark=#1D1D1D, SpectrumBlue=#2680EB, loupe_background=#000000)
-- [x] Run independent build (`.\gradlew.bat compileDebugKotlin`) - BUILD SUCCESSFUL in 1m 19s (exit code 0)
-- [x] Adversarial checks and edge case testing (Passed: no integrity violations, safe bounds handling)
-- [x] Update BRIEFING.md
-- [ ] Write handoff.md with verdict
-- [ ] Send completion message to orchestrator
+- [x] Initialized BRIEFING.md, DISPATCH.md, and progress.md
+- [x] Read authoritative documentation (`ORIGINAL_REQUEST.md`, `PROJECT.md`, `TEST_INFRA.md`, `worker_mining_1/handoff.md`)
+- [x] Inspect source code of `mine_apk_svgs.py` and `verify_mined_svgs.py` for code quality, error handling, adversarial flaws, integrity violations
+- [x] Run verification script and check exit codes and gate metrics (Passes 100% on existing 5 gates)
+- [x] Verify `mined Svg/` directory metrics (file count 1267, all `.svg`, non-empty, sizes 181 to 42,210 bytes)
+- [x] Sample and inspect 13 SVGs across categories (`svg_*`, `ic_*`, `spectrum_*`, `aspect_*`, etc.)
+- [x] Adversarial stress-testing: Discovered 62 files (4.89%) with invalid W3C SVG `fill` and `stroke` attributes (raw resource IDs and `.xml` file paths) and identified test harness gate blind spot
+- [x] Write `handoff.md` with complete findings, logic chain, and verdict: REQUEST_CHANGES
+- [ ] Send message to orchestrator parent

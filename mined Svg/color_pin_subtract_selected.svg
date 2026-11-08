@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22.0 22.0" width="22" height="22">
+  <path d="M11,11m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" fill="#bbbbbb" fill-opacity="0.300" stroke="none" stroke-width="3.0" />
+  <path d="M11,11m-9.5,0a9.5,9.5 0,1 1,19 0a9.5,9.5 0,1 1,-19 0" fill="none" stroke="#000000" stroke-opacity="0.300" stroke-width="3.0" />
+  <path d="M11,11m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" fill="#ffffff" stroke="none" stroke-width="2.0" />
+  <path d="M11,11m-9,0a9,9 0,1 1,18 0a9,9 0,1 1,-18 0" fill="none" stroke="#ffffff" stroke-width="2.0" />
+  <path d="M11,11m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" fill="#378ef0" stroke="none" stroke-width="2.0" />
+  <path d="M11,11m-9,0a9,9 0,1 1,18 0a9,9 0,1 1,-18 0" fill="none" stroke="#ffffff" stroke-width="2.0" />
+  <path d="m18.608,8.528a8,8 0,0 1,-1.444 7.572l-6.164,-5.1z" fill="#ffffff" fill-opacity="0.200" />
+  <path d="m17.164,16.1a8,8 0,0 1,-7.164 2.837l1,-7.937z" fill="#ffffff" fill-opacity="0.360" />
+  <path d="m10,18.937a8,8 0,0 1,-6.239 -4.531l7.239,-3.406z" fill="#ffffff" fill-opacity="0.520" />
+  <path d="m3.761,14.406a8,8 0,0 1,0.484 -7.693l6.755,4.287z" fill="#ffffff" fill-opacity="0.680" />
+  <path d="m4.245,6.713a8,8 0,0 1,6.755 -3.713v8z" fill="#ffffff" fill-opacity="0.840" />
+  <path d="M8.5,10L13.5,10A1,1 0,0 1,14.5 11L14.5,11A1,1 0,0 1,13.5 12L8.5,12A1,1 0,0 1,7.5 11L7.5,11A1,1 0,0 1,8.5 10z" fill="#ffffff" />
+</svg>

@@ -1,4 +1,4 @@
-# BRIEFING — 2026-11-04T19:04:00Z
+# BRIEFING — 2026-11-07T18:22:00Z
 
 ## Mission
 Investigate test failures, false attestations, and daemon flakiness in E2E test harness on emulator-5554 (sampling dock coordinates, uiautomator dump exit 137 backoff, orientation settle polling, and vacuous assertions in tier 2).
@@ -16,22 +16,28 @@ Investigate test failures, false attestations, and daemon flakiness in E2E test 
 
 ## Current Parent
 - Conversation ID: 940af036-e815-4281-aa60-73e24df6e7c3
-- Updated: not yet
+- Updated: 2026-11-07T18:11:12Z
 
 ## Investigation State
-- **Explored paths**: None yet
-- **Key findings**: None yet
-- **Unexplored areas**:
-  1. Dock sampling coordinates in test_tier1_feature_coverage.py vs emulator_portrait.png
-  2. dump_ui() exit code 137 and retry backoff in adb_helper.py
-  3. Window manager rotation polling via dumpsys window in adb_helper.py
-  4. test_t2_17 / test_t2_18 vacuous assertion pattern in test_tier2_boundary_corner.py
+- **Explored paths**:
+  - `CleanLightroom/tests/e2e/test_tier1_feature_coverage.py`
+  - `CleanLightroom/tests/e2e/test_tier2_boundary_corner.py`
+  - `CleanLightroom/tests/e2e/test_tier3_pairwise_combinations.py`
+  - `CleanLightroom/tests/e2e/test_tier4_real_world_scenarios.py`
+  - `CleanLightroom/tests/e2e/adb_helper.py`
+  - `CleanLightroom/app/src/main/kotlin/com/cleanlr/ui/editor/MaskingPanel.kt`
+- **Key findings**:
+  - `test_t1_06`: sampling at `(img.width // 2, img.height - 50)` evaluates to `(540, 2350)`, hitting the white gesture navigation pill. Sampling at `(img.width // 2, img.height - 120)` (`x=540, y=2280`) lands in the empty gap between Crop and Edit buttons, reliably yielding `#1D1D1D` (`RGB(29, 29, 29)`).
+  - `dump_ui`: exit status 137 occurs when `UiAutomationService` is contentious. Fixed via pre-dump file removal, `pkill -f uiautomator` on failure, exponential backoff retry, and reading active rotation from window manager.
+  - `set_orientation`: `dumpsys window` updates `mRotation=1` before `mCurrentRotation` finishes animating from `ROTATION_0` to `ROTATION_90`. Fixed via active polling on both `mCurrentRotation` and `mRotation`.
+  - `test_t2_17` and `test_t2_18`: conditional guards (`if opacity_node:`, `if pct_node:`) created vacuous pass cases. Formulated replacement using `wait_for_ui` and hard assertions.
+- **Unexplored areas**: None within scope.
 
 ## Key Decisions Made
-- Starting investigation of mandatory input files first.
+- All replacement code snippets fully formulated and documented in `handoff.md`.
 
 ## Artifact Index
-- DISPATCH.md — Dispatch log
-- BRIEFING.md — Working memory
-- progress.md — Liveness heartbeat
-- handoff.md — Final investigation report
+- `DISPATCH.md` — Inbound instructions log
+- `BRIEFING.md` — Working memory and context
+- `progress.md` — Liveness heartbeat
+- `handoff.md` — Comprehensive investigation report with machine-applicable code snippets

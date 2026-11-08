@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1.0 389.0" width="1" height="389">
+  <defs>
+    <clipPath id="clip_1">
+      <path d="M0,0H1V389H0V0Z" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clip_1)">
+    <path d="M0,0V389H2V0H0Z" fill="res/Lm1.xml" />
+  </g>
+</svg>

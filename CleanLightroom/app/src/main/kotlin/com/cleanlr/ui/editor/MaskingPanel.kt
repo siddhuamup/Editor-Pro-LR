@@ -688,6 +688,7 @@ fun MaskingSlidersPanel(
     onUpdateLayerAdjustments: (MaskLayer) -> Unit,
     onDeleteActiveLayer: () -> Unit,
     onAddSubMaskToActive: (SubMask) -> Unit,
+    showCategoryTabs: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     MaskingSlidersPanel(
@@ -700,6 +701,7 @@ fun MaskingSlidersPanel(
         onAddSubMaskToActive = onAddSubMaskToActive,
         onSubtractSubMaskFromActive = onAddSubMaskToActive,
         onIntersectSubMaskWithActive = onAddSubMaskToActive,
+        showCategoryTabs = showCategoryTabs,
         modifier = modifier
     )
 }
@@ -714,12 +716,13 @@ fun MaskingSlidersPanel(
     layers: List<MaskLayer>,
     activeLayerIndex: Int,
     selectedCategory: MaskAdjustmentCategory,
-    onCategorySelected: (MaskAdjustmentCategory) -> Unit,
+    onCategorySelected: (MaskAdjustmentCategory) -> Unit = {},
     onUpdateLayerAdjustments: (MaskLayer) -> Unit,
     onDeleteActiveLayer: () -> Unit,
     onAddSubMaskToActive: (SubMask) -> Unit,
-    onSubtractSubMaskFromActive: (SubMask) -> Unit,
-    onIntersectSubMaskWithActive: (SubMask) -> Unit,
+    onSubtractSubMaskFromActive: (SubMask) -> Unit = onAddSubMaskToActive,
+    onIntersectSubMaskWithActive: (SubMask) -> Unit = onAddSubMaskToActive,
+    showCategoryTabs: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val activeLayer = layers.getOrNull(activeLayerIndex) ?: return
@@ -921,6 +924,7 @@ fun MaskingSlidersPanel(
 
         HorizontalDivider(color = Color(0xFF2C2C2C), thickness = 0.5.dp)
 
+        if (showCategoryTabs) {
         // 3. Category Header & Tab Selector Strip (Light | Color | Effects | Detail | Optics)
         Row(
             modifier = Modifier
@@ -946,6 +950,17 @@ fun MaskingSlidersPanel(
                 )
             }
         }
+    } else {
+        // Authentic Landscape Category Title (Reference Screenshot 201104)
+        Text(
+            text = currentCategory.title.uppercase(),
+            color = SpectrumTextSecondary,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+    }
 
         // 4. 5 Local Adjustment Categories with Sliders
         when (currentCategory) {

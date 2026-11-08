@@ -45,7 +45,9 @@ enum class EditorToolTab(val title: String) {
     CURVES("Curves"),
     PRESETS("Presets"),
     VERSIONS("Versions"),
-    MASKS("Masks")
+    MASKS("Masks"),
+    ACTIONS("Actions"),
+    REMOVE("Remove")
 }
 
 enum class FlagState { NONE, PICK, REJECT }
@@ -152,7 +154,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val _isComparingOriginal = MutableStateFlow(false)
     val isComparingOriginal: StateFlow<Boolean> = _isComparingOriginal.asStateFlow()
 
-    private val _activeTab = MutableStateFlow(EditorToolTab.COLOR)
+    private val _activeTab = MutableStateFlow(EditorToolTab.LIGHT)
     val activeTab: StateFlow<EditorToolTab> = _activeTab.asStateFlow()
 
     private val _exportStatus = MutableStateFlow<String?>(null)
@@ -1287,6 +1289,11 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
             EditorToolTab.MASKS -> {
                 r.masks.isNotEmpty()
             }
+            EditorToolTab.ACTIONS -> false
+            EditorToolTab.REMOVE -> false
+
+
+
         }
     }
 
@@ -1350,6 +1357,10 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
             EditorToolTab.MASKS -> {
                 updateRecipe("Reset Masks") { it.copy(masks = emptyList()) }
             }
+            EditorToolTab.ACTIONS -> {}
+            EditorToolTab.REMOVE -> {}
+
+
         }
     }
 

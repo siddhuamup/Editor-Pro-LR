@@ -1,4 +1,4 @@
-# BRIEFING — 2026-10-29T06:49:00Z
+# BRIEFING — 2026-11-08T09:43:00Z
 
 ## Mission
 Orchestrate and monitor ultra-refinement of Lightroom Mobile UI parity, masking panel, SVG icons, and orientation support.
@@ -22,14 +22,14 @@ Orchestrate and monitor ultra-refinement of Lightroom Mobile UI parity, masking 
 ## User Context
 - **Last user request**: Resume Milestone 5 verification on emulator-5554 and deliver final victory report.
 - **Pending clarifications**: None. Prompt approved.
-- **Delivered results**: Milestones 1-4 complete with clean compilation, 0 DEX overflow, and unit test pass. Milestone 5 E2E & parity verification active.
+- **Delivered results**: Milestones 1-4 complete with clean compilation, 0 DEX overflow, and unit test pass. Milestone 5 Remediation Wave active (Tiers 1-3 E2E passed 100%, Tier 4 real-world scenarios under active verification).
 
 ## Project Status
 - **Phase**: in progress (Phase 4: Milestone 5 - E2E Testing & Parity Verification on emulator-5554)
 - **Active tracks**:
-  - Orchestrator Gen 2: 940af036-e815-4281-aa60-73e24df6e7c3 (actively running Milestone 5 verification)
-- **Cron 1 (Reporting)**: task-1557 (*/8 * * * *)
-- **Cron 2 (Liveness)**: task-1559 (*/10 * * * *)
+  - Orchestrator Gen 2: 940af036-e815-4281-aa60-73e24df6e7c3 (revived and actively orchestrating Milestone 5 execution)
+- **Cron 1 (Reporting)**: task-2340 (*/8 * * * *)
+- **Cron 2 (Liveness)**: task-2342 (*/10 * * * *)
 
 ## Victory Audit Status
 - **Triggered**: no

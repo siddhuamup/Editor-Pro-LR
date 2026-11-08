@@ -65,8 +65,9 @@ class TestTier1FeatureCoverage:
     def test_t1_06_dock_surface_token_parity(self, adb: ADBHelper, clean_screen):
         """Verifies bottom tool dock matches Adobe Spectrum darkroom surface (#1D1D1D / #121212)."""
         img, _ = adb.capture_screenshot()
-        # Sample bottom dock area safely away from center gesture pill (e.g. width // 4)
-        dock_rgb = ColorVerifier.sample_pixel(img, img.width // 4, img.height - 50)
+        # Sample primary dock surface between Crop and Edit buttons above gesture nav bar inset
+        # (center-x = 540, height - 120 = 2280 on 1080x2400)
+        dock_rgb = ColorVerifier.sample_pixel(img, img.width // 2, img.height - 120)
         lum = ColorVerifier.relative_luminance(dock_rgb)
         # Spectrum Darkroom surfaces must be dark (luminance < 0.10, RGB channels < 45)
         assert all(c < 45 for c in dock_rgb), (

@@ -1,13 +1,24 @@
-# Progress — Codebase Survey Explorer
+# Progress - explorer_survey_1
 
-Last visited: 2026-10-29T07:15:00Z
+- Last visited: 2026-11-08T08:14:00Z
+- Status: Investigation Complete
+- Current Step: Drafting handoff report `handoff.md` and sending notification to parent.
 
-- [x] Initialized DISPATCH.md and BRIEFING.md
-- [x] Read ORIGINAL_REQUEST.md
-- [x] Survey project structure and Gradle setup (AGP 8.7.1, Kotlin 2.0.21, buildDir redirected to C:/tmp/cleanlr_build)
-- [x] Survey screens, composables, navigation, ViewModels, and state management (MainActivity, EditorScreen 4830 lines, EditorViewModel, LightroomLibraryScreen)
-- [x] Survey current Masking panel implementation and features/gaps (MaskingPanel.kt vs MaskingSlidersPanel in write_masking.py, submask types, combine modes)
-- [x] Survey orientation handling (vertical vs horizontal/landscape: android:configChanges present, but zero Compose landscape adaptation)
-- [x] Survey icons and asset usage across the app (ic_lr_*.xml, 21 imageVector fallbacks, 14 categories in SVG pack)
-- [x] Verify build and test status (Discovered build failure: 0-byte ic_lr_close.xml, ic_lr_more_vert.xml, ic_lr_plus.xml; JDK path identified at Android Studio jbr)
-- [x] Compile comprehensive handoff.md and send message to orchestrator
+## Completed Milestones
+1. Verified APK file existence, size (170,231,128 bytes), and package metadata (`com.adobe.lrmobile`).
+2. Checked host environment:
+   - Python 3.13.9 available.
+   - Java 21.0.8 available via Android Studio JBR.
+   - Android SDK Build-Tools 36.1.0 (`aapt2.exe`, `aapt.exe`) available and verified.
+   - REA MCP tool checked; apktool not present on PATH.
+3. Inspected APK archive:
+   - 6,873 total entries.
+   - Obfuscated/flattened resource paths in `res/` (e.g. `res/-18.xml`).
+   - `resources.arsc` mapped 4,580 entries back to original resource identifiers.
+   - Confirmed 0 raw SVG files in APK.
+   - Confirmed all XML files in `res/` are compiled Android Binary XML (AXML).
+   - Scanned all 3,552 XML files and identified exactly 1,267 `<vector>` drawables, 25 `animated-vector` drawables, 197 `shape` drawables, and 29 Lottie JSON animations.
+   - Confirmed 100% of the 1,267 vector drawables have matching resource names in `resources.arsc`.
+4. Benchmarked and verified extraction strategy:
+   - Pure Python streaming AXML decoder parses all vector drawables in ~1.1 seconds.
+   - End-to-end vector-to-SVG conversion logic prototyped and verified in memory.

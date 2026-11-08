@@ -134,6 +134,26 @@ fun EditorScreenLandscape(
         }
     }
 
+    LaunchedEffect(selectedMobileTool) {
+        when (selectedMobileTool) {
+            "Edit" -> {
+                if (activeTab !in listOf(
+                        EditorToolTab.LIGHT, EditorToolTab.COLOR, EditorToolTab.BLUR,
+                        EditorToolTab.EFFECTS, EditorToolTab.DETAIL, EditorToolTab.OPTICS,
+                        EditorToolTab.PROFILES, EditorToolTab.CURVES
+                    )
+                ) {
+                    viewModel.setActiveTab(EditorToolTab.LIGHT)
+                }
+            }
+            "Masking" -> if (activeTab != EditorToolTab.MASKS) viewModel.setActiveTab(EditorToolTab.MASKS)
+            "Crop" -> if (activeTab != EditorToolTab.CROP) viewModel.setActiveTab(EditorToolTab.CROP)
+            "Presets" -> if (activeTab != EditorToolTab.PRESETS) viewModel.setActiveTab(EditorToolTab.PRESETS)
+            "Actions" -> if (activeTab != EditorToolTab.ACTIONS) viewModel.setActiveTab(EditorToolTab.ACTIONS)
+            "Remove" -> if (activeTab != EditorToolTab.REMOVE) viewModel.setActiveTab(EditorToolTab.REMOVE)
+        }
+    }
+
     Row(
         modifier = modifier
             .fillMaxSize()
@@ -205,6 +225,14 @@ fun EditorScreenLandscape(
                 LandscapeSubToolRail(
                     viewModel = viewModel,
                     activeTab = activeTab,
+                    modifier = Modifier.width(60.dp)
+                )
+
+                VerticalDivider(color = SpectrumInnerBorder, thickness = 1.dp)
+            } else if (selectedMobileTool == "Masking") {
+                LandscapeMaskingSubToolRail(
+                    selectedCategory = selectedMaskCategory,
+                    onSelectCategory = { selectedMaskCategory = it },
                     modifier = Modifier.width(60.dp)
                 )
 
@@ -592,7 +620,15 @@ internal fun LandscapeCanvasWorkspace(
                 }
             }
 
-            if (selectedMobileTool == "Masking") {
+            if (selectedMobileTool == "Masking" && !isCleanScreenMode) {
+                MaskOverlayCanvas(
+                    masks = recipe.masks,
+                    activeMaskIndex = activeMaskLayerIndex,
+                    isOverlayVisible = true,
+                    onPinClick = { },
+                    modifier = Modifier.fillMaxSize()
+                )
+
                 FloatingMaskDock(
                     masks = recipe.masks,
                     activeMaskIndex = activeMaskLayerIndex,
@@ -959,9 +995,13 @@ internal fun LandscapeAdjustmentColumn(
                         layers = recipe.masks,
                         activeLayerIndex = activeMaskLayerIndex,
                         selectedCategory = selectedMaskCategory,
-                        onUpdateLayerAdjustments = { layer -> viewModel.updateMaskLayer(layer) },
+                        onCategorySelected = onSelectMaskCategory,
+                        onUpdateLayerAdjustments = { layer: MaskLayer -> viewModel.updateMaskLayer(layer) },
                         onDeleteActiveLayer = { viewModel.deleteActiveMaskLayer() },
-                        onAddSubMaskToActive = { subMask -> viewModel.addSubMaskToActive(subMask) }
+                        onAddSubMaskToActive = { subMask: SubMask -> viewModel.addSubMaskToActive(subMask) },
+                        onSubtractSubMaskFromActive = { subMask: SubMask -> viewModel.addSubMaskToActive(subMask) },
+                        onIntersectSubMaskWithActive = { subMask: SubMask -> viewModel.addSubMaskToActive(subMask) },
+                        showCategoryTabs = false
                     )
                 }
 
@@ -1085,10 +1125,15 @@ internal fun LandscapeAdjustmentColumn(
                         }
 
                         else -> {
-                            Text(
-                                text = "${activeTab.title} controls",
-                                color = SpectrumTextSecondary,
-                                modifier = Modifier.padding(16.dp)
+                            // Defensive recovery: default to Light controls when activeTab is not an edit tab
+                            LightLandscapeAdjustmentPanel(
+                                recipe = recipe,
+                                isHdrModeActive = isHdrModeActive,
+                                hdrLimitEv = hdrLimitEv,
+                                onHdrToggle = onToggleHdrMode,
+                                onHdrLimitChange = onHdrLimitEvChange,
+                                onOpenCurves = { viewModel.setActiveTab(EditorToolTab.CURVES) },
+                                viewModel = viewModel
                             )
                         }
                     }
@@ -1136,7 +1181,7 @@ internal fun LandscapeSubToolRail(
             val iconRes = when (tab) {
                 EditorToolTab.LIGHT -> R.drawable.ic_lr_light
                 EditorToolTab.COLOR -> R.drawable.ic_lr_color
-                EditorToolTab.BLUR -> R.drawable.ic_lr_lens_blur
+                EditorToolTab.BLUR -> R.drawable.ic_lr_blur
                 EditorToolTab.EFFECTS -> R.drawable.ic_lr_effects
                 EditorToolTab.DETAIL -> R.drawable.ic_lr_detail
                 EditorToolTab.OPTICS -> R.drawable.ic_lr_optics
@@ -1153,6 +1198,49 @@ internal fun LandscapeSubToolRail(
                 onClick = { viewModel.setActiveTab(tab) },
                 onLongClick = { viewModel.toggleBypassTab(tab) },
                 onDoubleClick = { viewModel.resetTab(tab) }
+            )
+
+            Spacer(Modifier.height(4.dp))
+        }
+    }
+}
+
+// =============================================================================
+// 2B-2. MASKING SUB-TOOL VERTICAL STRIP COMPONENT (Landscape Masking Mode)
+// =============================================================================
+@Composable
+internal fun LandscapeMaskingSubToolRail(
+    selectedCategory: LocalAdjustmentCategory,
+    onSelectCategory: (LocalAdjustmentCategory) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val categories = listOf(
+        LocalAdjustmentCategory.LIGHT to Pair(R.drawable.ic_lr_light, "Light"),
+        LocalAdjustmentCategory.COLOR to Pair(R.drawable.ic_lr_color, "Color"),
+        LocalAdjustmentCategory.EFFECTS to Pair(R.drawable.ic_lr_effects, "Effects"),
+        LocalAdjustmentCategory.DETAIL to Pair(R.drawable.ic_lr_detail, "Detail"),
+        LocalAdjustmentCategory.OPTICS to Pair(R.drawable.ic_lr_optics, "Optics")
+    )
+
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .background(SpectrumSurface)
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 12.dp, horizontal = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        categories.forEach { (cat, info) ->
+            val (iconRes, label) = info
+            val isSelected = (selectedCategory == cat)
+
+            SubToolRailItem(
+                iconRes = iconRes,
+                label = label,
+                isSelected = isSelected,
+                isModified = false,
+                isBypassed = false,
+                onClick = { onSelectCategory(cat) }
             )
 
             Spacer(Modifier.height(4.dp))
@@ -1209,6 +1297,39 @@ internal fun LandscapePrimaryDockRail(
                 Icon(
                     painter = painterResource(R.drawable.ic_lr_select_checkmark),
                     contentDescription = "Apply crop",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(32.dp))
+        } else if (selectedMobileTool == "Masking") {
+            // Authentic Lightroom Mobile Landscape Masking Rail (Screenshot 201104)
+            Spacer(modifier = Modifier.height(32.dp))
+            IconButton(
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    onSelectMobileTool("Edit")
+                },
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_lr_close),
+                    contentDescription = "Discard mask",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            IconButton(
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    onSelectMobileTool("Edit")
+                },
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_lr_select_checkmark),
+                    contentDescription = "Apply mask",
                     tint = Color.White,
                     modifier = Modifier.size(24.dp)
                 )

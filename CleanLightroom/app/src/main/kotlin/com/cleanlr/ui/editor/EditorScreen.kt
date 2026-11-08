@@ -233,6 +233,47 @@ fun EditorScreen(
         }
     }
 
+    val synchronizeSelectedTool: (String?) -> Unit = { tool ->
+        if (selectedMobileTool == tool && tool == "Crop") {
+            if (tool == "Crop" && viewModel.isCropActive.value) {
+                viewModel.toggleCropActive()
+            }
+            selectedMobileTool = null
+        } else {
+            if (tool == "Crop") {
+                if (!viewModel.isCropActive.value) viewModel.toggleCropActive()
+                selectedMobileTool = "Crop"
+                viewModel.setActiveTab(EditorToolTab.CROP)
+            } else {
+                if (viewModel.isCropActive.value) viewModel.toggleCropActive()
+                selectedMobileTool = tool
+                when (tool) {
+                    "Actions" -> viewModel.setActiveTab(EditorToolTab.ACTIONS)
+                    "Presets" -> viewModel.setActiveTab(EditorToolTab.PRESETS)
+                    "Edit" -> {
+                        val currentTab = viewModel.activeTab.value
+                        val isEditSubTab = currentTab in listOf(
+                            EditorToolTab.LIGHT,
+                            EditorToolTab.COLOR,
+                            EditorToolTab.BLUR,
+                            EditorToolTab.EFFECTS,
+                            EditorToolTab.DETAIL,
+                            EditorToolTab.OPTICS,
+                            EditorToolTab.PROFILES,
+                            EditorToolTab.CURVES
+                        )
+                        if (!isEditSubTab) {
+                            viewModel.setActiveTab(EditorToolTab.LIGHT)
+                        }
+                    }
+                    "Masking" -> viewModel.setActiveTab(EditorToolTab.MASKS)
+                    "Remove" -> viewModel.setActiveTab(EditorToolTab.REMOVE)
+                    else -> viewModel.setActiveTab(EditorToolTab.LIGHT)
+                }
+            }
+        }
+    }
+
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -241,7 +282,7 @@ fun EditorScreen(
             viewModel = viewModel,
             modifier = modifier,
             selectedMobileTool = selectedMobileTool,
-            onSelectMobileTool = { selectedMobileTool = it },
+            onSelectMobileTool = synchronizeSelectedTool,
             onBack = onBack
         )
         return
@@ -650,29 +691,7 @@ fun EditorScreen(
                     )
                     else -> MobilePrimaryToolbar(
                         selectedTool = selectedMobileTool,
-                        onToolSelected = { tool ->
-                            if (selectedMobileTool == tool) {
-                                if (tool == "Crop" && viewModel.isCropActive.value) {
-                                    viewModel.toggleCropActive()
-                                }
-                                selectedMobileTool = null
-                            } else {
-                                if (tool == "Crop") {
-                                    if (!viewModel.isCropActive.value) viewModel.toggleCropActive()
-                                    selectedMobileTool = "Crop"
-                                } else {
-                                    if (viewModel.isCropActive.value) viewModel.toggleCropActive()
-                                    selectedMobileTool = tool
-                                    when (tool) {
-                                        "Actions" -> { }
-                                        "Presets" -> viewModel.setActiveTab(EditorToolTab.PRESETS)
-                                        "Edit" -> viewModel.setActiveTab(EditorToolTab.LIGHT)
-                                        "Masking" -> viewModel.setActiveTab(EditorToolTab.MASKS)
-                                        "Remove" -> viewModel.setActiveTab(EditorToolTab.MASKS)
-                                    }
-                                }
-                            }
-                        }
+                        onToolSelected = synchronizeSelectedTool
                     )
                 }
             }
@@ -807,8 +826,16 @@ fun EditorScreen(
                     }
                 }
 
-                // Floating Mask Dock (Reference Screenshot 083741)
+                // Floating Mask Dock & Canvas Overlay (Reference Screenshots 083741 & 201104)
                 if (selectedMobileTool == "Masking" && !isCleanScreenMode) {
+                    MaskOverlayCanvas(
+                        masks = recipe.masks,
+                        activeMaskIndex = activeMaskLayerIndex,
+                        isOverlayVisible = true,
+                        onPinClick = { },
+                        modifier = Modifier.fillMaxSize()
+                    )
+
                     FloatingMaskDock(
                         masks = recipe.masks,
                         activeMaskIndex = activeMaskLayerIndex,
@@ -2262,6 +2289,10 @@ fun EditorScreen(
                                 onAddSubMaskToActive = { subMask -> viewModel.addSubMaskToActive(subMask) }
                             )
                         }
+
+                        EditorToolTab.ACTIONS, EditorToolTab.REMOVE -> {}
+                        EditorToolTab.ACTIONS -> {}
+                        EditorToolTab.REMOVE -> {}
                         }
                     }
                     }
@@ -2485,7 +2516,7 @@ fun EditorScreen(
                                 EditorToolTab.CROP -> R.drawable.ic_lr_crop
                                 EditorToolTab.LIGHT -> R.drawable.ic_lr_light
                                 EditorToolTab.COLOR -> R.drawable.ic_lr_color
-                                EditorToolTab.BLUR -> R.drawable.ic_lr_lens_blur
+                                EditorToolTab.BLUR -> R.drawable.ic_lr_blur
                                 EditorToolTab.EFFECTS -> R.drawable.ic_lr_effects
                                 EditorToolTab.DETAIL -> R.drawable.ic_lr_detail
                                 EditorToolTab.OPTICS -> R.drawable.ic_lr_optics
@@ -2494,6 +2525,8 @@ fun EditorScreen(
                                 EditorToolTab.PRESETS -> R.drawable.ic_lr_presets
                                 EditorToolTab.VERSIONS -> R.drawable.ic_lr_versions
                                 EditorToolTab.MASKS -> R.drawable.ic_lr_masking
+                                EditorToolTab.ACTIONS -> R.drawable.ic_lr_quick_actions
+                                EditorToolTab.REMOVE -> R.drawable.ic_lr_generative_remove
                             }
                             Surface(
                                 color = if (isSelected) Color(0xFF2C2C2C) else Color.Transparent,
