@@ -1,0 +1,91 @@
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21        ">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
+   crs:PresetType="Look"
+   crs:Cluster="Adobe"
+   crs:UUID="F5968BB76A014F87B62163E5A485C3FA"
+   crs:SupportsAmount="True"
+   crs:SupportsColor="True"
+   crs:SupportsMonochrome="False"
+   crs:SupportsHighDynamicRange="True"
+   crs:SupportsNormalDynamicRange="True"
+   crs:SupportsSceneReferred="True"
+   crs:SupportsOutputReferred="True"
+   crs:CameraModelRestriction=""
+   crs:Copyright="© 2018 Adobe Systems, Inc."
+   crs:ContactInfo=""
+   crs:Version="10.3"
+   crs:ProcessVersion="10.0"
+   crs:Contrast2012="+8"
+   crs:Clarity2012="+8"
+   crs:ConvertToGrayscale="True"
+   crs:LookTable="AC0E24EFC658D3BD29B430044AE2FB7C"
+   crs:Table_AC0E24EFC658D3BD29B430044AE2FB7C="2e000KZk$uzz]:0)N}/wLUp@1eC|PHgWv{!^VT`/]:Ae:W%N[oE*d1ipZnl]v[+kHI.12q5=L:ZX|}V{RO8"
+   crs:HasSettings="True">
+   <crs:Name>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">B&amp;W 04</rdf:li>
+    </rdf:Alt>
+   </crs:Name>
+   <crs:ShortName>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:ShortName>
+   <crs:SortName>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">B&amp;W 04</rdf:li>
+    </rdf:Alt>
+   </crs:SortName>
+   <crs:Group>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">B&amp;W</rdf:li>
+    </rdf:Alt>
+   </crs:Group>
+   <crs:Description>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:Description>
+   <crs:ToneCurvePV2012>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>17, 10</rdf:li>
+     <rdf:li>34, 24</rdf:li>
+     <rdf:li>51, 41</rdf:li>
+     <rdf:li>68, 63</rdf:li>
+     <rdf:li>85, 89</rdf:li>
+     <rdf:li>102, 116</rdf:li>
+     <rdf:li>119, 143</rdf:li>
+     <rdf:li>136, 169</rdf:li>
+     <rdf:li>153, 193</rdf:li>
+     <rdf:li>170, 212</rdf:li>
+     <rdf:li>187, 228</rdf:li>
+     <rdf:li>204, 239</rdf:li>
+     <rdf:li>221, 246</rdf:li>
+     <rdf:li>238, 251</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012>
+   <crs:ToneCurvePV2012Red>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012Red>
+   <crs:ToneCurvePV2012Green>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012Green>
+   <crs:ToneCurvePV2012Blue>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012Blue>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>

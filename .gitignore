@@ -10,4 +10,6 @@ rea/
 CleanLightroom/*.png
 CleanLightroom/dump.xml
 .tmp.driveupload
+__pycache__/
+*.pyc
 

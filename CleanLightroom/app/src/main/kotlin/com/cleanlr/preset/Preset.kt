@@ -439,13 +439,22 @@ object PresetManager {
         )
     )
 
-    fun getGroups(): List<String> = STARTER_PACK.map { it.group }.distinct()
+    /**
+     * All available presets: Curated starter styles merged with 500+ authentic
+     * presets mined directly from Adobe Lightroom Mobile APK.
+     */
+    val ALL_PRESETS: List<Preset> by lazy {
+        val starterIds = STARTER_PACK.map { it.id }.toSet()
+        STARTER_PACK + MinedPresetLibrary.PRESETS.filter { it.id !in starterIds }
+    }
+
+    fun getGroups(): List<String> = ALL_PRESETS.map { it.group }.distinct()
 
     fun getPresetsByGroup(group: String): List<Preset> =
-        STARTER_PACK.filter { it.group.equals(group, ignoreCase = true) }
+        ALL_PRESETS.filter { it.group.equals(group, ignoreCase = true) }
 
     fun findPresetById(id: String): Preset? =
-        STARTER_PACK.find { it.id == id }
+        ALL_PRESETS.find { it.id == id }
 
     /**
      * Scale a preset against a base recipe using the modern Amount slider (0% to 200%).

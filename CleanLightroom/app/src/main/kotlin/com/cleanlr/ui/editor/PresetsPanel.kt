@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -66,20 +68,54 @@ fun PresetsPanel(
     var activeSubTab by remember { mutableStateOf("Yours") } // Default to "Yours" or "Premium"
     var openedCollection by remember { mutableStateOf<String?>(null) }
 
-    // Static authentic collections matching Screenshots 083253 & 083256
-    val premiumCollections = listOf(
-        Triple("Adaptive: Portrait", 12, listOf(Color(0xFFE67E22), Color(0xFFF39C12))),
-        Triple("Adaptive: Sky", 9, listOf(Color(0xFF2980B9), Color(0xFF6DD5FA))),
-        Triple("Adaptive: Subject", 9, listOf(Color(0xFF27AE60), Color(0xFF2ECC71))),
-        Triple("Adaptive: Landscape", 8, listOf(Color(0xFF16A085), Color(0xFF1ABC9C)))
+    // Authentic collections matching Lightroom Mobile curated and mined styles
+    val premiumCollectionDefs = listOf(
+        Pair("Adaptive: Portrait", listOf(Color(0xFFE67E22), Color(0xFFF39C12))),
+        Pair("Adaptive: Sky", listOf(Color(0xFF2980B9), Color(0xFF6DD5FA))),
+        Pair("Adaptive: Subject", listOf(Color(0xFF27AE60), Color(0xFF2ECC71))),
+        Pair("Adaptive: Landscape", listOf(Color(0xFF16A085), Color(0xFF1ABC9C))),
+        Pair("Adaptive: Blur Background", listOf(Color(0xFF8E44AD), Color(0xFF9B59B6))),
+        Pair("Style: Cinematic", listOf(Color(0xFFD35400), Color(0xFFE67E22))),
+        Pair("Style: Cinematic II", listOf(Color(0xFFE67E22), Color(0xFFF39C12))),
+        Pair("Style: Vintage", listOf(Color(0xFFC0392B), Color(0xFFE74C3C))),
+        Pair("Style: Black & White", listOf(Color(0xFF2C3E50), Color(0xFF7F8C8D))),
+        Pair("Style: Futuristic", listOf(Color(0xFF8E44AD), Color(0xFF3498DB))),
+        Pair("Style: Film-Inspired", listOf(Color(0xFF16A085), Color(0xFFF1C40F))),
+        Pair("Seasons: Autumn", listOf(Color(0xFFD35400), Color(0xFFF39C12))),
+        Pair("Seasons: Spring", listOf(Color(0xFF27AE60), Color(0xFF2ECC71))),
+        Pair("Seasons: Summer", listOf(Color(0xFFF39C12), Color(0xFFF1C40F))),
+        Pair("Seasons: Winter", listOf(Color(0xFF2980B9), Color(0xFFBDC3C7))),
+        Pair("Subject: Travel", listOf(Color(0xFF2980B9), Color(0xFF1ABC9C))),
+        Pair("Subject: Urban Architecture", listOf(Color(0xFF34495E), Color(0xFF95A5A6))),
+        Pair("Subject: Landscape", listOf(Color(0xFF27AE60), Color(0xFF16A085))),
+        Pair("Subject: Food", listOf(Color(0xFFE74C3C), Color(0xFFE67E22)))
     )
+    val premiumCollections: List<Triple<String, Int, List<Color>>> = premiumCollectionDefs.map { (title, grad) ->
+        val count = presets.count { it.group.equals(title, ignoreCase = true) }
+        Triple(title, if (count > 0) count else 10, grad)
+    }
 
-    val yoursCollections = listOf(
-        Pair("User Presets", presets.count { it.group.equals("User", ignoreCase = true) || it.isCustom }.coerceAtLeast(2)),
-        Pair("Autumn Forest", 9),
-        Pair("Dark and Moody (by Northlandscapes)", 5),
-        Pair("Northlandscapes - Astrophotography", 10)
+    val yoursCollectionTitles = listOf(
+        "User Presets",
+        "Color",
+        "Creative",
+        "B&W",
+        "Portraits",
+        "Vintage",
+        "Landscape",
+        "Defaults",
+        "Curve",
+        "Grain",
+        "Sharpening"
     )
+    val yoursCollections = yoursCollectionTitles.map { title ->
+        val count = if (title == "User Presets") {
+            presets.count { it.group.equals("User", ignoreCase = true) || it.group.equals("User Presets", ignoreCase = true) || it.isCustom }.coerceAtLeast(2)
+        } else {
+            presets.count { it.group.equals(title, ignoreCase = true) }
+        }
+        Pair(title, count)
+    }.filter { it.second > 0 || it.first == "User Presets" }
 
     Column(
         modifier = modifier
@@ -193,9 +229,14 @@ fun PresetsPanel(
         if (openedCollection != null) {
             // Preset Cards Horizontal Row for opened collection
             val collectionPresets = presets.filter {
-                it.group.contains(openedCollection ?: "", ignoreCase = true) ||
-                openedCollection == "User Presets" ||
-                it.group.equals("Creative", ignoreCase = true)
+                val grp = openedCollection ?: ""
+                if (grp.equals("User Presets", ignoreCase = true)) {
+                    it.group.equals("User", ignoreCase = true) || it.group.equals("User Presets", ignoreCase = true) || it.isCustom
+                } else {
+                    it.group.equals(grp, ignoreCase = true) ||
+                    it.group.startsWith(grp, ignoreCase = true) ||
+                    grp.startsWith(it.group, ignoreCase = true)
+                }
             }.ifEmpty { presets }
 
             LazyRow(
@@ -341,6 +382,8 @@ fun PresetsPanel(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(max = 240.dp)
+                            .verticalScroll(rememberScrollState())
                             .padding(vertical = 4.dp)
                     ) {
                         premiumCollections.forEach { (title, count, gradient) ->
@@ -406,6 +449,8 @@ fun PresetsPanel(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(max = 240.dp)
+                            .verticalScroll(rememberScrollState())
                             .padding(vertical = 4.dp)
                     ) {
                         yoursCollections.forEachIndexed { index, (title, count) ->

@@ -95,7 +95,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val _customPresets = MutableStateFlow<List<Preset>>(emptyList())
     val customPresets: StateFlow<List<Preset>> = _customPresets.asStateFlow()
 
-    private val _allPresets = MutableStateFlow<List<Preset>>(PresetManager.STARTER_PACK)
+    private val _allPresets = MutableStateFlow<List<Preset>>(PresetManager.ALL_PRESETS)
     val allPresets: StateFlow<List<Preset>> = _allPresets.asStateFlow()
 
     private val _activePreset = MutableStateFlow<Preset?>(null)
@@ -563,7 +563,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         )
         val updated = _customPresets.value + newPreset
         _customPresets.value = updated
-        _allPresets.value = PresetManager.STARTER_PACK + updated
+        _allPresets.value = PresetManager.ALL_PRESETS + updated
         _activePreset.value = newPreset
         _presetAmount.value = 100f
         _exportStatus.value = "Preset \"$name\" saved!"
@@ -586,7 +586,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                     )
                     val updated = _customPresets.value + newPreset
                     _customPresets.value = updated
-                    _allPresets.value = PresetManager.STARTER_PACK + updated
+                    _allPresets.value = PresetManager.ALL_PRESETS + updated
                     withContext(Dispatchers.Main) {
                         applyPreset(newPreset)
                         _exportStatus.value = "Imported XMP \"$fileName\""

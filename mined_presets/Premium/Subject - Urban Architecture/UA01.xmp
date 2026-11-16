@@ -1,0 +1,126 @@
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21        ">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
+   crs:PresetType="Normal"
+   crs:Cluster="Premium 1.50"
+   crs:UUID="DBC748CA068D4E22B7B183FADB4CC276"
+   crs:SupportsAmount="True"
+   crs:SupportsColor="True"
+   crs:SupportsMonochrome="True"
+   crs:SupportsHighDynamicRange="True"
+   crs:SupportsNormalDynamicRange="True"
+   crs:SupportsSceneReferred="True"
+   crs:SupportsOutputReferred="True"
+   crs:CameraModelRestriction=""
+   crs:Copyright="Adobe 2021"
+   crs:ContactInfo=""
+   crs:Version="14.0"
+   crs:ProcessVersion="11.0"
+   crs:Whites2012="+50"
+   crs:Blacks2012="+30"
+   crs:Texture="+10"
+   crs:Clarity2012="+5"
+   crs:Vibrance="+15"
+   crs:Saturation="+5"
+   crs:ParametricShadows="0"
+   crs:ParametricDarks="0"
+   crs:ParametricLights="0"
+   crs:ParametricHighlights="0"
+   crs:ParametricShadowSplit="25"
+   crs:ParametricMidtoneSplit="50"
+   crs:ParametricHighlightSplit="75"
+   crs:HueAdjustmentRed="-5"
+   crs:HueAdjustmentOrange="+5"
+   crs:HueAdjustmentYellow="+5"
+   crs:HueAdjustmentGreen="-10"
+   crs:HueAdjustmentAqua="-5"
+   crs:HueAdjustmentBlue="-25"
+   crs:HueAdjustmentPurple="-70"
+   crs:HueAdjustmentMagenta="-10"
+   crs:SaturationAdjustmentRed="-10"
+   crs:SaturationAdjustmentOrange="+30"
+   crs:SaturationAdjustmentYellow="+10"
+   crs:SaturationAdjustmentGreen="-20"
+   crs:SaturationAdjustmentAqua="-10"
+   crs:SaturationAdjustmentBlue="+5"
+   crs:SaturationAdjustmentPurple="+5"
+   crs:SaturationAdjustmentMagenta="+10"
+   crs:LuminanceAdjustmentRed="+5"
+   crs:LuminanceAdjustmentOrange="+30"
+   crs:LuminanceAdjustmentYellow="+10"
+   crs:LuminanceAdjustmentGreen="-10"
+   crs:LuminanceAdjustmentAqua="+5"
+   crs:LuminanceAdjustmentBlue="+40"
+   crs:LuminanceAdjustmentPurple="+20"
+   crs:LuminanceAdjustmentMagenta="+10"
+   crs:SplitToningShadowHue="209"
+   crs:SplitToningShadowSaturation="16"
+   crs:SplitToningHighlightHue="180"
+   crs:SplitToningHighlightSaturation="0"
+   crs:SplitToningBalance="+20"
+   crs:ColorGradeMidtoneHue="221"
+   crs:ColorGradeMidtoneSat="14"
+   crs:ColorGradeShadowLum="+3"
+   crs:ColorGradeMidtoneLum="+13"
+   crs:ColorGradeHighlightLum="+27"
+   crs:ColorGradeBlending="70"
+   crs:ColorGradeGlobalHue="0"
+   crs:ColorGradeGlobalSat="0"
+   crs:ColorGradeGlobalLum="0"
+   crs:ConvertToGrayscale="False"
+   crs:ToneCurveName2012="Linear"
+   crs:CameraProfile="Default Color"
+   crs:HasSettings="True">
+   <crs:Name>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">UA01</rdf:li>
+    </rdf:Alt>
+   </crs:Name>
+   <crs:ShortName>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:ShortName>
+   <crs:SortName>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:SortName>
+   <crs:Group>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">Subject: Urban Architecture</rdf:li>
+    </rdf:Alt>
+   </crs:Group>
+   <crs:Description>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:Description>
+   <crs:ToneCurvePV2012>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012>
+   <crs:ToneCurvePV2012Red>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012Red>
+   <crs:ToneCurvePV2012Green>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012Green>
+   <crs:ToneCurvePV2012Blue>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012Blue>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>
