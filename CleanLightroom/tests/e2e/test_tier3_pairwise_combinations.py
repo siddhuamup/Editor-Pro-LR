@@ -121,15 +121,29 @@ class TestTier3PairwiseCombinations:
         assert adb.is_app_foreground(), "App crashed on Combine tap!"
 
     def test_t3_09_pairwise_mask_discard_vs_commit(self, adb: ADBHelper, clean_screen):
-        """Verifies top bar commit or discard controls handle user exit gracefully."""
+        """Verifies landscape masking rail Discard and Commit action controls handle user exit gracefully."""
+        # Step 1: Rotate to landscape
+        adb.set_orientation(1, settle_delay_s=1.0)
         ui = adb.dump_ui()
-        # Look for commit checkmark or discard close icon
-        more_btn = ui.find_one(desc="More options")
-        if more_btn:
-            adb.tap_element(more_btn, delay_s=0.5)
-            # Dismiss
-            adb.key_event("KEYCODE_BACK", delay_s=0.5)
-        assert adb.is_app_foreground(), "App exited unexpectedly!"
+        mask_tool = ui.find_one(desc="Masking") or ui.find_one(text="Masking")
+        if mask_tool:
+            adb.tap_element(mask_tool, delay_s=0.8)
+            ui = adb.dump_ui()
+
+        # Step 2: Verify Discard (close) and Apply (checkmark) buttons in landscape rail
+        discard_btn = ui.find_one(desc="Discard mask") or ui.find_one(desc="Cancel")
+        apply_btn = ui.find_one(desc="Apply mask") or ui.find_one(desc="Done")
+        assert discard_btn is not None or apply_btn is not None, "Missing Discard/Apply action in landscape masking rail"
+
+        # Step 3: Tap apply to commit
+        if apply_btn:
+            adb.tap_element(apply_btn, delay_s=0.8)
+        elif discard_btn:
+            adb.tap_element(discard_btn, delay_s=0.8)
+
+        # Step 4: Restore portrait
+        adb.set_orientation(0, settle_delay_s=0.8)
+        assert adb.is_app_foreground(), "App exited unexpectedly after mask commit/discard!"
 
     def test_t3_10_pairwise_library_navigation_and_rotation(self, adb: ADBHelper, clean_screen):
         """Navigates Back to Library, rotates screen, re-opens Editor."""

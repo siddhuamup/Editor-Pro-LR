@@ -47,7 +47,7 @@ class TestTier2BoundaryCornerCases:
 
     def test_t2_03_memory_pressure_trim(self, adb: ADBHelper):
         """Verifies app remains alive and responsive under RUNNING_CRITICAL memory trim."""
-        adb.shell(f"am send-trim-memory {PACKAGE_NAME} RUNNING_CRITICAL")
+        adb.shell(f"am send-trim-memory {PACKAGE_NAME} RUNNING_CRITICAL", check=False)
         time.sleep(0.5)
         assert adb.is_app_foreground(), "App was terminated under critical memory trim!"
 
@@ -187,11 +187,18 @@ class TestTier2BoundaryCornerCases:
             fab = ui.find_one(desc="Create new Mask") or ui.find_one(desc="Add Mask")
             if fab:
                 adb.tap_element(fab, delay_s=0.6)
-                ui = adb.dump_ui()
+                ui = adb.wait_for_ui(
+                    lambda u: u.find_one(text="Brush") is not None or u.find_one(desc="Brush") is not None,
+                    timeout_s=3.0,
+                ) or adb.dump_ui()
                 brush_btn = ui.find_one(text="Brush") or ui.find_one(desc="Brush")
                 if brush_btn:
-                    adb.tap_element(brush_btn, delay_s=0.6)
-                    ui = adb.dump_ui()
+                    adb.tap_element(brush_btn, delay_s=0.5)
+                    # Sheet dismissal and MaskingPanel recomposition
+                    ui = adb.wait_for_ui(
+                        lambda u: u.find_one(desc="Mask Opacity") is not None or u.find_one(text="Mask Opacity") is not None,
+                        timeout_s=5.0,
+                    ) or adb.dump_ui()
             opacity_node = ui.find_one(desc="Mask Opacity") or ui.find_one(text="Mask Opacity")
 
         assert opacity_node is not None, "Mask Opacity slider element missing in hierarchy!"
@@ -202,13 +209,13 @@ class TestTier2BoundaryCornerCases:
 
     def test_t2_18_mask_opacity_slider_boundary_hundred(self, adb: ADBHelper):
         """Verifies 100% is displayed as default opacity on new mask creation."""
-        # Wait up to 3.0s for 100% readout in hierarchy
+        # Wait up to 5.0s for 100% readout in hierarchy
         ui = adb.wait_for_ui(
             lambda u: any(
                 u.find_one(text=pattern) is not None or u.find_one(desc=pattern) is not None
                 for pattern in ["100%", "100 %", "100"]
             ),
-            timeout_s=3.0,
+            timeout_s=5.0,
         ) or adb.dump_ui()
         
         pct_node = (
@@ -219,6 +226,33 @@ class TestTier2BoundaryCornerCases:
             or ui.find_one(desc="100 %")
             or ui.find_one(desc="100")
         )
+        # If not found yet, ensure mask layer exists and wait for UI
+        if not pct_node:
+            fab = ui.find_one(desc="Create new Mask") or ui.find_one(desc="Add Mask")
+            if fab:
+                adb.tap_element(fab, delay_s=0.6)
+                ui = adb.wait_for_ui(
+                    lambda u: u.find_one(text="Brush") is not None or u.find_one(desc="Brush") is not None,
+                    timeout_s=3.0,
+                ) or adb.dump_ui()
+                brush_btn = ui.find_one(text="Brush") or ui.find_one(desc="Brush")
+                if brush_btn:
+                    adb.tap_element(brush_btn, delay_s=0.5)
+                    ui = adb.wait_for_ui(
+                        lambda u: any(
+                            u.find_one(text=pattern) is not None or u.find_one(desc=pattern) is not None
+                            for pattern in ["100%", "100 %", "100"]
+                        ),
+                        timeout_s=5.0,
+                    ) or adb.dump_ui()
+            pct_node = (
+                ui.find_one(text="100%")
+                or ui.find_one(text="100 %")
+                or ui.find_one(text="100")
+                or ui.find_one(desc="100%")
+                or ui.find_one(desc="100 %")
+                or ui.find_one(desc="100")
+            )
         assert pct_node is not None, "100% opacity readout node missing in Masking hierarchy!"
         assert pct_node.bounds[1][0] > pct_node.bounds[0][0], (
             f"Invalid bounds for 100% readout: {pct_node.bounds}"

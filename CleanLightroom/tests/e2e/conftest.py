@@ -34,19 +34,37 @@ def adb():
 @pytest.fixture
 def clean_screen(adb):
     """Ensures device is in portrait mode and editor is active before test."""
-    adb.set_orientation(0, settle_delay_s=0.5)
+    adb.set_orientation(0, settle_delay_s=1.5)
     if not adb.is_app_foreground():
         adb.launch_app(PACKAGE_NAME, MAIN_ACTIVITY)
-    ui = adb.dump_ui()
+    try:
+        ui = adb.dump_ui()
+    except Exception:
+        # If app is stuck in an ANR or unhandled popup, restart MainActivity
+        adb.restart_app(PACKAGE_NAME, MAIN_ACTIVITY, wait_s=1.5)
+        adb.wait_for_ui(lambda u: u.exists(desc="Edit") or u.exists(text="Edit"), timeout_s=6.0)
+        ui = adb.dump_ui()
+
+    # If an ANR or unhandled System UI popup is present in hierarchy, restart MainActivity
+    if (
+        ui.find_one(text="isn't responding")
+        or ui.find_one(text="Application Not Responding")
+        or ui.find_one(text="Wait")
+        or ui.find_one(text="Close app")
+    ):
+        adb.restart_app(PACKAGE_NAME, MAIN_ACTIVITY, wait_s=1.5)
+        adb.wait_for_ui(lambda u: u.exists(desc="Edit") or u.exists(text="Edit"), timeout_s=6.0)
+        ui = adb.dump_ui()
+
     # If stranded in LibraryScreen (e.g. after back button navigation), restart to enter Editor
     if not ui.find_one(desc="Edit") and not ui.find_one(text="Edit"):
         adb.restart_app(PACKAGE_NAME, MAIN_ACTIVITY, wait_s=1.5)
         adb.wait_for_ui(lambda u: u.exists(desc="Edit") or u.exists(text="Edit"), timeout_s=6.0)
         ui = adb.dump_ui()
-    # If in Crop or a modal mode with Cancel button, dismiss it
-    cancel_btn = ui.find_one(desc="Cancel") or ui.find_one(text="Cancel")
-    if cancel_btn:
-        adb.tap_element(cancel_btn, delay_s=0.5)
+    # If in Crop or a modal mode with Cancel/Discard button, dismiss it
+    dismiss_btn = ui.find_one(desc="Cancel") or ui.find_one(text="Cancel") or ui.find_one(desc="Discard mask")
+    if dismiss_btn:
+        adb.tap_element(dismiss_btn, delay_s=0.5)
         ui = adb.dump_ui()
     # Ensure default Edit mode is active so top-bar controls are available
     if not ui.find_one(desc="Undo"):

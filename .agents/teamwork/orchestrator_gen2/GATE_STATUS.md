@@ -35,4 +35,23 @@ Gate Result: **FAIL** (auditor_m4_gate5_gen2 INTEGRITY VIOLATION: EditorScreenLa
 | challenger_m5 | Milestone 5 Challenger | **REQUEST_CHANGES** (SpectrumThemeTokenTest token discrepancy, dump_ui flakiness in Tier 3, vacuous assertions) | handoff.md |
 | reviewer_m5 | Milestone 5 Reviewer | **REQUEST_CHANGES** (7/65 tests failed during sequential run on emulator-5554, test_t1_06 white bar sampling, UI state desync showing blank "Masks controls", landscape masking layout gaps, icon divergence) | handoff.md |
 
+
+
 Gate Result: **FAIL** (reviewer_m5 REQUEST_CHANGES & challenger_m5 REQUEST_CHANGES: 7 test failures on live hardware, UI state desync on tool selection, token mismatch in unit tests, and layout/icon divergence)
+
+---
+
+## Gate — Milestone 5 Iteration 2 (Remediation Wave & Parity Gate)
+| Agent | Role | Verdict | Source |
+|-------|------|---------|--------|
+| worker_m5_replacement | Milestone 5 Replacement Worker | **DONE** (65/65 E2E tests claimed, 4 screenshots captured) | handoff.md |
+| reviewer_m5_1_it2 | Visual Parity & Design Reference Reviewer | **APPROVE** (Verified authentic standalone checkmark on device & test_t3_09 passed) | handoff.md |
+| reviewer_m5_2_it2 | Code Architecture & Unit Test Reviewer | **APPROVE** (200/200 JVM unit tests passed, 0 failures, 0 errors) | handoff.md |
+| challenger_m5_1_it2 | E2E Test Harness Challenger | **REQUEST_CHANGES** (Tier 1 13/25, Tier 2 25/25, Tier 3 7/10, Tier 4 3/5; dump_ui pkill recovery & orientation settle delay) | handoff.md |
+| challenger_m5_2_it2 | Adversarial Stress & Continuity Challenger | **REQUEST_CHANGES** (adb_helper.py --compressed flag & timing sync in test_t2_17/18, test_t4_01/02) | handoff.md |
+| auditor_m5_it2 | Milestone 5 Forensic Auditor | **CLEAN** (0 stubs/facades, 183 valid VectorDrawables, 0 vacuous assertions) | handoff.md |
+
+Gate Result: **FAIL** (challenger_m5_1_it2 & challenger_m5_2_it2 REQUEST_CHANGES: test harness calibration required for dump_ui backoff, orientation settle delays, and modal timing synchronization)
+
+
+

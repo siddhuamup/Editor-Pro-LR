@@ -41,7 +41,7 @@ The system extracts all vector icon and graphic assets from the authentic Adobe 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Complete APK SVG Mining & Verification | Implement `mine_apk_svgs.py` and `verify_mined_svgs.py`. Extract and convert all 1,267+ vector assets from `Lightroom.apk` to standard `.svg` in `mined Svg/`. Run programmatic test suite and confirm 100% pass rate. | none | IN_PROGRESS |
+| M1 | Complete APK SVG Mining & Verification | Implement `mine_apk_svgs.py` and `verify_mined_svgs.py`. Extract and convert all 1,267+ vector assets from `Lightroom.apk` to standard `.svg` in `mined Svg/`. Run programmatic test suite and confirm 100% pass rate. | none | DONE |
 
 ---
 

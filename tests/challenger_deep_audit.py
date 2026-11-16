@@ -181,7 +181,9 @@ def check_2_transparency_and_black_boxes():
     # and verify their corresponding SVGs
     print("\nTracing exact AXML transparent references (17170445 / @android:color/transparent) in APK...")
     import mine_apk_svgs
-    file_to_keys, res_map = mine_apk_svgs.parse_arsc(mine_apk_svgs.APK_PATH)
+    with zipfile.ZipFile(APK_PATH, 'r') as z:
+        arsc_data = z.read('resources.arsc')
+        file_to_keys, res_map = mine_apk_svgs.parse_arsc(arsc_data)
 
     transparent_sources = []
     with zipfile.ZipFile(APK_PATH, 'r') as z:
@@ -362,9 +364,6 @@ def check_5_previously_failed_files_inspection():
     # List of known files that failed in Iteration 1 (with invalid paints / unhandled tokens)
     # Reviewer 1 and Challenger 1 reported 62 files.
     # We verify that these 62 files are completely clean in mined Svg/ now.
-    import mine_apk_svgs
-    file_to_keys, res_map = mine_apk_svgs.parse_arsc(mine_apk_svgs.APK_PATH)
-
     remediated_samples = [
         "badge_unlocked_full.svg",
         "spectrum_checkbox_default_checked_focused.svg",

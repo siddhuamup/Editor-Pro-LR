@@ -273,7 +273,7 @@ class ADBHelper:
         3: "ROTATION_270",
     }
 
-    def set_orientation(self, rotation: int, settle_delay_s: float = 0.5, timeout_s: float = 6.0) -> None:
+    def set_orientation(self, rotation: int, settle_delay_s: float = 1.5, timeout_s: float = 6.0) -> None:
         """Sets screen orientation: 0 for Portrait, 1 for Landscape (90 deg counter-clockwise).
         Actively polls Window Manager until mCurrentRotation and mRotation have settled.
         """
@@ -319,26 +319,37 @@ class ADBHelper:
         img = Image.open(local_path)
         return img, local_path
 
-    def dump_ui(self, remote_path: str = "/sdcard/e2e_uidump.xml", retries: int = 4) -> UIHierarchy:
+    def dump_ui(self, remote_path: str = "/sdcard/e2e_uidump.xml", retries: int = 4, compressed: bool = False) -> UIHierarchy:
         """Dumps UI hierarchy with daemon contention recovery and backoff retry.
         Ensures a non-empty UI hierarchy is returned or raises RuntimeError on failure.
         """
         last_error: Optional[Exception] = None
+        cmd_flag = " --compressed" if compressed else ""
         for attempt in range(retries):
             try:
                 # Remove previous dump to prevent reading stale XML
                 self.shell(f"rm -f {remote_path}", check=False)
-                self.shell(f"uiautomator dump {remote_path}", timeout=15)
+                # Attempt standard dump first to preserve full view hierarchy (ComposeView/SurfaceView),
+                # falling back to --compressed if standard dump encounters contention.
+                flag = cmd_flag if (attempt == 0 or compressed) else " --compressed"
+                self.shell(f"uiautomator dump{flag} {remote_path}", timeout=25)
                 raw_xml = self.shell(f"cat {remote_path}", check=False)
                 if raw_xml.strip().startswith("<?xml") and "</hierarchy>" in raw_xml:
                     hierarchy = UIHierarchy(raw_xml)
                     if hierarchy.elements:
                         return hierarchy
+                    else:
+                        last_error = RuntimeError(
+                            f"UI dump returned empty hierarchy (0 elements) on attempt {attempt + 1}"
+                        )
+                else:
+                    last_error = RuntimeError(
+                        f"UI dump output invalid XML on attempt {attempt + 1}: {raw_xml[:100]!r}"
+                    )
             except Exception as e:
                 last_error = e
-                # UiAutomationService contention / exit code 137: clean up stuck daemon
-                self.shell("pkill -f uiautomator", check=False)
-            time.sleep(0.4 + 0.2 * (attempt + 1))
+            # Use 1.5s - 2.5s backoff between retries without pkill to allow UiAutomationService to recover naturally
+            time.sleep(1.5 + 0.3 * (attempt + 1))
         
         raise RuntimeError(
             f"Failed to dump UI hierarchy after {retries} attempts (last error: {last_error}). "

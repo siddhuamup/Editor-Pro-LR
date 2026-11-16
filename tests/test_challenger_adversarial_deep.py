@@ -8,14 +8,14 @@ Probes all 1,267 mined SVGs across 12 independent adversarial stress dimensions:
 2. Non-ASCII and Unprintable Control Characters
 3. XML Well-Formedness and DOM Structure
 4. Android Token & Namespace Leakage
-5. Re-testing of the 62 Iteration-1 Defective Files
+5. Re-testing of the 62 Iteration-1 Defective Files (which had 99 invalid paint attributes)
 6. Exhaustive Paint & Color Syntax Conformance (W3C standard)
 7. Opacity and Numeric Bounds
 8. Path Geometry and Command Syntax
 9. ViewBox, Dimensions, and Coordinate Systems
 10. Group Transformations and Parentheses Balance
 11. ClipPath and Local URL Reference Resolution
-12. Raw String APK Inventory Reconciliation against Lightroom.apk
+12. Raw Binary APK Inventory Reconciliation against Lightroom.apk
 """
 
 import os
@@ -31,6 +31,7 @@ import xml.etree.ElementTree as ET
 ROOT_DIR = Path(__file__).resolve().parent.parent
 SVG_DIR = ROOT_DIR / "mined Svg"
 APK_PATH = Path(r"C:\Users\Siddhu\Downloads\Lightroom.apk")
+BASELINE_COMMIT = "8ecf3ee36f204ab1dee166b6d13d7c46796ae1fd~1"
 
 # Regex definitions
 RE_ANDROID_TOKEN = re.compile(
@@ -50,45 +51,68 @@ VALID_CAPS = {'butt', 'round', 'square', 'inherit'}
 VALID_JOINS = {'miter', 'round', 'bevel', 'inherit'}
 VALID_FILL_RULES = {'nonzero', 'evenodd', 'inherit'}
 
+
+def parse_string_pool(data: bytes, offset: int):
+    """Accurately parses an Android binary XML string pool."""
+    htype, hsize, csize, scount, stcount, flags, s_start, st_start = struct.unpack('<HHIIIIII', data[offset:offset+28])
+    is_utf8 = bool(flags & (1 << 8))
+    offsets = struct.unpack(f'<{scount}I', data[offset+28:offset+28+scount*4])
+    pool_data = data[offset+s_start:offset+csize]
+    strings = []
+    for off in offsets:
+        try:
+            if is_utf8:
+                p = off
+                char_len = pool_data[p]; p += 1
+                if char_len & 0x80:
+                    char_len = ((char_len & 0x7f) << 8) | pool_data[p]; p += 1
+                byte_len = pool_data[p]; p += 1
+                if byte_len & 0x80:
+                    byte_len = ((byte_len & 0x7f) << 8) | pool_data[p]; p += 1
+                s = pool_data[p:p+byte_len].decode('utf-8', errors='replace')
+            else:
+                p = off
+                char_len = struct.unpack('<H', pool_data[p:p+2])[0]; p += 2
+                if char_len & 0x8000:
+                    char_len = ((char_len & 0x7fff) << 16) | struct.unpack('<H', pool_data[p:p+2])[0]; p += 2
+                s = pool_data[p:p+char_len*2].decode('utf-16le', errors='replace')
+            strings.append(s)
+        except Exception:
+            strings.append('')
+    return strings, offset + csize
+
+
 def get_iteration_1_defective_files():
     """
-    Retrieves the 62 files that had invalid paints in HEAD commit.
-    Uses git show to inspect HEAD commit for each modified file.
+    Retrieves the exact 62 files that had 99 invalid paints in Iteration 1 baseline.
     """
-    cmd = ["git", "diff", "--name-only", "HEAD~1..HEAD"]
-    # Alternatively find files in HEAD with raw integer or .xml in fill/stroke
-    cmd_files = ["git", "ls-tree", "-r", "--name-only", "HEAD", "mined Svg/"]
-    try:
-        proc = subprocess.run(cmd_files, capture_output=True, text=True, cwd=str(ROOT_DIR), check=True)
-        all_head_files = proc.stdout.strip().splitlines()
-    except Exception as e:
-        print(f"Warning: git ls-tree failed: {e}")
-        all_head_files = []
+    proc = subprocess.run(
+        ['git', 'ls-tree', '-r', '--name-only', BASELINE_COMMIT, 'mined Svg/'],
+        capture_output=True, text=True, cwd=str(ROOT_DIR), check=True
+    )
+    all_files = proc.stdout.strip().splitlines()
 
-    bad_in_head = []
-    # Test each file in HEAD
-    for fpath in all_head_files:
+    bad_files = {}
+    for f in all_files:
+        content = subprocess.run(
+            ['git', 'show', f'{BASELINE_COMMIT}:{f}'],
+            capture_output=True, text=True, cwd=str(ROOT_DIR), check=True
+        ).stdout
         try:
-            show_proc = subprocess.run(["git", "show", f"HEAD:{fpath}"], capture_output=True, text=True, cwd=str(ROOT_DIR), check=True)
-            content = show_proc.stdout
-            # Check for bad paint
             root = ET.fromstring(content)
-            has_bad = False
-            for el in root.iter():
-                for a in ("fill", "stroke"):
-                    if a in el.attrib:
-                        val = el.attrib[a].strip()
-                        if not RE_W3C_PAINT.match(val):
-                            has_bad = True
-                            break
-                if has_bad:
-                    break
-            if has_bad:
-                bad_in_head.append(Path(fpath).name)
         except Exception:
-            pass
+            continue
+        issues = []
+        for el in root.iter():
+            for a in ('fill', 'stroke'):
+                if a in el.attrib:
+                    val = el.attrib[a].strip()
+                    if not RE_W3C_PAINT.match(val):
+                        issues.append((el.tag.split('}')[-1], a, val))
+        if issues:
+            bad_files[Path(f).name] = issues
 
-    return sorted(bad_in_head)
+    return bad_files
 
 
 def run_adversarial_suite():
@@ -110,7 +134,7 @@ def run_adversarial_suite():
 
     # Step 2: Ingest APK and reconcile
     print("\n[2] Reconciling against Lightroom.apk binary XMLs...")
-    apk_vector_count = 0
+    apk_vectors = []
     if not APK_PATH.exists():
         findings['apk_missing'].append(str(APK_PATH))
     else:
@@ -120,57 +144,35 @@ def run_adversarial_suite():
                     try:
                         raw = z.read(name)
                         if len(raw) >= 8 and struct.unpack('<H', raw[:2])[0] == 0x0003 and b'vector' in raw:
-                            # Verify root element is vector
-                            # String pool
-                            scount = struct.unpack('<I', raw[12:16])[0]
-                            flags = struct.unpack('<I', raw[20:24])[0]
-                            is_utf8 = bool(flags & (1 << 8))
-                            s_start = struct.unpack('<I', raw[24:28])[0]
-                            sp_csize = struct.unpack('<I', raw[16:20])[0]
-                            offsets = struct.unpack(f'<{scount}I', raw[36:36 + scount * 4])
-                            pool_data = raw[8 + s_start:8 + sp_csize]
-                            strings = []
-                            for off in offsets:
-                                try:
-                                    if is_utf8:
-                                        p = off
-                                        cl = pool_data[p]; p += 1
-                                        if cl & 0x80: cl = ((cl & 0x7f) << 8) | pool_data[p]; p += 1
-                                        bl = pool_data[p]; p += 1
-                                        if bl & 0x80: bl = ((bl & 0x7f) << 8) | pool_data[p]; p += 1
-                                        s = pool_data[p:p+bl].decode('utf-8', errors='replace')
-                                    else:
-                                        p = off
-                                        cl = struct.unpack('<H', pool_data[p:p+2])[0]; p += 2
-                                        if cl & 0x8000: cl = ((cl & 0x7fff) << 16) | struct.unpack('<H', pool_data[p:p+2])[0]; p += 2
-                                        s = pool_data[p:p+cl*2].decode('utf-16le', errors='replace')
-                                    strings.append(s)
-                                except Exception:
-                                    strings.append('')
+                            strings, _ = parse_string_pool(raw, 8)
                             if 'vector' in strings:
-                                pos = 8 + sp_csize
+                                pos = 8
+                                _, sp_csize = struct.unpack('<HI', raw[pos+2:pos+8])
+                                pos += sp_csize
                                 if pos < len(raw):
                                     rmt, _, rmc = struct.unpack('<HHI', raw[pos:pos+8])
                                     if rmt == 0x0180: pos += rmc
                                 while pos < len(raw):
                                     nt, _, ns = struct.unpack('<HHI', raw[pos:pos+8])
-                                    if nt == 0x0102: # start elem
+                                    if nt == 0x0102: # START_ELEMENT
                                         elem_idx = struct.unpack('<I', raw[pos+20:pos+24])[0]
                                         if elem_idx < len(strings) and strings[elem_idx] == 'vector':
-                                            apk_vector_count += 1
+                                            apk_vectors.append(name)
                                         break
                                     pos += ns
                     except Exception:
                         pass
-        stats['apk_vectors'] = apk_vector_count
-        print(f"    Discovered {apk_vector_count} vector drawables in APK.")
-        if apk_vector_count != 1267:
-            findings['apk_vector_discrepancy'].append(f"APK vectors: {apk_vector_count}, expected 1267")
+        stats['apk_vectors'] = len(apk_vectors)
+        print(f"    Discovered {len(apk_vectors)} vector drawables in APK.")
+        if len(apk_vectors) != 1267:
+            findings['apk_vector_discrepancy'].append(f"APK vectors: {len(apk_vectors)}, expected 1267")
 
     # Step 3: Identify the 62 files from Iteration 1
-    print("\n[3] Identifying Iteration 1 defective files...")
-    iter1_defective = get_iteration_1_defective_files()
-    print(f"    Identified {len(iter1_defective)} defective files in HEAD commit history.")
+    print("\n[3] Identifying Iteration 1 defective files from baseline commit...")
+    iter1_defective_map = get_iteration_1_defective_files()
+    iter1_defective_names = sorted(list(iter1_defective_map.keys()))
+    total_baseline_bad_attrs = sum(len(v) for v in iter1_defective_map.values())
+    print(f"    Baseline: Exactly {len(iter1_defective_names)} defective files with {total_baseline_bad_attrs} invalid paint attributes.")
 
     # Step 4: Full adversarial probe across ALL files
     print("\n[4] Scanning all 1,267 SVGs across adversarial dimensions...")
@@ -220,9 +222,6 @@ def run_adversarial_suite():
         if nan_matches:
             findings['nan_inf'].append((fname, nan_matches))
 
-        # Check for unescaped raw '<' in attributes or text
-        # (ET will catch syntax errors, but let's also check)
-        
         # C. XML DOM Parsing
         try:
             root = ET.fromstring(content)
@@ -370,7 +369,7 @@ def run_adversarial_suite():
     # Step 5: Specifically re-test the 62 files from Iteration 1
     print("\n[5] Explicit verification of the 62 Iteration 1 defective files...")
     iter1_results = []
-    for fname in iter1_defective:
+    for fname in iter1_defective_names:
         fpath = SVG_DIR / fname
         if not fpath.exists():
             iter1_results.append((fname, "FILE_MISSING", []))
@@ -408,7 +407,7 @@ def run_adversarial_suite():
 
     categories = [
         ('count_mismatch', 'Asset Count Integrity (1267)'),
-        ('apk_vector_discrepancy', 'APK Inventory Reconciliation'),
+        ('apk_vector_discrepancy', 'APK Inventory Reconciliation (1267 matched)'),
         ('empty_file', 'File Size > 0'),
         ('non_utf8', 'Valid UTF-8 Encoding'),
         ('unprintable_ctrl_chars', 'Unprintable Control Chars'),
@@ -447,7 +446,7 @@ def run_adversarial_suite():
         cnt = len(err_list)
         total_issues += cnt
         status = "[PASS]" if cnt == 0 else "[FAIL]"
-        print(f"  {status:7} {cat_label:<45}: {cnt} issues")
+        print(f"  {status:7} {cat_label:<50}: {cnt} issues")
         if cnt > 0:
             for item in err_list[:3]:
                 print(f"           - {item}")

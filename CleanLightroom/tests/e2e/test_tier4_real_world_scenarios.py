@@ -39,12 +39,18 @@ class TestTier4RealWorldScenarios:
         adb.tap_element(edit_tool, delay_s=0.8)
 
         # Step 3: Verify Light sliders (Exposure, Contrast)
-        ui_edit = adb.dump_ui()
+        ui_edit = adb.wait_for_ui(
+            lambda u: u.exists(text="Exposure") or u.exists(desc="Exposure"),
+            timeout_s=5.0,
+        ) or adb.dump_ui()
         if not (ui_edit.exists(text="Exposure") or ui_edit.exists(desc="Exposure")):
             light_tab = ui_edit.find_one(desc="Light") or ui_edit.find_one(text="Light")
             if light_tab:
                 adb.tap_element(light_tab, delay_s=0.8)
-                ui_edit = adb.dump_ui()
+                ui_edit = adb.wait_for_ui(
+                    lambda u: u.exists(text="Exposure") or u.exists(desc="Exposure"),
+                    timeout_s=5.0,
+                ) or adb.dump_ui()
         assert ui_edit.exists(text="Exposure") or ui_edit.exists(desc="Exposure"), "Exposure slider missing"
 
         # Step 4: Tap Compare before/after icon
@@ -66,18 +72,27 @@ class TestTier4RealWorldScenarios:
         adb.tap_element(mask_dock, delay_s=0.8)
 
         # Step 2: Tap + FAB / Create new Mask
-        ui_mask = adb.dump_ui()
+        ui_mask = adb.wait_for_ui(
+            lambda u: u.exists(desc="Create new Mask") or u.exists(desc="Add Mask"),
+            timeout_s=4.0,
+        ) or adb.dump_ui()
         fab = ui_mask.find_one(desc="Create new Mask") or ui_mask.find_one(desc="Add Mask")
         if fab:
             adb.tap_element(fab, delay_s=0.8)
-            ui_sheet = adb.dump_ui()
+            ui_sheet = adb.wait_for_ui(
+                lambda u: u.exists(desc="Select Subject") or u.exists(text="Select Subject") or u.exists(desc="Brush") or u.exists(text="Brush"),
+                timeout_s=4.0,
+            ) or adb.dump_ui()
             # Step 3: Select Subject or Brush
-            sub = ui_sheet.find_one(desc="Select Subject") or ui_sheet.find_one(text="Select Subject")
+            sub = ui_sheet.find_one(desc="Select Subject") or ui_sheet.find_one(text="Select Subject") or ui_sheet.find_one(desc="Brush") or ui_sheet.find_one(text="Brush")
             if sub:
-                adb.tap_element(sub, delay_s=1.0)
+                adb.tap_element(sub, delay_s=0.8)
 
         # Step 4: Verify Mask layer controls (Invert, Opacity, Category tabs)
-        ui_layer = adb.dump_ui()
+        ui_layer = adb.wait_for_ui(
+            lambda u: u.exists(desc="Invert") or u.exists(text="Invert"),
+            timeout_s=5.0,
+        ) or adb.dump_ui()
         assert ui_layer.exists(desc="Invert") or ui_layer.exists(text="Invert"), "Invert button missing"
         assert ui_layer.exists(desc="Light") or ui_layer.exists(text="Light"), "Light category missing"
 

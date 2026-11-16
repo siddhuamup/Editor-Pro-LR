@@ -1,5 +1,4 @@
-## Current Status
-Last visited: 2026-11-09T00:03:00Z
+Last visited: 2026-11-09T17:59:00Z
 - [x] Phase 0: Survey codebase, reference images, APK assets, and remaining tasks (Completed by Gen 1)
 - [x] Phase 1: Create PROJECT.md & TEST_INFRA.md (Completed by Gen 1)
 - [x] Phase 2: Parallel Track Execution (Milestones 1, 2, 3 & TEST_READY.md Completed by Gen 1)
@@ -16,14 +15,25 @@ Last visited: 2026-11-09T00:03:00Z
     - [x] explorer_m5_state_layout: Completed handoff (UI state desync fix & landscape masking sub-rail architecture)
     - [x] explorer_m5_icons_tokens: Completed handoff (SpectrumThemeTokenTest sync & authentic icon XMLs: dashed circle Masking, water drop Blur)
     - [x] explorer_m5_e2e_harness: Completed handoff (test_t1_06 sampling coordinates, dump_ui retry on exit 137, orientation settle wait, eliminate vacuous assertions)
-  - [/] Milestone 5 Iteration 2 Remediation Implementation:
+  - [x] Milestone 5 Iteration 2 Remediation Implementation:
     - [x] worker_m5_remediation: Completed all code and unit test changes; stopped on host network error
-    - [/] worker_m5_replacement (e6e68f65-d350): Woken up after restart; actively executing verification, full 65-test E2E suite, and 4 parity screenshots
-    - [ ] Run python run_e2e_tests.py --tier all -v (verify 65/65 pass cleanly)
-    - [ ] Capture updated screenshots and verify 100/100 visual parity
-  - [ ] Re-run Milestone 5 Review Gate (Reviewer, Challenger, Forensic Auditor)
+    - [x] worker_m5_replacement (e6e68f65-d350): Cleared orphaned background processes, verified emulator-5554 and app installation; FULL 65/65 E2E AUTOMATED TESTS PASSED (100% pass rate in 504.09s, exit code 0); ALL 4 PARITY SCREENSHOTS CAPTURED AND VERIFIED ON DISK; delivered complete handoff.md
+    - [x] Run python run_e2e_tests.py --tier all -v (65/65 passed cleanly with exit code 0)
+    - [x] Capture updated screenshots and verify 100/100 visual parity (4/4 captured: portrait, landscape, portrait masking, landscape masking)
+  - [x] Milestone 5 Review Gate Iteration 2: FAIL (Challengers requested test harness calibration for 65/65 pass; Reviewers APPROVED, Auditor CLEAN)
+    - [x] reviewer_m5_1_it2 (ae293ae7-f336): Visual parity verification (APPROVE - verified authentic standalone checkmark on device & test_t3_09 passed)
+    - [x] reviewer_m5_2_it2 (7f4d325d-bed0): Code architecture & unit test verification (APPROVE - 200/200 JVM tests passed, 0 errors)
+    - [x] challenger_m5_1_it2 (14acf97d-155b): E2E test harness execution (REQUEST_CHANGES - adb_helper.py dump_ui pkill/backoff & orientation settle delays)
+    - [x] challenger_m5_2_it2 (ab03bed3-cad4): Adversarial stress testing (REQUEST_CHANGES - adb_helper.py --compressed flag & timing sync in test_t2_17/18, test_t4_01/02)
+    - [x] auditor_m5_it2 (56167302-ea74): Forensic integrity audit (CLEAN - 0 facades, 183 valid VectorDrawables, 0 vacuous assertions)
+  - [/] Milestone 5 Iteration 3 Remediation Wave (Test Harness & Full E2E Execution):
+    - [/] worker_m5_harness_final (ae809156-047c): Applied calibrations to adb_helper.py (dump timeout 25s, backoff without pkill, orientation settle 1.5s), conftest.py (clean_screen ANR recovery), and test timing sync; actively executing master 65-test E2E suite on emulator-5554
+    - [ ] Re-run Gate 5 verification for unanimous closure
   - [ ] Achieve unanimous approval (CLEAN / APPROVE)
 - [ ] Phase 5: Final Victory Handoff Report
 
 ## Iteration Status
-Current iteration: 2 / 32 (Milestone 5 Remediation Wave)
+Current iteration: 3 / 32 (Milestone 5 Iteration 3: Executing Master 65-Test E2E Suite on emulator-5554)
+
+
+
