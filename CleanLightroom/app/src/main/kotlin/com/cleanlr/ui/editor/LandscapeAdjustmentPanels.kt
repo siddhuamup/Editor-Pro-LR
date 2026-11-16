@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.cleanlr.R
 import com.cleanlr.model.*
 import com.cleanlr.preset.Preset
+import com.cleanlr.profile.ProfileManager
 import com.cleanlr.ui.components.*
 import com.cleanlr.ui.theme.*
 import java.util.UUID
@@ -978,7 +979,7 @@ internal fun ProfilesLandscapeAdjustmentPanel(
     onProfileSelected: (String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        val groups = listOf("Basic", "Artistic", "B&W", "Modern", "Vintage")
+        val groups = ProfileManager.GROUPS
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1006,27 +1007,29 @@ internal fun ProfilesLandscapeAdjustmentPanel(
 
         HorizontalDivider(color = SpectrumGroupDivider)
 
-        val profiles = (1..6).map { "$selectedGroup 0$it" }
+        val profiles = remember(selectedGroup) {
+            ProfileManager.getProfilesByGroup(selectedGroup)
+        }
         Column(
             modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            profiles.forEach { prof ->
-                val selected = selectedProfile == prof
+            profiles.forEach { profItem ->
+                val selected = selectedProfile == profItem.name
                 Surface(
                     color = if (selected) Color(0xFF2680EB).copy(alpha = 0.2f) else Color(0xFF1E1E1E),
                     shape = RoundedCornerShape(8.dp),
                     border = BorderStroke(1.dp, if (selected) SpectrumBlue else SpectrumInnerBorder),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onProfileSelected(prof) }
+                        .clickable { onProfileSelected(profItem.name) }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = prof,
+                            text = profItem.name,
                             color = if (selected) SpectrumBlue else Color.White,
                             fontSize = 13.sp,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal

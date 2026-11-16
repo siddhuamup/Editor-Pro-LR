@@ -1,0 +1,111 @@
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0-c000 1.000000, 0000/00/00-00:00:00        ">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
+   crs:PresetType="Look"
+   crs:Cluster="Adobe"
+   crs:UUID="0AFD67EF367A4A149E4FBB209DB42570"
+   crs:SupportsAmount="True"
+   crs:SupportsColor="True"
+   crs:SupportsMonochrome="True"
+   crs:SupportsHighDynamicRange="True"
+   crs:SupportsNormalDynamicRange="True"
+   crs:SupportsSceneReferred="True"
+   crs:SupportsOutputReferred="True"
+   crs:RequiresRGBTables="False"
+   crs:ShowInPresets="True"
+   crs:ShowInQuickActions="False"
+   crs:CameraModelRestriction=""
+   crs:Copyright="Adobe 2026"
+   crs:ContactInfo=""
+   crs:Version="18.0"
+   crs:CompatibleVersion="268435456"
+   crs:ProcessVersion="15.4"
+   crs:Exposure2012="+0.20"
+   crs:SplitToningShadowHue="224"
+   crs:SplitToningShadowSaturation="26"
+   crs:SplitToningHighlightHue="36"
+   crs:SplitToningHighlightSaturation="13"
+   crs:SplitToningBalance="-18"
+   crs:ColorGradeMidtoneHue="34"
+   crs:ColorGradeMidtoneSat="18"
+   crs:ColorGradeShadowLum="-19"
+   crs:ColorGradeMidtoneLum="0"
+   crs:ColorGradeHighlightLum="+10"
+   crs:ColorGradeBlending="50"
+   crs:ColorGradeGlobalHue="0"
+   crs:ColorGradeGlobalSat="0"
+   crs:ColorGradeGlobalLum="0"
+   crs:CurveRefineSaturation="50"
+   crs:ConvertToGrayscale="False"
+   crs:HasSettings="True">
+   <crs:Name>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">Film-Inspired 07</rdf:li>
+    </rdf:Alt>
+   </crs:Name>
+   <crs:ShortName>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:ShortName>
+   <crs:SortName>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:SortName>
+   <crs:Group>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">Film-Inspired</rdf:li>
+    </rdf:Alt>
+   </crs:Group>
+   <crs:Description>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:Description>
+   <crs:ToneCurvePV2012>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>32, 22</rdf:li>
+     <rdf:li>64, 56</rdf:li>
+     <rdf:li>128, 128</rdf:li>
+     <rdf:li>192, 196</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012>
+   <crs:ToneCurvePV2012Red>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012Red>
+   <crs:ToneCurvePV2012Green>
+    <rdf:Seq>
+     <rdf:li>0, 1</rdf:li>
+     <rdf:li>35, 30</rdf:li>
+     <rdf:li>128, 125</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012Green>
+   <crs:ToneCurvePV2012Blue>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012Blue>
+   <crs:PointColors>
+    <rdf:Seq>
+     <rdf:li>0.093404, 0.844673, 0.518713, 0.150000, -0.130000, 0.000000, 0.500000, 0.000000, 0.333333, 0.666667, 1.000000, 0.114673, 0.664673, 1.000000, 1.000000, 0.017550, 0.567550, 0.927550, 1.000000</rdf:li>
+     <rdf:li>0.675839, 0.854272, 0.599609, 0.080000, 0.000000, 0.050000, 0.500000, 0.000000, 0.333333, 0.666667, 1.000000, 0.124272, 0.674272, 1.000000, 1.000000, 0.067506, 0.617506, 0.977506, 1.000000</rdf:li>
+    </rdf:Seq>
+   </crs:PointColors>
+   <crs:ColorVariance>
+    <rdf:Seq>
+     <rdf:li>0.000000</rdf:li>
+     <rdf:li>0.000000</rdf:li>
+    </rdf:Seq>
+   </crs:ColorVariance>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>

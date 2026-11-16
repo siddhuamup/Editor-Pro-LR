@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cleanlr.ui.components.*
 import com.cleanlr.ui.theme.*
+import com.cleanlr.profile.ProfileManager
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -4473,16 +4474,9 @@ private fun ProfilesPanel(
     onProfileSelected: (String) -> Unit
 ) {
     var showGroupMenu by remember { mutableStateOf(false) }
-    val profiles = listOf(
-        "Monochrome",
-        "Artistic 01",
-        "Artistic 02",
-        "Artistic 03",
-        "Artistic 04",
-        "Artistic 05",
-        "Artistic 06",
-        "Artistic 07"
-    )
+    val profiles = remember(selectedGroup) {
+        ProfileManager.getProfilesByGroup(selectedGroup)
+    }
 
     Column(
         modifier = Modifier
@@ -4490,7 +4484,7 @@ private fun ProfilesPanel(
             .background(spectrum_surface_dark)
             .padding(horizontal = 14.dp, vertical = 6.dp)
     ) {
-        // Header Row: "Basic ⌄" + Three-dots overflow
+        // Header Row: "<selectedGroup> ⌄" + Three-dots overflow
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -4503,7 +4497,7 @@ private fun ProfilesPanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Basic",
+                    text = selectedGroup,
                     color = Color.White,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
@@ -4530,7 +4524,7 @@ private fun ProfilesPanel(
             expanded = showGroupMenu,
             onDismissRequest = { showGroupMenu = false }
         ) {
-            listOf("Basic", "Adobe Raw", "Camera Matching", "Artistic", "B&W", "Modern", "Vintage").forEach { group ->
+            ProfileManager.GROUPS.forEach { group ->
                 DropdownMenuItem(
                     text = { Text(group) },
                     onClick = {
@@ -4551,9 +4545,9 @@ private fun ProfilesPanel(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            profiles.forEachIndexed { index, profile ->
-                val isSelected = selectedProfile == profile
-                val isMonochrome = profile == "Monochrome"
+            profiles.forEachIndexed { index, profileItem ->
+                val isSelected = selectedProfile == profileItem.name
+                val isMonochrome = profileItem.isMonochrome
 
                 Surface(
                     color = Color(0xFF1E1E1E),
@@ -4562,7 +4556,7 @@ private fun ProfilesPanel(
                     modifier = Modifier
                         .width(108.dp)
                         .height(96.dp)
-                        .clickable { onProfileSelected(profile) }
+                        .clickable { onProfileSelected(profileItem.name) }
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         // Landscape mountain / sunset gradient thumbnail simulating the photo
@@ -4614,7 +4608,7 @@ private fun ProfilesPanel(
                                 .padding(horizontal = 6.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = profile,
+                                text = profileItem.name,
                                 color = Color.White,
                                 fontSize = 10.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
@@ -4625,8 +4619,8 @@ private fun ProfilesPanel(
                     }
                 }
 
-                // Vertical separator after Monochrome (like Screenshot 083723)
-                if (index == 0) {
+                // Vertical separator after first item if monochrome
+                if (index == 0 && isMonochrome) {
                     Box(
                         modifier = Modifier
                             .height(50.dp)

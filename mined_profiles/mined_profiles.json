@@ -1,0 +1,492 @@
+[
+  {
+    "id": "profile_adaptive_adaptive_b_w",
+    "name": "Adaptive B&W",
+    "group": "Adaptive",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Adaptive/Adaptive B&W.xmp"
+  },
+  {
+    "id": "profile_adaptive_adaptive_color",
+    "name": "Adaptive Color",
+    "group": "Adaptive",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Adaptive/Adaptive Color.xmp"
+  },
+  {
+    "id": "profile_basic_adobe_color",
+    "name": "Adobe Color",
+    "group": "Basic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Adobe Raw/Adobe Color.xmp"
+  },
+  {
+    "id": "profile_basic_adobe_landscape",
+    "name": "Adobe Landscape",
+    "group": "Basic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Adobe Raw/Adobe Landscape.xmp"
+  },
+  {
+    "id": "profile_basic_adobe_monochrome",
+    "name": "Adobe Monochrome",
+    "group": "Basic",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Adobe Raw/Adobe Monochrome.xmp"
+  },
+  {
+    "id": "profile_basic_adobe_neutral",
+    "name": "Adobe Neutral",
+    "group": "Basic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Adobe Raw/Adobe Neutral.xmp"
+  },
+  {
+    "id": "profile_basic_adobe_portrait",
+    "name": "Adobe Portrait",
+    "group": "Basic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Adobe Raw/Adobe Portrait.xmp"
+  },
+  {
+    "id": "profile_basic_adobe_vivid",
+    "name": "Adobe Vivid",
+    "group": "Basic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Adobe Raw/Adobe Vivid.xmp"
+  },
+  {
+    "id": "profile_artistic_artistic_01",
+    "name": "Artistic 01",
+    "group": "Artistic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Artistic/Artistic 01.xmp"
+  },
+  {
+    "id": "profile_artistic_artistic_02",
+    "name": "Artistic 02",
+    "group": "Artistic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Artistic/Artistic 02.xmp"
+  },
+  {
+    "id": "profile_artistic_artistic_03",
+    "name": "Artistic 03",
+    "group": "Artistic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Artistic/Artistic 03.xmp"
+  },
+  {
+    "id": "profile_artistic_artistic_04",
+    "name": "Artistic 04",
+    "group": "Artistic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Artistic/Artistic 04.xmp"
+  },
+  {
+    "id": "profile_artistic_artistic_05",
+    "name": "Artistic 05",
+    "group": "Artistic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Artistic/Artistic 05.xmp"
+  },
+  {
+    "id": "profile_artistic_artistic_06",
+    "name": "Artistic 06",
+    "group": "Artistic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Artistic/Artistic 06.xmp"
+  },
+  {
+    "id": "profile_artistic_artistic_07",
+    "name": "Artistic 07",
+    "group": "Artistic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Artistic/Artistic 07.xmp"
+  },
+  {
+    "id": "profile_artistic_artistic_08",
+    "name": "Artistic 08",
+    "group": "Artistic",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Artistic/Artistic 08.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_01",
+    "name": "B&W 01",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 01.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_02",
+    "name": "B&W 02",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 02.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_03",
+    "name": "B&W 03",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 03.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_04",
+    "name": "B&W 04",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 04.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_05",
+    "name": "B&W 05",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 05.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_06",
+    "name": "B&W 06",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 06.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_07",
+    "name": "B&W 07",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 07.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_08",
+    "name": "B&W 08",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 08.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_09",
+    "name": "B&W 09",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 09.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_10",
+    "name": "B&W 10",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 10.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_11",
+    "name": "B&W 11",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 11.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_12",
+    "name": "B&W 12",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W 12.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_blue_filter_v2",
+    "name": "B&W Blue Filter v2",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W Blue Filter v2.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_blue_filter",
+    "name": "B&W Blue Filter",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W Blue Filter.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_green_filter_v2",
+    "name": "B&W Green Filter v2",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W Green Filter v2.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_green_filter",
+    "name": "B&W Green Filter",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W Green Filter.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_orange_filter_v2",
+    "name": "B&W Orange Filter v2",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W Orange Filter v2.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_orange_filter",
+    "name": "B&W Orange Filter",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W Orange Filter.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_red_filter_v2",
+    "name": "B&W Red Filter v2",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W Red Filter v2.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_red_filter",
+    "name": "B&W Red Filter",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W Red Filter.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_yellow_filter_v2",
+    "name": "B&W Yellow Filter v2",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W Yellow Filter v2.xmp"
+  },
+  {
+    "id": "profile_b_w_b_w_yellow_filter",
+    "name": "B&W Yellow Filter",
+    "group": "B&W",
+    "isMonochrome": true,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/B&W/B&W Yellow Filter.xmp"
+  },
+  {
+    "id": "profile_modern_modern_01",
+    "name": "Modern 01",
+    "group": "Modern",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Modern/Modern 01.xmp"
+  },
+  {
+    "id": "profile_modern_modern_02",
+    "name": "Modern 02",
+    "group": "Modern",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Modern/Modern 02.xmp"
+  },
+  {
+    "id": "profile_modern_modern_03",
+    "name": "Modern 03",
+    "group": "Modern",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Modern/Modern 03.xmp"
+  },
+  {
+    "id": "profile_modern_modern_04",
+    "name": "Modern 04",
+    "group": "Modern",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Modern/Modern 04.xmp"
+  },
+  {
+    "id": "profile_modern_modern_05",
+    "name": "Modern 05",
+    "group": "Modern",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Modern/Modern 05.xmp"
+  },
+  {
+    "id": "profile_modern_modern_06",
+    "name": "Modern 06",
+    "group": "Modern",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Modern/Modern 06.xmp"
+  },
+  {
+    "id": "profile_modern_modern_07",
+    "name": "Modern 07",
+    "group": "Modern",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Modern/Modern 07.xmp"
+  },
+  {
+    "id": "profile_modern_modern_08",
+    "name": "Modern 08",
+    "group": "Modern",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Modern/Modern 08.xmp"
+  },
+  {
+    "id": "profile_modern_modern_09",
+    "name": "Modern 09",
+    "group": "Modern",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Modern/Modern 09.xmp"
+  },
+  {
+    "id": "profile_modern_modern_10",
+    "name": "Modern 10",
+    "group": "Modern",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Modern/Modern 10.xmp"
+  },
+  {
+    "id": "profile_vintage_vintage_01",
+    "name": "Vintage 01",
+    "group": "Vintage",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Vintage/Vintage 01.xmp"
+  },
+  {
+    "id": "profile_vintage_vintage_02",
+    "name": "Vintage 02",
+    "group": "Vintage",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Vintage/Vintage 02.xmp"
+  },
+  {
+    "id": "profile_vintage_vintage_03",
+    "name": "Vintage 03",
+    "group": "Vintage",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Vintage/Vintage 03.xmp"
+  },
+  {
+    "id": "profile_vintage_vintage_04",
+    "name": "Vintage 04",
+    "group": "Vintage",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Vintage/Vintage 04.xmp"
+  },
+  {
+    "id": "profile_vintage_vintage_05",
+    "name": "Vintage 05",
+    "group": "Vintage",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Vintage/Vintage 05.xmp"
+  },
+  {
+    "id": "profile_vintage_vintage_06",
+    "name": "Vintage 06",
+    "group": "Vintage",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Vintage/Vintage 06.xmp"
+  },
+  {
+    "id": "profile_vintage_vintage_07",
+    "name": "Vintage 07",
+    "group": "Vintage",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Vintage/Vintage 07.xmp"
+  },
+  {
+    "id": "profile_vintage_vintage_08",
+    "name": "Vintage 08",
+    "group": "Vintage",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Vintage/Vintage 08.xmp"
+  },
+  {
+    "id": "profile_vintage_vintage_09",
+    "name": "Vintage 09",
+    "group": "Vintage",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Vintage/Vintage 09.xmp"
+  },
+  {
+    "id": "profile_vintage_vintage_10",
+    "name": "Vintage 10",
+    "group": "Vintage",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Adobe/Profiles/Vintage/Vintage 10.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_01",
+    "name": "Film-Inspired 01",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 01.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_02",
+    "name": "Film-Inspired 02",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 02.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_03",
+    "name": "Film-Inspired 03",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 03.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_04",
+    "name": "Film-Inspired 04",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 04.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_05",
+    "name": "Film-Inspired 05",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 05.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_06",
+    "name": "Film-Inspired 06",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 06.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_07",
+    "name": "Film-Inspired 07",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 07.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_08",
+    "name": "Film-Inspired 08",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 08.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_09",
+    "name": "Film-Inspired 09",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 09.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_10",
+    "name": "Film-Inspired 10",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 10.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_11",
+    "name": "Film-Inspired 11",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 11.xmp"
+  },
+  {
+    "id": "profile_film_film_inspired_12",
+    "name": "Film-Inspired 12",
+    "group": "Film",
+    "isMonochrome": false,
+    "path": "assets/stagingcontent/Settings/Premium/Style - Film/Profiles/Film 12.xmp"
+  }
+]

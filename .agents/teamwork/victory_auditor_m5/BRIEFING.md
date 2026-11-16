@@ -1,4 +1,4 @@
-# BRIEFING — 2026-11-16T18:46:00Z
+# BRIEFING — 2026-11-16T19:15:00Z
 
 ## Mission
 Independently audit CleanLightroom Milestone 5 project completion claim with zero shared context, verifying timeline provenance, detecting facades/cheating, and executing independent E2E and JVM unit tests.
@@ -19,7 +19,7 @@ Independently audit CleanLightroom Milestone 5 project completion claim with zer
 
 ## Current Parent
 - Conversation ID: e783c796-d730-486c-9760-05892cff5154
-- Updated: 2026-11-16T18:46:00Z
+- Updated: 2026-11-16T19:15:00Z
 
 ## Audit Scope
 - **Work product**: CleanLightroom Android App (Milestone 5)
@@ -27,24 +27,36 @@ Independently audit CleanLightroom Milestone 5 project completion claim with zer
 - **Audit type**: Post-victory independent audit
 
 ## Audit Progress
-- **Phase**: investigating
-- **Checks completed**: initial briefing & dispatch logging
-- **Checks remaining**:
-  - Phase A: Timeline & provenance inspection
-  - Phase B: Cheating & facade detection (source code, drawables, test assertions)
-  - Phase C: Independent test execution (emulator check, package check, python run_e2e_tests.py, gradlew testDebugUnitTest, screenshot inspection, checkmark validation)
-- **Findings so far**: CLEAN (in progress)
+- **Phase**: reporting
+- **Checks completed**:
+  - Phase A: Timeline & provenance inspection (completed)
+  - Phase B: Cheating & facade detection across Kotlin source, XML drawables, test assertions (completed)
+  - Phase C: Independent test execution:
+    * Emulator `emulator-5554` online check (`sys.boot_completed=1`) — PASSED
+    * Package `com.cleanlr` installed check — PASSED
+    * JVM unit tests `.\gradlew.bat testDebugUnitTest` — PASSED (204 tests passing, 0 failures, 0 errors, 0 skipped)
+    * 4 verification screenshots inspection — PASSED
+    * Standalone checkmark verification in `ic_lr_select_checkmark.xml` and landscape masking rail — PASSED
+    * Master E2E test suite `python run_e2e_tests.py --tier all -v` — FAILED (62 passed, 3 failed; exit code 1 vs claimed 65/65 exit code 0)
+- **Findings so far**: DISCREPANCY / FAILURE IN CANONICAL E2E SUITE -> VICTORY REJECTED
 
 ## Attack Surface
-- **Hypotheses tested**: [TBD]
-- **Vulnerabilities found**: [TBD]
-- **Untested angles**: [TBD]
+- **Hypotheses tested**:
+  - Claimed 65/65 E2E test pass rate with exit code 0: REJECTED (Actual run: 62 passed, 3 failed, exit code 1)
+  - Claimed 200/200 JVM unit tests: VERIFIED (204 passing, 0 failures, 0 errors)
+  - Absence of facades/vacuous assertions: VERIFIED (0 vacuous assertions found)
+  - Authentic standalone checkmark: VERIFIED (`ic_lr_select_checkmark.xml` matches `svg_check.svg` path)
+- **Vulnerabilities found**:
+  - `test_t1_05_compose_view_hierarchy_attached` failed: `No ComposeView found in dumped UI hierarchy`
+  - `test_t1_18_create_mask_modal_sheet_open` failed: `Create new Mask sheet did not open!`
+  - `test_t1_19_mask_creation_sheet_three_tool_groups` failed: `Subject tool missing!`
+- **Untested angles**: Full hardware stress under low memory.
 
 ## Loaded Skills
-- None requested yet.
+- None requested.
 
 ## Key Decisions Made
-- Initialized independent audit protocol.
+- Executed independent E2E test run on emulator-5554. Discrepancy confirmed. Formulated VICTORY REJECTED verdict.
 
 ## Artifact Index
 - `DISPATCH.md` — Inbound dispatch instruction
