@@ -1,25 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="?attr/colorControlNormal">
-    <!-- Solid rubber tip at bottom-left -->
-    <path
-        android:pathData="M3.4,15.5 L8.5,20.6 L12.4,16.7 L7.3,11.6 Z"
-        android:fillColor="#FFFFFFFF" />
-    <!-- Outlined sleeve at top-right -->
-    <path
-        android:pathData="M7.3,11.6 L12.4,16.7 L19.8,9.3 C20.4,8.7 20.4,7.7 19.8,7.1 L16.9,4.2 C16.3,3.6 15.3,3.6 14.7,4.2 L7.3,11.6 Z"
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="1.75"
-        android:strokeLineJoin="round" />
-    <!-- Diagonal seam between rubber and sleeve -->
-    <path
-        android:pathData="M7.3,11.6 L12.4,16.7"
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="1.75" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="16.667dp" android:height="17.778dp" android:viewportWidth="16.66699981689453" android:viewportHeight="17.777999877929688" android:tint="?attr/colorControlNormal">
+    <path android:pathData="M16.389,2.222L12.222,2.222L12.222,1.111A1.111,1.111 0,0 0,11.111 0L5.556,0A1.111,1.111 0,0 0,4.444 1.111L4.444,2.222L0.278,2.222A0.278,0.278 0,0 0,0 2.5v0.556a0.278,0.278 0,0 0,0.278 0.278L1.389,3.334L2.729,17.278a0.556,0.556 0,0 0,0.556 0.5h10.1a0.556,0.556 0,0 0,0.556 -0.5L15.278,3.333h1.111a0.278,0.278 0,0 0,0.278 -0.278L16.667,2.5A0.278,0.278 0,0 0,16.389 2.222ZM5.036,15a0.556,0.556 0,0 1,-0.592 -0.517h0l-0.6,-8.889a0.557,0.557 0,0 1,1.111 -0.074l0.595,8.889A0.556,0.556 0,0 1,5.039 15ZM8.889,14.444a0.556,0.556 0,1 1,-1.111 0L7.778,5.556a0.556,0.556 0,0 1,1.111 0ZM11.111,2.222L5.556,2.222L5.556,1.111h5.556ZM12.222,14.482a0.557,0.557 0,1 1,-1.111 -0.074l0.595,-8.889a0.557,0.557 0,1 1,1.111 0.074Z" android:fillColor="#FFFFFFFF" />
 </vector>
