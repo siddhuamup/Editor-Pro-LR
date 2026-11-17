@@ -278,6 +278,7 @@ fun LoupeCanvas(
     onPrevPhoto: (() -> Unit)? = null,
     isCropActive: Boolean = false,
     isExpandEnabled: Boolean = false,
+    onCropRectChanged: ((Float, Float, Float, Float) -> Unit)? = null,
     isCurveActive: Boolean = false,
     curvePoints: List<CurvePoint> = emptyList(),
     curveChannelColor: Color = Color.White,
@@ -552,8 +553,9 @@ fun LoupeCanvas(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer(
-                    scaleX = animatedScale,
-                    scaleY = animatedScale,
+                    scaleX = animatedScale * (if (recipe.crop.flipHorizontal) -1f else 1f),
+                    scaleY = animatedScale * (if (recipe.crop.flipVertical) -1f else 1f),
+                    rotationZ = recipe.crop.rotationDegrees + recipe.crop.straightenAngle,
                     translationX = animatedOffset.x,
                     translationY = animatedOffset.y
                 )
@@ -583,7 +585,11 @@ fun LoupeCanvas(
         // AUTHENTIC CROP OVERLAY BRACKETS & TABS (Screenshot 083306)
         // ════════════════════════════════════════════════════
         if (isCropActive) {
-            CropOverlayBrackets(isExpandEnabled = isExpandEnabled)
+            CropOverlayBrackets(
+                crop = recipe.crop,
+                onCropRectChanged = { l, t, r, b -> onCropRectChanged?.invoke(l, t, r, b) },
+                isExpandEnabled = isExpandEnabled
+            )
         }
 
         // ════════════════════════════════════════════════════
@@ -1075,27 +1081,158 @@ fun LoupeCanvas(
 /**
  * Authentic Crop Overlay Brackets and Rule-of-Thirds Grid (Matching Lightroom Screenshot 083306)
  */
+private enum class CropHandle {
+    TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT,
+    TOP, BOTTOM, LEFT, RIGHT,
+    INSIDE, NONE
+}
+
 @Composable
 private fun CropOverlayBrackets(
+    crop: com.cleanlr.model.CropAdjustments,
+    onCropRectChanged: (Float, Float, Float, Float) -> Unit,
     isExpandEnabled: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    var activeHandle by remember { mutableStateOf(CropHandle.NONE) }
+    var isDragging by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .pointerInput(crop) {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        val w = size.width.toFloat()
+                        val h = size.height.toFloat()
+                        val padX = 20.dp.toPx()
+                        val padY = 20.dp.toPx()
+                        val availW = (w - padX * 2f).coerceAtLeast(1f)
+                        val availH = (h - padY * 2f).coerceAtLeast(1f)
+
+                        val cLeft = padX + crop.left * availW
+                        val cTop = padY + crop.top * availH
+                        val cRight = padX + crop.right * availW
+                        val cBottom = padY + crop.bottom * availH
+
+                        val cornerRadius = 36.dp.toPx()
+                        val edgeThreshold = 24.dp.toPx()
+
+                        fun distSq(p1: Offset, x2: Float, y2: Float): Float {
+                            val dx = p1.x - x2
+                            val dy = p1.y - y2
+                            return dx * dx + dy * dy
+                        }
+
+                        val crSq = cornerRadius * cornerRadius
+                        activeHandle = when {
+                            distSq(offset, cLeft, cTop) < crSq -> CropHandle.TOP_LEFT
+                            distSq(offset, cRight, cTop) < crSq -> CropHandle.TOP_RIGHT
+                            distSq(offset, cLeft, cBottom) < crSq -> CropHandle.BOTTOM_LEFT
+                            distSq(offset, cRight, cBottom) < crSq -> CropHandle.BOTTOM_RIGHT
+                            kotlin.math.abs(offset.y - cTop) < edgeThreshold && offset.x in (cLeft - 10f)..(cRight + 10f) -> CropHandle.TOP
+                            kotlin.math.abs(offset.y - cBottom) < edgeThreshold && offset.x in (cLeft - 10f)..(cRight + 10f) -> CropHandle.BOTTOM
+                            kotlin.math.abs(offset.x - cLeft) < edgeThreshold && offset.y in (cTop - 10f)..(cBottom + 10f) -> CropHandle.LEFT
+                            kotlin.math.abs(offset.x - cRight) < edgeThreshold && offset.y in (cTop - 10f)..(cBottom + 10f) -> CropHandle.RIGHT
+                            offset.x in cLeft..cRight && offset.y in cTop..cBottom -> CropHandle.INSIDE
+                            else -> CropHandle.NONE
+                        }
+
+                        if (activeHandle != CropHandle.NONE) {
+                            isDragging = true
+                        }
+                    },
+                    onDrag = { change, dragAmount ->
+                        if (activeHandle != CropHandle.NONE) {
+                            change.consume()
+                            val w = size.width.toFloat()
+                            val h = size.height.toFloat()
+                            val padX = 20.dp.toPx()
+                            val padY = 20.dp.toPx()
+                            val availW = (w - padX * 2f).coerceAtLeast(1f)
+                            val availH = (h - padY * 2f).coerceAtLeast(1f)
+
+                            val normDx = dragAmount.x / availW
+                            val normDy = dragAmount.y / availH
+
+                            var l = crop.left
+                            var t = crop.top
+                            var r = crop.right
+                            var b = crop.bottom
+
+                            when (activeHandle) {
+                                CropHandle.TOP_LEFT -> {
+                                    l = (l + normDx).coerceIn(0f, r - 0.05f)
+                                    t = (t + normDy).coerceIn(0f, b - 0.05f)
+                                }
+                                CropHandle.TOP_RIGHT -> {
+                                    r = (r + normDx).coerceIn(l + 0.05f, 1f)
+                                    t = (t + normDy).coerceIn(0f, b - 0.05f)
+                                }
+                                CropHandle.BOTTOM_LEFT -> {
+                                    l = (l + normDx).coerceIn(0f, r - 0.05f)
+                                    b = (b + normDy).coerceIn(t + 0.05f, 1f)
+                                }
+                                CropHandle.BOTTOM_RIGHT -> {
+                                    r = (r + normDx).coerceIn(l + 0.05f, 1f)
+                                    b = (b + normDy).coerceIn(t + 0.05f, 1f)
+                                }
+                                CropHandle.TOP -> {
+                                    t = (t + normDy).coerceIn(0f, b - 0.05f)
+                                }
+                                CropHandle.BOTTOM -> {
+                                    b = (b + normDy).coerceIn(t + 0.05f, 1f)
+                                }
+                                CropHandle.LEFT -> {
+                                    l = (l + normDx).coerceIn(0f, r - 0.05f)
+                                }
+                                CropHandle.RIGHT -> {
+                                    r = (r + normDx).coerceIn(l + 0.05f, 1f)
+                                }
+                                CropHandle.INSIDE -> {
+                                    val curW = r - l
+                                    val curH = b - t
+                                    val nextL = (l + normDx).coerceIn(0f, 1f - curW)
+                                    val nextT = (t + normDy).coerceIn(0f, 1f - curH)
+                                    l = nextL
+                                    t = nextT
+                                    r = nextL + curW
+                                    b = nextT + curH
+                                }
+                                CropHandle.NONE -> {}
+                            }
+                            onCropRectChanged(l, t, r, b)
+                        }
+                    },
+                    onDragEnd = {
+                        isDragging = false
+                        activeHandle = CropHandle.NONE
+                    },
+                    onDragCancel = {
+                        isDragging = false
+                        activeHandle = CropHandle.NONE
+                    }
+                )
+            }
+    ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
 
             val padX = 20.dp.toPx()
             val padY = 20.dp.toPx()
-            val cropLeft = padX
-            val cropTop = padY
-            val cropRight = w - padX
-            val cropBottom = h - padY
+            val availW = w - padX * 2f
+            val availH = h - padY * 2f
+
+            val cropLeft = padX + crop.left * availW
+            val cropTop = padY + crop.top * availH
+            val cropRight = padX + crop.right * availW
+            val cropBottom = padY + crop.bottom * availH
             val cropW = cropRight - cropLeft
             val cropH = cropBottom - cropTop
 
-            // Dim letterbox outside crop area
-            val scrimColor = Color.Black.copy(alpha = if (isExpandEnabled) 0.35f else 0.45f)
+            // Dim letterbox outside crop area (60% scrim)
+            val scrimColor = Color.Black.copy(alpha = if (isExpandEnabled) 0.35f else 0.60f)
             if (cropLeft > 0f) drawRect(scrimColor, Offset(0f, 0f), Size(cropLeft, h))
             if (cropRight < w) drawRect(scrimColor, Offset(cropRight, 0f), Size(w - cropRight, h))
             if (cropTop > 0f) drawRect(scrimColor, Offset(cropLeft, 0f), Size(cropW, cropTop))
@@ -1103,11 +1240,22 @@ private fun CropOverlayBrackets(
 
             // Thin outer boundary line
             drawRect(
-                if (isExpandEnabled) Color(0xFF1686FF).copy(alpha = 0.7f) else Color.White.copy(alpha = 0.45f),
+                if (isExpandEnabled) Color(0xFF1686FF).copy(alpha = 0.85f) else Color.White.copy(alpha = 0.45f),
                 Offset(cropLeft, cropTop),
                 Size(cropW, cropH),
                 style = Stroke(1.dp.toPx())
             )
+
+            // Dynamic 3x3 Rule-of-Thirds Grid (visible while dragging)
+            if (isDragging) {
+                val gridColor = Color.White.copy(alpha = 0.65f)
+                val gridStroke = 0.85.dp.toPx()
+
+                drawLine(gridColor, Offset(cropLeft + cropW / 3f, cropTop), Offset(cropLeft + cropW / 3f, cropBottom), gridStroke)
+                drawLine(gridColor, Offset(cropLeft + 2 * cropW / 3f, cropTop), Offset(cropLeft + 2 * cropW / 3f, cropBottom), gridStroke)
+                drawLine(gridColor, Offset(cropLeft, cropTop + cropH / 3f), Offset(cropRight, cropTop + cropH / 3f), gridStroke)
+                drawLine(gridColor, Offset(cropLeft, cropTop + 2 * cropH / 3f), Offset(cropRight, cropTop + 2 * cropH / 3f), gridStroke)
+            }
 
             // 4 Corner Brackets (24dp length, 3.5dp stroke, Color.White)
             val bracketLen = 24.dp.toPx()
@@ -1171,9 +1319,6 @@ private fun CropOverlayBrackets(
     }
 }
 
-/**
- * Authentic 4x4 Tone Curve Overlay on Loupe Canvas (Matching Lightroom Screenshot 083443)
- */
 @Composable
 private fun ToneCurveCanvasOverlay(
     curvePoints: List<CurvePoint>,

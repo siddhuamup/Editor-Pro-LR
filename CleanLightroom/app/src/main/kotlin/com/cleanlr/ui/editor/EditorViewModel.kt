@@ -810,8 +810,82 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         _viewMode.value = mode
     }
 
+    private var cropSnapshotBeforeEdit: CropAdjustments = CropAdjustments()
+
     override fun toggleCropActive() {
-        _isCropActive.value = !_isCropActive.value
+        val willBeActive = !_isCropActive.value
+        if (willBeActive) {
+            cropSnapshotBeforeEdit = _recipe.value.crop
+        }
+        _isCropActive.value = willBeActive
+    }
+
+    fun cancelCrop() {
+        _aspectRatioGuide.value = null
+        updateRecipe("Cancel Crop") {
+            it.copy(crop = cropSnapshotBeforeEdit)
+        }
+        _isCropActive.value = false
+    }
+
+    fun confirmCrop() {
+        _isCropActive.value = false
+        historyManager.commitState(_recipe.value, "Crop and Expand")
+    }
+
+    fun setCropRect(left: Float, top: Float, right: Float, bottom: Float) {
+        updateRecipe {
+            it.copy(crop = it.crop.copy(
+                left = left.coerceIn(0f, 0.9f),
+                top = top.coerceIn(0f, 0.9f),
+                right = right.coerceIn(left + 0.05f, 1f),
+                bottom = bottom.coerceIn(top + 0.05f, 1f)
+            ))
+        }
+    }
+
+    fun autoStraighten() {
+        updateRecipe("Auto Straighten") {
+            val current = it.crop.straightenAngle
+            val target = if (kotlin.math.abs(current) < 0.1f) -1.85f else 0.0f
+            it.copy(crop = it.crop.copy(straightenAngle = target))
+        }
+    }
+
+    fun applyAspectRatio(ratioStr: String?) {
+        _aspectRatioGuide.value = ratioStr
+        updateRecipe("Aspect Ratio: " + (ratioStr ?: "Free")) { current ->
+            val newCrop = when (ratioStr) {
+                null, "Free" -> current.crop.copy(aspectRatio = "Free")
+                "Original" -> current.crop.copy(aspectRatio = "Original", left = 0f, top = 0f, right = 1f, bottom = 1f)
+                "1:1", "1 x 1" -> {
+                    val pad = 0.15f
+                    current.crop.copy(aspectRatio = "1:1", left = pad, top = 0f, right = 1f - pad, bottom = 1f)
+                }
+                "4:5", "4 x 5" -> {
+                    val pad = 0.18f
+                    current.crop.copy(aspectRatio = "4:5", left = pad, top = 0f, right = 1f - pad, bottom = 1f)
+                }
+                "9:16", "9 x 16" -> {
+                    val pad = 0.24f
+                    current.crop.copy(aspectRatio = "9:16", left = pad, top = 0f, right = 1f - pad, bottom = 1f)
+                }
+                "16:9", "16 x 9" -> {
+                    val pad = 0.22f
+                    current.crop.copy(aspectRatio = "16:9", left = 0f, top = pad, right = 1f, bottom = 1f - pad)
+                }
+                "3:2", "3 x 2" -> {
+                    val pad = 0.08f
+                    current.crop.copy(aspectRatio = "3:2", left = 0f, top = pad, right = 1f, bottom = 1f - pad)
+                }
+                "4:3", "4 x 3" -> {
+                    val pad = 0.12f
+                    current.crop.copy(aspectRatio = "4:3", left = 0f, top = pad, right = 1f, bottom = 1f - pad)
+                }
+                else -> current.crop.copy(aspectRatio = ratioStr)
+            }
+            current.copy(crop = newCrop)
+        }
     }
 
     fun rotateCrop(clockwise: Boolean) {

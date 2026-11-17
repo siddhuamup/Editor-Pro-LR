@@ -1,19 +1,23 @@
-# BRIEFING — 2026-11-08T18:22:00Z
+# BRIEFING — 2026-11-17T18:25:00Z
 
 ## Mission
-Extract and mine all icon and vector assets from C:\Users\Siddhu\Downloads\Lightroom.apk, convert them to valid standard .svg files in "mined Svg", and programmatically verify their validity.
+Analyze all mobile screenshots in the Adobe Lightroom Mobile design reference folder and horizontal subfolder, determine their respective UI panels or features, sort the screenshots into panel-specific folders, and verify 100% file retention with an automated audit script.
 
 ## 🔒 My Identity
 - Archetype: teamwork_orchestrator
 - Roles: orchestrator, user_liaison, human_reporter, successor
 - Working directory: c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\orchestrator\
 - Original parent: parent
-- Original parent conversation ID: 812053ca-2337-4865-8351-50a0fc2ee656
+- Original parent conversation ID: 905777c9-f86a-44c3-88fc-b119fcb623ca
 
 ## 🔒 My Workflow
 - **Pattern**: Project
 - **Scope document**: c:\Users\Siddhu\Desktop\apps testing\PROJECT.md
-1. **Decompose**: Survey completed. Authoritative PROJECT.md and TEST_INFRA.md established.
+1. **Decompose**:
+   - Survey (Phase 0): 3 parallel Explorers / Spec Miners inventory files, analyze UI panels, and define canonical folder taxonomy & verification rules.
+   - Decompose into Milestones in PROJECT.md:
+     - M1: Panel Taxonomy, Mapping Matrix & Automated Audit Harness Design
+     - M2: Panel Directory Creation, Screenshot Sorting (Vertical & Horizontal), and Automated Retention Verification
 2. **Dispatch & Execute**:
    - Direct iteration loop: Explorer -> Worker -> Reviewer -> Challenger -> Auditor -> Gate
 3. **On failure**:
@@ -25,10 +29,11 @@ Extract and mine all icon and vector assets from C:\Users\Siddhu\Downloads\Light
    - Escalate: report to parent (sub-orchestrators only, last resort)
 4. **Succession**: At 16 spawns, write handoff.md, spawn successor
 - **Work items**:
-  1. Survey APK assets and conversion tooling [DONE]
-  2. Milestone 1: APK Asset Extraction, SVG Conversion & Verification [DONE]
-- **Current phase**: COMPLETED (Milestone 1 Gate Passed)
-- **Current focus**: Final Reporting and Handoff to Sentinel
+  1. Survey design reference screenshots, UI panels, and verification requirements [in-progress]
+  2. Milestone 1: Screenshot UI Panel Mapping, Folder Structure & Audit Script Specification [pending]
+  3. Milestone 2: Panel Folder Creation, Sorting Execution & Automated Verification [pending]
+- **Current phase**: Phase 0 (Survey)
+- **Current focus**: Parallel Survey completion (revived subagents post-restart)
 
 ## 🔒 Key Constraints
 - DISPATCH-ONLY: NEVER write, modify, or create source code files directly.
@@ -38,53 +43,38 @@ Extract and mine all icon and vector assets from C:\Users\Siddhu\Downloads\Light
 - Never reuse a subagent after it has delivered its handoff — always spawn fresh.
 - Binary veto on Forensic Auditor integrity violations.
 - Always include path to ORIGINAL_REQUEST.md in all subagent dispatches.
+- Verify 100% file retention: moving files must never lose, truncate, or duplicate files.
 
 ## Current Parent
-- Conversation ID: 812053ca-2337-4865-8351-50a0fc2ee656
-- Updated: 2026-11-08T09:56:12Z
+- Conversation ID: 905777c9-f86a-44c3-88fc-b119fcb623ca
+- Updated: 2026-11-17T18:22:00Z
 
 ## Key Decisions Made
-- Replaced worker_mining_gen2 with worker_mining_gen3 following network failure, resuming from partial code updates.
+- Server restarted; revived active survey subagents explorer_survey_2 and spec_miner_survey_3 via directed messages.
+- Background heartbeat cron and safety timer restarted.
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| explorer_survey_1 | teamwork_explorer | APK Structure & Tooling Explorer | COMPLETED | 586d5077-9644-4818-900c-7b512042718e |
-| spec_miner_survey_2 | teamwork_spec_miner | Vector Asset Spec Miner | COMPLETED | 82c997e8-204b-4ba9-9d90-39a3b10ff063 |
-| spec_miner_survey_3 | teamwork_spec_miner | SVG Conversion & QA Spec Miner | COMPLETED | 63f16f7c-9654-4c72-8ad8-cd1eabc20de3 |
-| worker_mining_1 | teamwork_worker | APK SVG Extraction Worker | COMPLETED (Iter 1) | 8719958e-df8e-4783-9c7c-c2fe6a34aa7c |
-| reviewer_m1_1 | teamwork_reviewer | Milestone 1 Reviewer 1 | COMPLETED (REQUEST_CHANGES) | 92e91720-df2e-4b51-a15e-64c3d30235e3 |
-| reviewer_m1_2 | teamwork_reviewer | Milestone 1 Reviewer 2 | COMPLETED (APPROVE) | bd9cc6dc-7115-4d7d-bd3b-b3a390adec3a |
-| challenger_m1_1 | teamwork_challenger | Milestone 1 Challenger 1 | COMPLETED (REQUEST_CHANGES) | d66f400c-b324-4b1c-93ee-d8bec7545207 |
-| challenger_m1_2 | teamwork_challenger | Milestone 1 Challenger 2 | COMPLETED (APPROVE) | c28cd957-0fc9-4587-9cd4-24381f72a15e |
-| auditor_m1 | teamwork_auditor | Milestone 1 Forensic Auditor | COMPLETED (CLEAN) | 85d3968f-0ec2-401a-99c9-9967d6d3aa34 |
-| explorer_fix_1 | teamwork_explorer | ARSC Reference Decoder Explorer | COMPLETED | 13d52abc-6390-4ddd-9a2b-e355e29a549e |
-| explorer_fix_2 | teamwork_explorer | Color Resolution Explorer | COMPLETED | b5e28341-8a58-4da1-b32c-dbc2fc359b82 |
-| explorer_fix_3 | teamwork_explorer | Test Harness Paint Validator Explorer | COMPLETED | b113fc3e-bcfc-4942-8c6c-5c0a50ceca44 |
-| worker_mining_gen2 | teamwork_worker | APK SVG Remediation Worker | ERRORED (NETWORK) | 05715c05-ad0e-4673-8d84-6d6f0d420e88 |
-| worker_mining_gen3 | teamwork_worker | APK SVG Remediation Worker Gen 3 | COMPLETED | 8c5186e8-e0e6-4590-8086-3162a6de0ff3 |
-| reviewer_m1_1_gen2 | teamwork_reviewer | Milestone 1 Reviewer 1 Gen 2 | COMPLETED (APPROVE) | 31eec1bd-42ef-4a58-a0fb-7bf93762fb71 |
-| reviewer_m1_2_gen2 | teamwork_reviewer | Milestone 1 Reviewer 2 Gen 2 | COMPLETED (APPROVE) | 52a4c240-6fbd-4ce2-add4-bbcad8fdbfca |
-| challenger_m1_1_gen2 | teamwork_challenger | Milestone 1 Challenger 1 Gen 2 | COMPLETED (APPROVE) | 0905052d-82df-4a4d-a196-f1009140d451 |
-| challenger_m1_2_gen2 | teamwork_challenger | Milestone 1 Challenger 2 Gen 2 | COMPLETED (APPROVE) | 56c3433b-813f-42b6-ab68-4e8bca074b26 |
-| auditor_m1_gen2 | teamwork_auditor | Milestone 1 Forensic Auditor Gen 2 | COMPLETED (CLEAN) | bdafcda3-2608-43f4-9fa7-e2d6887f73f7 |
+| explorer_survey_1 | teamwork_explorer | Screenshot File Inventory & Hashes | COMPLETED | 48abc935-4d62-4c24-b065-dfcd0bb72c18 |
+| explorer_survey_2 | teamwork_explorer | UI Panel Feature & Control Mapping | IN_PROGRESS (REVIVED) | a2273dcb-7aa4-4551-bf45-7fa45afadef7 |
+| spec_miner_survey_3 | teamwork_spec_miner | Lightroom Taxonomy & Audit Spec | IN_PROGRESS (REVIVED) | 5d8265e2-b99c-4eab-a1fb-cce66f75ccf7 |
 
 ## Succession Status
-- Succession required: no (Milestone 1 complete, all milestones finished)
-- Spawn count: 19 / 16
-- Pending subagents: none (all 19 finished)
+- Succession required: no
+- Spawn count: 3 / 16
+- Pending subagents: a2273dcb-7aa4-4551-bf45-7fa45afadef7, 5d8265e2-b99c-4eab-a1fb-cce66f75ccf7
 - Predecessor: none
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: ee54e32c-82f7-47db-a4c1-749165b59911/task-308
-- Safety timer: ee54e32c-82f7-47db-a4c1-749165b59911/task-565
+- Heartbeat cron: cccad627-2c2d-4414-a5e3-3ca885a5664d/task-135
+- Safety timer: cccad627-2c2d-4414-a5e3-3ca885a5664d/task-137
 
 ## Artifact Index
 - c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\ORIGINAL_REQUEST.md — Authoritative User Request
+- c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\explorer_survey_1\handoff.md — Complete Screenshot Inventory & Hashes
 - c:\Users\Siddhu\Desktop\apps testing\PROJECT.md — Global Project Specification & Milestones
-- c:\Users\Siddhu\Desktop\apps testing\TEST_INFRA.md — E2E Test Infrastructure Specification
-- c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\orchestrator\GATE_STATUS.md — Gate Verdict Matrix
 - c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\orchestrator\DISPATCH.md — Dispatch instructions
 - c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\orchestrator\BRIEFING.md — Working memory
 - c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\orchestrator\progress.md — Liveness & progress

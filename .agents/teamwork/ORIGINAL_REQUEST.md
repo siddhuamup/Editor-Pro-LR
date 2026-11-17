@@ -1,38 +1,27 @@
 # Original User Request
 
-## Approved Task Prompt — 2026-11-07T18:49:27Z
+## Initial Request — 2026-11-17T08:45:40Z
 
-Extract and mine all SVG icons from the original APK file "C:\Users\Siddhu\Downloads\Lightroom.apk" using REA and reverse engineering tools.
+Analyze screenshots in the Adobe Lightroom Mobile design reference folder, determine their respective UI panels or features, and sort the screenshots into panel-specific folders.
 
+Working directory: C:\Users\Siddhu\Desktop\apps testing\CleanLightroom\design-reference
 Integrity mode: development
 
 ## Requirements
 
-### R1. APK Asset Extraction
-Extract all icon and vector assets from the original APK file located at `C:\Users\Siddhu\Downloads\Lightroom.apk`.
+### R1. Screenshot UI Panel Analysis
+Analyze all mobile screenshots in the design reference folder and its `horizontal screen UI(same as verticle)` subfolder to determine which Adobe Lightroom Mobile panel or tool each image represents (such as Gallery, Actions, Presets, Crop, Light, Tone Curve, Color, Color Grading, Color Mix, Effects, Detail, Optics, Masking).
 
-### R2. SVG Conversion and Output Organization
-Convert all extracted vector icons into valid standard `.svg` files and save them in a new folder named `mined Svg`.
+### R2. Panel Folder Creation and File Sorting
+Create dedicated panel-wise folders for each recognized Lightroom feature. Move the corresponding screenshots into their respective panel folders, sorting both vertical and horizontal screenshots into matching panel categories.
+
+### R3. Automated Inventory and Verification
+Verify that all screenshot files have been categorized and moved without any file loss, corruption, or unintentional omission.
 
 ## Acceptance Criteria
 
-### Verification and Asset Validity
-- [ ] All icon and vector assets from `C:\Users\Siddhu\Downloads\Lightroom.apk` are extracted and stored as `.svg` files inside the `mined Svg` directory.
-- [ ] Every extracted `.svg` file is non-empty (> 0 bytes) and validates as well-formed SVG/XML.
-- [ ] A programmatic verification test script executes and confirms that all generated SVG files parse cleanly and are valid.
-
-
-## Follow-up — 2026-11-08T09:54:09Z
-
-Please continue the teamwork run to complete the remediation and final verification of the SVG icons.
-
-## Follow-up — 2026-10-29T06:47:19Z
-
-use parellel agent :- ultra refine ui. ui vr ajun kaam karychi garaj ahe UI la mi atta 60/100 marks deil kaaran ui ajun exact match nahiye je SVG icons references images(orignal UI) madhe astil tech use kar . masking panl  vr ajun khup kaam karne baki ahe , ui & feature build kelyavr rea/ ne orignal apk varun help ghe ani build kartanna pan help ghe. design reference folder madhe ui che reference screenshot ahet je ki orignal application madhun ghetle ahet ani tyach design refence folder madhe horizhontal UI che pan screenshot ahet tyat jashe ui ahe tasach ui vertcle cha pan ahe fkt screen rotate hote. ani svg icon compalsory nahiye ki reference madhunach use karyche jashe exact ui vr ahe tasa use kar. ani last prompt madhun je tasks remaining astil te pan complete karun ghe
-
-### Requirements & Scope
-1. Ultra-refine CleanLightroom Android Jetpack Compose app UI to 100/100 visual parity matching authentic reference screenshots in `CleanLightroom/design-reference` and `CleanLightroom/design-reference/horizontal screen UI(same as verticle)`.
-2. Replace generic icons with authentic 24dp VectorDrawables from `CleanLightroom/design-reference/Svg Icons/01_Lightroom_Mobile_SVG_Pack_24px` and mined SVG pack.
-3. Complete Masking panel subsystem: Ruby Red 50% overlay, centroid pin, floating dock, combine operations (Add, Subtract, Intersect, Invert), and 5 local adjustments.
-4. Implement responsive multi-rail landscape layout (loupe canvas, adjustment column, vertical sub-tool rail, primary dock rail).
-5. Build and run app on active emulator `emulator-5554`, capture screenshots across portrait and landscape, verify 65/65 E2E automated test suite and 200/200 JVM unit tests.
+### Organization and File Integrity
+- [ ] All screenshot image files from the root design reference folder and `horizontal screen UI(same as verticle)` are sorted into distinct, panel-named directories.
+- [ ] Horizontal screenshots are categorized into the matching panel folders alongside the vertical UI screenshots.
+- [ ] Screenshots are moved (not duplicated) into their target panel folders.
+- [ ] An automated audit script checks and confirms 100% file retention (the total number of categorized files equals the initial total, with no missing files).

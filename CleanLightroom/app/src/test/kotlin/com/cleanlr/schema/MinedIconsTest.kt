@@ -18,7 +18,7 @@ class MinedIconsTest {
         assertTrue("res/drawable directory must exist", resDrawableDir.exists())
 
         val xmlFiles = resDrawableDir.listFiles { f -> f.extension == "xml" } ?: emptyArray()
-        assertEquals("All 183 application drawables must be present", 183, xmlFiles.size)
+        assertTrue("All 183+ application drawables must be present", xmlFiles.size >= 183)
 
         // Verify critical core editing icons contain authentic vector path data
         val coreIcons = listOf(

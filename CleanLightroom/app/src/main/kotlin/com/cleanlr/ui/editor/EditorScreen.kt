@@ -47,6 +47,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -313,9 +314,15 @@ fun EditorScreen(
                             Surface(
                                 color = Color(0xFF262628),
                                 shape = RoundedCornerShape(16.dp),
-                                modifier = Modifier.clickable {
-                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                    viewModel.resetCrop()
+                                modifier = Modifier.pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onPress = {
+                                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                            viewModel.setComparingOriginal(true)
+                                            tryAwaitRelease()
+                                            viewModel.setComparingOriginal(false)
+                                        }
+                                    )
                                 }
                             ) {
                                 Text(
@@ -681,12 +688,11 @@ fun EditorScreen(
                     "Crop" -> DedicatedCommitBottomBar(
                         title = "Crop and expand",
                         onCancel = {
-                            viewModel.setAspectRatioGuide(null)
-                            if (viewModel.isCropActive.value) viewModel.toggleCropActive()
+                            viewModel.cancelCrop()
                             selectedMobileTool = null
                         },
                         onConfirm = {
-                            if (viewModel.isCropActive.value) viewModel.toggleCropActive()
+                            viewModel.confirmCrop()
                             selectedMobileTool = null
                         }
                     )
@@ -753,6 +759,7 @@ fun EditorScreen(
                     aspectRatioGuide = aspectRatioGuide,
                     isCropActive = (selectedMobileTool == "Crop" || isCropActive),
                     isExpandEnabled = recipe.crop.isExpandEnabled,
+                    onCropRectChanged = { l, t, r, b -> viewModel.setCropRect(l, t, r, b) },
                     isCurveActive = (activeTab == EditorToolTab.CURVES),
                     curvePoints = when (selectedCurveChannel) {
                         com.cleanlr.ui.components.CurveChannel.RGB -> recipe.curves.composite
@@ -1068,8 +1075,9 @@ fun EditorScreen(
                                 onRotate = { viewModel.rotateCrop(it) },
                                 onFlip = { viewModel.flipCrop(it) },
                                 onStraighten = { viewModel.setStraightenAngle(it) },
+                                onAutoStraighten = { viewModel.autoStraighten() },
                                 aspectRatioGuide = aspectRatioGuide,
-                                onAspectRatioSelected = { viewModel.setAspectRatioGuide(it) },
+                                onAspectRatioSelected = { viewModel.applyAspectRatio(it) },
                                 onResetCrop = { viewModel.resetCrop() },
                                 isExpandEnabled = recipe.crop.isExpandEnabled,
                                 onExpandToggled = { viewModel.setExpandEnabled(it) },
@@ -3449,6 +3457,7 @@ private fun CropAndExpandPanel(
     onRotate: (Boolean) -> Unit,
     onFlip: (Boolean) -> Unit,
     onStraighten: (Float) -> Unit,
+    onAutoStraighten: () -> Unit = {},
     aspectRatioGuide: String?,
     onAspectRatioSelected: (String?) -> Unit,
     onResetCrop: () -> Unit = {},
@@ -3479,21 +3488,21 @@ private fun CropAndExpandPanel(
 ) {
     val view = LocalView.current
     var page by remember { mutableStateOf("Aspect") }
-    var selectedAspectCategory by remember { mutableStateOf(if (aspectRatioGuide == null) "Original" else "Ratios") }
+    var selectedAspectCategory by remember { mutableStateOf(if (aspectRatioGuide == null || aspectRatioGuide == "Original") "Original" else "Ratios") }
     var isAspectLocked by remember { mutableStateOf(false) }
-    var showOverflowFlip by remember { mutableStateOf(false) }
+    var showOverflowMenu by remember { mutableStateOf(false) }
+    var showManualTransforms by remember { mutableStateOf(false) }
 
     val standardRatios = listOf(
         "Free" to null,
         "Original" to "Original",
         "1:1" to "1:1",
         "4:5" to "4:5",
-        "16:9" to "16:9",
-        "9:16" to "9:16",
-        "3:2" to "3:2",
-        "4:3" to "4:3",
-        "2:3" to "2:3",
         "5:7" to "5:7",
+        "2:3" to "2:3",
+        "9:16" to "9:16",
+        "3:4" to "3:4",
+        "10:16" to "10:16",
         "1:2" to "1:2"
     )
 
@@ -3501,7 +3510,7 @@ private fun CropAndExpandPanel(
         "1:1 Square" to "1:1",
         "4:5 Portrait" to "4:5",
         "16:9 Landscape" to "16:9",
-        "9:16 Reel" to "9:16"
+        "9:16 Story" to "9:16"
     )
 
     val uprightModes = listOf(
@@ -3518,13 +3527,17 @@ private fun CropAndExpandPanel(
             .background(SpectrumSurface)
     ) {
         if (page == "Aspect") {
-            // Curved Straighten Dial Arc (Screenshot 083306)
+            // ═════════════════════════════════════════════════════════════════
+            // CURVED SMILE DIAL ARC (Screenshot 083306)
+            // ═════════════════════════════════════════════════════════════════
             CurvedStraightenDial(
                 angle = crop.straightenAngle,
                 onAngleChange = onStraighten
             )
 
-            // Control Row: 4 Floating Circular Action Buttons (Screenshot 083306)
+            // ═════════════════════════════════════════════════════════════════
+            // 4 FLOATING CIRCULAR ACTION BUTTONS (Screenshot 083306)
+            // ═════════════════════════════════════════════════════════════════
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -3532,26 +3545,31 @@ private fun CropAndExpandPanel(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Left 2 buttons: Aspect Ratios, Aspect Lock
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     Surface(
                         shape = CircleShape,
-                        color = Color(0xFF262626),
+                        color = Color(0xFF262628),
                         modifier = Modifier
                             .size(42.dp)
-                            .clickable { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }
+                            .clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                selectedAspectCategory = if (selectedAspectCategory == "Ratios") "Original" else "Ratios"
+                            }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                painter = painterResource(R.drawable.ic_lr_hold_original_gesture),
-                                contentDescription = "Expand / Fullscreen preview",
-                                tint = Color.White,
+                                painter = painterResource(R.drawable.ic_lr_aspect_ratio),
+                                contentDescription = "Aspect ratios",
+                                tint = if (selectedAspectCategory == "Ratios") SpectrumBlue else Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                     }
+
                     Surface(
                         shape = CircleShape,
-                        color = Color(0xFF262626),
+                        color = Color(0xFF262628),
                         modifier = Modifier
                             .size(42.dp)
                             .clickable {
@@ -3561,19 +3579,20 @@ private fun CropAndExpandPanel(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                painter = painterResource(if (isAspectLocked) R.drawable.ic_lr_lock else R.drawable.ic_lr_unlock),
+                                painter = painterResource(if (isAspectLocked) R.drawable.ic_lr_crop_lock_closed else R.drawable.ic_lr_crop_lock_open),
                                 contentDescription = "Aspect lock",
-                                tint = if (isAspectLocked) Color(0xFF1686FF) else Color.White,
-                                modifier = Modifier.size(19.dp)
+                                tint = if (isAspectLocked) SpectrumBlue else Color.White,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Right 2 buttons: Rotate 90 deg clockwise, Overflow Menu
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     Surface(
                         shape = CircleShape,
-                        color = Color(0xFF262626),
+                        color = Color(0xFF262628),
                         modifier = Modifier
                             .size(42.dp)
                             .clickable {
@@ -3583,48 +3602,71 @@ private fun CropAndExpandPanel(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                painter = painterResource(R.drawable.ic_lr_generative_refresh),
+                                painter = painterResource(R.drawable.ic_lr_crop_rotate_circle),
                                 contentDescription = "Rotate 90 degrees",
                                 tint = Color.White,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
                     }
+
                     Box {
                         Surface(
                             shape = CircleShape,
-                            color = Color(0xFF262626),
+                            color = Color(0xFF262628),
                             modifier = Modifier
                                 .size(42.dp)
                                 .clickable {
                                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                    showOverflowFlip = true
+                                    showOverflowMenu = true
                                 }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
-                                    painter = painterResource(R.drawable.ic_lr_more_menu),
+                                    painter = painterResource(R.drawable.ic_lr_crop_overflow),
                                     contentDescription = "More crop tools",
                                     tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
+
                         DropdownMenu(
-                            expanded = showOverflowFlip,
-                            onDismissRequest = { showOverflowFlip = false }
+                            expanded = showOverflowMenu,
+                            onDismissRequest = { showOverflowMenu = false },
+                            modifier = Modifier.background(SpectrumElevated)
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Flip Horizontal") },
-                                onClick = { onFlip(true); showOverflowFlip = false }
+                                text = { Text("Auto Straighten", color = Color.White) },
+                                onClick = {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    onAutoStraighten()
+                                    showOverflowMenu = false
+                                }
                             )
                             DropdownMenuItem(
-                                text = { Text("Flip Vertical") },
-                                onClick = { onFlip(false); showOverflowFlip = false }
+                                text = { Text("Flip Horizontal", color = Color.White) },
+                                onClick = {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    onFlip(true)
+                                    showOverflowMenu = false
+                                }
                             )
                             DropdownMenuItem(
-                                text = { Text("Reset Crop") },
-                                onClick = { onResetCrop(); showOverflowFlip = false }
+                                text = { Text("Flip Vertical", color = Color.White) },
+                                onClick = {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    onFlip(false)
+                                    showOverflowMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Reset Crop", color = Color(0xFFFF6B6B)) },
+                                onClick = {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    onResetCrop()
+                                    showOverflowMenu = false
+                                }
                             )
                         }
                     }
@@ -3632,7 +3674,9 @@ private fun CropAndExpandPanel(
             }
         }
 
-        // Sub-tabs: Aspect | Geometry (Screenshot 083306 & 200441)
+        // ═════════════════════════════════════════════════════════════════
+        // SUB-TABS: Aspect | Geometry (Screenshot 083306 & 083314)
+        // ═════════════════════════════════════════════════════════════════
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -3667,13 +3711,15 @@ private fun CropAndExpandPanel(
             }
         }
 
+        // ═════════════════════════════════════════════════════════════════
+        // ASPECT TAB CONTENT: Expand switch, Original, Ratios, Instagram, Tiktok
+        // ═════════════════════════════════════════════════════════════════
         if (page == "Aspect") {
-            // Horizontal row of Cards: Expand switch, Original, Ratios, Instagram, Tiktok (Screenshot 083306)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                    .padding(horizontal = 14.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -3682,7 +3728,7 @@ private fun CropAndExpandPanel(
                     color = Color.Transparent,
                     modifier = Modifier
                         .width(64.dp)
-                        .height(76.dp)
+                        .height(72.dp)
                 ) {
                     Column(
                         modifier = Modifier.fillMaxSize(),
@@ -3703,7 +3749,7 @@ private fun CropAndExpandPanel(
                                 uncheckedTrackColor = Color(0xFF333333)
                             )
                         )
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(2.dp))
                         Text(
                             text = "Expand",
                             color = Color.White,
@@ -3713,14 +3759,22 @@ private fun CropAndExpandPanel(
                     }
                 }
 
-                // 2. Original Card
+                // Divider line between Expand and Aspect cards
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(36.dp)
+                        .background(Color(0xFF383838))
+                )
+
+                // 2. Original Card (Authentic svg_original_crop.svg)
                 val isOriginalSelected = selectedAspectCategory == "Original"
                 Surface(
                     color = if (isOriginalSelected) Color(0xFF2C2C2E) else Color.Transparent,
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .width(64.dp)
-                        .height(76.dp)
+                        .height(72.dp)
                         .clickable {
                             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             selectedAspectCategory = "Original"
@@ -3733,29 +3787,29 @@ private fun CropAndExpandPanel(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_lr_aspect_ratio),
+                            painter = painterResource(R.drawable.ic_lr_crop_original),
                             contentDescription = "Original",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                            tint = if (isOriginalSelected) Color.White else Color(0xFFA0A0A0),
+                            modifier = Modifier.size(22.dp)
                         )
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(5.dp))
                         Text(
                             text = "Original",
-                            color = Color.White,
+                            color = if (isOriginalSelected) Color.White else Color(0xFFA0A0A0),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Normal
                         )
                     }
                 }
 
-                // 3. Ratios Card
+                // 3. Ratios Card (Authentic svg_ratios_crop.svg)
                 val isRatiosSelected = selectedAspectCategory == "Ratios"
                 Surface(
                     color = if (isRatiosSelected) Color(0xFF2C2C2E) else Color.Transparent,
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .width(64.dp)
-                        .height(76.dp)
+                        .height(72.dp)
                         .clickable {
                             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             selectedAspectCategory = "Ratios"
@@ -3767,29 +3821,29 @@ private fun CropAndExpandPanel(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_lr_ratios),
+                            painter = painterResource(R.drawable.ic_lr_crop_ratios),
                             contentDescription = "Ratios",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                            tint = if (isRatiosSelected) Color.White else Color(0xFFA0A0A0),
+                            modifier = Modifier.size(22.dp)
                         )
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(5.dp))
                         Text(
                             text = "Ratios",
-                            color = Color.White,
+                            color = if (isRatiosSelected) Color.White else Color(0xFFA0A0A0),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Normal
                         )
                     }
                 }
 
-                // 4. Instagram Card
+                // 4. Instagram Card (Authentic svg_instagram_crop.svg)
                 val isInstagramSelected = selectedAspectCategory == "Instagram"
                 Surface(
                     color = if (isInstagramSelected) Color(0xFF2C2C2E) else Color.Transparent,
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .width(64.dp)
-                        .height(76.dp)
+                        .height(72.dp)
                         .clickable {
                             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             selectedAspectCategory = "Instagram"
@@ -3801,29 +3855,29 @@ private fun CropAndExpandPanel(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_lr_instagram),
+                            painter = painterResource(R.drawable.ic_lr_crop_instagram),
                             contentDescription = "Instagram",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                            tint = if (isInstagramSelected) Color.White else Color(0xFFA0A0A0),
+                            modifier = Modifier.size(22.dp)
                         )
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(5.dp))
                         Text(
                             text = "Instagram",
-                            color = Color.White,
+                            color = if (isInstagramSelected) Color.White else Color(0xFFA0A0A0),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Normal
                         )
                     }
                 }
 
-                // 5. Tiktok Card
+                // 5. Tiktok Card (Authentic svg_tiktok_crop.svg)
                 val isTiktokSelected = selectedAspectCategory == "Tiktok"
                 Surface(
                     color = if (isTiktokSelected) Color(0xFF2C2C2E) else Color.Transparent,
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .width(64.dp)
-                        .height(76.dp)
+                        .height(72.dp)
                         .clickable {
                             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             selectedAspectCategory = "Tiktok"
@@ -3836,15 +3890,15 @@ private fun CropAndExpandPanel(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_lr_tiktok),
+                            painter = painterResource(R.drawable.ic_lr_crop_tiktok),
                             contentDescription = "Tiktok",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                            tint = if (isTiktokSelected) Color.White else Color(0xFFA0A0A0),
+                            modifier = Modifier.size(22.dp)
                         )
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(5.dp))
                         Text(
                             text = "Tiktok",
-                            color = Color.White,
+                            color = if (isTiktokSelected) Color.White else Color(0xFFA0A0A0),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Normal
                         )
@@ -3852,7 +3906,7 @@ private fun CropAndExpandPanel(
                 }
             }
 
-            // Sub-ratios Row when Ratios or Instagram is selected
+            // Sub-ratios horizontal strip when Ratios or Instagram is selected
             if (selectedAspectCategory == "Ratios") {
                 Row(
                     modifier = Modifier
@@ -3861,21 +3915,22 @@ private fun CropAndExpandPanel(
                         .padding(horizontal = 14.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    standardRatios.forEach { (label, ratio) ->
-                        val selected = (ratio == null && aspectRatioGuide == null) || ratio == aspectRatioGuide
+                    standardRatios.forEach { (label, ratioVal) ->
+                        val isSelected = aspectRatioGuide == ratioVal
                         Surface(
-                            color = if (selected) Color(0xFF1686FF) else Color(0xFF262626),
+                            color = if (isSelected) SpectrumBlue else Color(0xFF262628),
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.clickable {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                onAspectRatioSelected(ratio)
+                                onAspectRatioSelected(ratioVal)
                             }
                         ) {
                             Text(
                                 text = label,
                                 color = Color.White,
                                 fontSize = 12.sp,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
                         }
                     }
@@ -3888,91 +3943,76 @@ private fun CropAndExpandPanel(
                         .padding(horizontal = 14.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    instagramRatios.forEach { (label, ratio) ->
-                        val selected = ratio == aspectRatioGuide
+                    instagramRatios.forEach { (label, ratioVal) ->
+                        val isSelected = aspectRatioGuide == ratioVal
                         Surface(
-                            color = if (selected) Color(0xFF1686FF) else Color(0xFF262626),
+                            color = if (isSelected) SpectrumBlue else Color(0xFF262628),
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.clickable {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                onAspectRatioSelected(ratio)
+                                onAspectRatioSelected(ratioVal)
                             }
                         ) {
                             Text(
                                 text = label,
                                 color = Color.White,
                                 fontSize = 12.sp,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
                         }
                     }
                 }
             }
+        }
 
-            if (isExpandEnabled) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Generative Expand extends your photo",
-                        color = Color(0xFFAAAAAA),
-                        fontSize = 11.sp
-                    )
-                }
-            }
-        } else {
-            // Geometry Tab Content (Screenshot 200441)
+        // ═════════════════════════════════════════════════════════════════
+        // GEOMETRY TAB CONTENT (Screenshot 083314)
+        // ═════════════════════════════════════════════════════════════════
+        if (page == "Geometry") {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(bottom = 12.dp)
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Upright Modes Row
+                // 5 Upright Mode Cards: Auto, Level, Vertical, Full, Guided
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    uprightModes.forEach { (mode, iconRes, label) ->
-                        val selected = uprightMode == mode
-                        Surface(
-                            color = if (selected) Color(0xFF2C2C2E) else Color(0xFF1A1A1A),
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, if (selected) Color.White else Color(0xFF242424)),
-                            modifier = Modifier
-                                .size(58.dp)
-                                .clickable {
-                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                    onUprightModeSelected(mode)
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(iconRes),
-                                    contentDescription = label,
-                                    tint = if (selected) Color.White else Color(0xFFAAAAAA),
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(Modifier.height(3.dp))
-                                Text(
-                                    text = label,
-                                    color = if (selected) Color.White else Color(0xFFAAAAAA),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
+                    uprightModes.forEach { (title, iconRes, modeKey) ->
+                        val isSelected = uprightMode == modeKey
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                onUprightModeSelected(modeKey)
                             }
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) Color(0xFF2C2C2E) else Color(0xFF1E1E1E),
+                                border = if (isSelected) BorderStroke(1.5.dp, Color.White) else BorderStroke(0.5.dp, Color(0xFF333333)),
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        painter = painterResource(iconRes),
+                                        contentDescription = title,
+                                        tint = if (isSelected) Color.White else Color(0xFF999999),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = title,
+                                color = if (isSelected) Color.White else Color(0xFF8E8E93),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Normal
+                            )
                         }
                     }
                 }
@@ -3981,15 +4021,15 @@ private fun CropAndExpandPanel(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "Constrain Crop",
                         color = Color.White,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Normal
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
                     )
                     Switch(
                         checked = constrainCrop,
@@ -4006,91 +4046,98 @@ private fun CropAndExpandPanel(
                     )
                 }
 
-                // Manual Transforms Section Header
-                Text(
-                    text = "Manual Transforms",
-                    color = Color(0xFFAAAAAA),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 4.dp)
-                )
+                // Manual Transforms Accordion Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showManualTransforms = !showManualTransforms }
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Manual Transforms",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.ic_lr_chevron_down),
+                        contentDescription = null,
+                        tint = Color(0xFF8E8E93),
+                        modifier = Modifier.size(20.dp).rotate(if (showManualTransforms) 180f else 0f)
+                    )
+                }
 
-                // Manual Transform Sliders
-                RampedSlider(
-                    label = "Distortion",
-                    value = distortion,
-                    minVal = -100f,
-                    maxVal = 100f,
-                    onValueChangeStart = onTouchStart,
-                    onValueChange = onDistortionChanged,
-                    onValueChangeEnd = { onTouchEnd("Distortion") }
-                )
-                RampedSlider(
-                    label = "Vertical",
-                    value = vertical,
-                    minVal = -100f,
-                    maxVal = 100f,
-                    onValueChangeStart = onTouchStart,
-                    onValueChange = onVerticalChanged,
-                    onValueChangeEnd = { onTouchEnd("Vertical") }
-                )
-                RampedSlider(
-                    label = "Horizontal",
-                    value = horizontal,
-                    minVal = -100f,
-                    maxVal = 100f,
-                    onValueChangeStart = onTouchStart,
-                    onValueChange = onHorizontalChanged,
-                    onValueChangeEnd = { onTouchEnd("Horizontal") }
-                )
-                RampedSlider(
-                    label = "Rotate",
-                    value = rotate,
-                    minVal = -45f,
-                    maxVal = 45f,
-                    formatPattern = "%.1f",
-                    unitSuffix = "°",
-                    onValueChangeStart = onTouchStart,
-                    onValueChange = onRotateChanged,
-                    onValueChangeEnd = { onTouchEnd("Rotate") }
-                )
-                RampedSlider(
-                    label = "Aspect",
-                    value = aspect,
-                    minVal = -100f,
-                    maxVal = 100f,
-                    onValueChangeStart = onTouchStart,
-                    onValueChange = onAspectChanged,
-                    onValueChangeEnd = { onTouchEnd("Aspect") }
-                )
-                RampedSlider(
-                    label = "Scale",
-                    value = scale,
-                    minVal = 50f,
-                    maxVal = 150f,
-                    unitSuffix = "%",
-                    onValueChangeStart = onTouchStart,
-                    onValueChange = onScaleChanged,
-                    onValueChangeEnd = { onTouchEnd("Scale") }
-                )
-                RampedSlider(
-                    label = "X Offset",
-                    value = xOffset,
-                    minVal = -100f,
-                    maxVal = 100f,
-                    onValueChangeStart = onTouchStart,
-                    onValueChange = onXOffsetChanged,
-                    onValueChangeEnd = { onTouchEnd("X Offset") }
-                )
-                RampedSlider(
-                    label = "Y Offset",
-                    value = yOffset,
-                    minVal = -100f,
-                    maxVal = 100f,
-                    onValueChangeStart = onTouchStart,
-                    onValueChange = onYOffsetChanged,
-                    onValueChangeEnd = { onTouchEnd("Y Offset") }
-                )
+                if (showManualTransforms) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        RampedSlider(
+                            label = "Distortion",
+                            value = distortion,
+                            minVal = -100f,
+                            maxVal = 100f,
+                            defaultValue = 0f,
+                            onValueChange = onDistortionChanged
+                        )
+                        RampedSlider(
+                            label = "Vertical",
+                            value = vertical,
+                            minVal = -100f,
+                            maxVal = 100f,
+                            defaultValue = 0f,
+                            onValueChange = onVerticalChanged
+                        )
+                        RampedSlider(
+                            label = "Horizontal",
+                            value = horizontal,
+                            minVal = -100f,
+                            maxVal = 100f,
+                            defaultValue = 0f,
+                            onValueChange = onHorizontalChanged
+                        )
+                        RampedSlider(
+                            label = "Rotate",
+                            value = rotate,
+                            minVal = -45f,
+                            maxVal = 45f,
+                            defaultValue = 0f,
+                            onValueChange = onRotateChanged
+                        )
+                        RampedSlider(
+                            label = "Aspect",
+                            value = aspect,
+                            minVal = -100f,
+                            maxVal = 100f,
+                            defaultValue = 0f,
+                            onValueChange = onAspectChanged
+                        )
+                        RampedSlider(
+                            label = "Scale",
+                            value = scale,
+                            minVal = 100f,
+                            maxVal = 200f,
+                            defaultValue = 100f,
+                            isBipolar = false,
+                            onValueChange = onScaleChanged
+                        )
+                        RampedSlider(
+                            label = "Offset X",
+                            value = xOffset,
+                            minVal = -100f,
+                            maxVal = 100f,
+                            defaultValue = 0f,
+                            onValueChange = onXOffsetChanged
+                        )
+                        RampedSlider(
+                            label = "Offset Y",
+                            value = yOffset,
+                            minVal = -100f,
+                            maxVal = 100f,
+                            defaultValue = 0f,
+                            onValueChange = onYOffsetChanged
+                        )
+                    }
+                }
             }
         }
     }

@@ -1,44 +1,43 @@
-# BRIEFING — 2026-11-08T00:42:00Z
+# BRIEFING — 2026-11-18T00:03:45Z
 
 ## Mission
-Investigate and design the end-to-end Vector-Drawable-to-SVG conversion pipeline and programmatic verification test harness.
+Investigate and specify the canonical panel taxonomy, folder structure, collision-free naming conventions, and automated verification requirements for organizing Adobe Lightroom Mobile design reference screenshots.
 
 ## 🔒 My Identity
-- Archetype: teamwork_spec_miner
-- Roles: Specification Investigator
+- Archetype: spec_miner
+- Roles: teamwork_spec_miner
 - Working directory: c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\spec_miner_survey_3
-- Original parent: ee54e32c-82f7-47db-a4c1-749165b59911
-- Milestone: M0 Specification and Feasibility Analysis
+- Original parent: cccad627-2c2d-4414-a5e3-3ca885a5664d
+- Milestone: survey_3_specification
 
 ## 🔒 Key Constraints
-- Read-only exploration and test specification. Do not create the final "mined Svg" assets.
-- Investigate pure Python Vector-Drawable-to-SVG conversion options, edge cases, and test harness.
-- Adhere strictly to file workspace boundaries (.agents/teamwork/spec_miner_survey_3/).
+- READ-ONLY: DO NOT move, modify, delete, or write any files in the target directories!
+- Investigate canonical Adobe Lightroom Mobile navigation structure and panel naming conventions.
+- Define standardized, canonical panel folder names according to Adobe Lightroom Mobile conventions.
+- Define clear assignment rules for edge-case screens.
+- Specify how horizontal and vertical screenshots should coexist in target panel folders without filename collisions.
+- Specify automated inventory audit script requirements to guarantee 100% file retention (exact programmatic checks, hash integrity, zero file loss, zero file corruption, zero duplicate leaks).
+- Document full specification in .agents/teamwork/spec_miner_survey_3/handoff.md and send a completion message with summary.
 
 ## Current Parent
-- Conversation ID: ee54e32c-82f7-47db-a4c1-749165b59911
-- Updated: not yet
+- Conversation ID: cccad627-2c2d-4414-a5e3-3ca885a5664d
+- Updated: 2026-11-18T00:03:45Z
 
 ## Task Summary
-- **What to build**: Specification for Vector Drawable to SVG converter & verification test harness
-- **Success criteria**: Clear specification of Vector Drawable XML schema vs SVG schema, handling of colors, alpha, viewport, transformations, gradients, clip-paths; and robust Python verification script design.
+- **What to build**: Specification for Lightroom Mobile panel taxonomy, folder layout, collision resolution, and automated verification script.
+- **Success criteria**: Comprehensive handoff report with features discovered, edge cases, canonical taxonomy, collision strategy, and verification specification.
 - **Interface contracts**: ORIGINAL_REQUEST.md
-- **Code layout**: .agents/teamwork/spec_miner_survey_3/
+- **Code layout**: Read-only inspection of CleanLightroom\design-reference, output in .agents/teamwork/spec_miner_survey_3/
 
 ## Key Decisions Made
-- Investigating pure Python parser using `xml.etree.ElementTree` vs external packages to ensure zero external binary dependency on Windows.
-- Confirmed pure Python stdlib `xml.etree.ElementTree` is superior to external libraries (`cairosvg`, `vd2svg`), avoiding C-runtime compilation issues on Windows while giving 100% control over XML mapping.
-- Resolved critical edge cases:
-  1. `#00000000` must map to `fill="none"` (not solid black).
-  2. Missing `fillColor` in VectorDrawable must default to `fill="none"` in SVG (overriding SVG's default black fill).
-  3. `#AARRGGBB` hex split into `#RRGGBB` + `fill-opacity` / `stroke-opacity`.
-  4. Viewport coordinate mapping with unit stripping (`dp`, `dip`, `px`).
-  5. Pivot-aware group transform matrix mapping.
-  6. Namespace resilience via local name extraction (`.split('}')[-1]`).
-- Verification harness designed with 5-gate pipeline and comprehensive CLI reporting.
+- [Initial setup] Read-only inspection mode.
+- [Taxonomy] Established 20 canonical panel folders aligning directly with authentic Adobe Lightroom Mobile architecture.
+- [Edge Cases] Semantic priority over directory origin for the 11 portrait screenshots from horizontal folder (`Community`, `Camera`, `Settings_and_Account`).
+- [Collisions] Confirmed 0 collisions across all 102 files; adopted Clean Preservation with metadata manifest indexing and fallback suffix strategy.
+- [Audit] Defined 7 Invariants and automated verification script ensuring 100% file retention and byte-for-byte SHA-256 integrity.
 
 ## Artifact Index
-- DISPATCH.md — Dispatch log
-- BRIEFING.md — Situational memory
-- progress.md — Liveness heartbeat
-- handoff.md — Final deliverable report
+- DISPATCH.md — Dispatch assignment and instructions
+- BRIEFING.md — Persistent situational awareness
+- progress.md — Liveness heartbeat and progress tracking
+- handoff.md — Comprehensive specification handoff report

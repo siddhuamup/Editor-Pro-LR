@@ -1,36 +1,60 @@
-## 2026-10-29T06:53:15Z
-From: 44240a21-53d3-40ab-9781-d6b2d37ac308 (Parent/Orchestrator)
+## Task Assignment: UI Panel Feature Explorer (explorer_survey_2)
+
+Read: `c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\ORIGINAL_REQUEST.md`
+Working directory: `.agents/teamwork/explorer_survey_2/`
+
+### Mission
+Conduct a visual and semantic analysis of all screenshots in:
+1. `C:\Users\Siddhu\Desktop\apps testing\CleanLightroom\design-reference` (vertical UI)
+2. `C:\Users\Siddhu\Desktop\apps testing\CleanLightroom\design-reference\horizontal screen UI(same as verticle)` (landscape UI)
+
+### Scope & Constraints
+- READ-ONLY: DO NOT move, modify, delete, or write any files in the target directories!
+- Determine which Adobe Lightroom Mobile panel or tool each image represents (Gallery, Edit Home, Crop, Light, Tone Curve, Color, Color Grading, Color Mix, Effects, Detail, Optics, Geometry, Masking, Presets, Actions, Export/Share, Settings, etc.).
+- Identify specific UI controls shown in each image (e.g. Tone Curve RGB curves, HSL color wheels, masking tools brush/radial/linear, dehaze/clarity sliders, etc.).
+- Categorize each image to its primary Lightroom feature.
+- Verify how horizontal screenshots correspond to vertical ones.
+- Write your complete mapping findings to `.agents/teamwork/explorer_survey_2/handoff.md`.
+
+
+## 2026-11-17T08:51:10Z
+From: cccad627-2c2d-4414-a5e3-3ca885a5664d
 Priority: MESSAGE_PRIORITY_HIGH
 
-You are teamwork_spec_miner (Design & SVG Spec Miner).
-Your working directory is: c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\explorer_survey_2\
+You are explorer_survey_2, a teamwork_explorer.
+Your working directory is: .agents/teamwork/explorer_survey_2/
+Read:
+1. c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\ORIGINAL_REQUEST.md
+2. .agents/teamwork/explorer_survey_2/DISPATCH.md
 
-Read ORIGINAL_REQUEST.md at: c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\ORIGINAL_REQUEST.md
+Your mission:
+Conduct a visual and semantic analysis of all screenshots in:
+1. `C:\Users\Siddhu\Desktop\apps testing\CleanLightroom\design-reference` (vertical UI)
+2. `C:\Users\Siddhu\Desktop\apps testing\CleanLightroom\design-reference\horizontal screen UI(same as verticle)` (landscape UI)
 
-Your Mission:
-Thoroughly inspect and document the exact design specifications from the authoritative reference sources:
-1. Reference Screenshots:
-   - Examine `c:\Users\Siddhu\Desktop\apps testing\CleanLightroom\design-reference\` (vertical reference screenshots taken from original Lightroom Mobile).
-   - Examine `c:\Users\Siddhu\Desktop\apps testing\CleanLightroom\design-reference\horizontal screen UI(same as verticle)\` (landscape reference screenshots).
-   - Compare vertical vs horizontal layouts: layout organization, dock placement, topbars, sliders, panels, floating widgets.
-2. SVG Icons:
-   - Examine `c:\Users\Siddhu\Desktop\apps testing\CleanLightroom\design-reference\Svg Icons\01_Lightroom_Mobile_SVG_Pack_24px` and any subfolders.
-   - Catalog all available SVGs: names, dimensions, path contents, purpose.
-   - Map each reference screen UI icon (top action bar, edit toolbar icons, sub-tool icons, masking panel icons, preset icons, etc.) to the exact SVG file that should be used.
-   - Note which icons must be imported as VectorDrawables or XML vectors into Android `res/drawable`.
-3. Discrepancy & Parity Spec:
-   - Identify all visual parity gaps between current app screenshots (e.g. `c:\Users\Siddhu\Desktop\apps testing\CleanLightroom\screen_*.png` or `live_*.png`) and the original reference screenshots: colors, background shades, padding, fonts, sizes, borders, dividers, active states.
+Tasks:
+- Determine which Adobe Lightroom Mobile panel or tool each image represents:
+  e.g., Gallery/Library, Edit Home/Toolbar, Crop / Geometry, Light (Exposure, Contrast, Highlights, Shadows, Whites, Blacks), Tone Curve (Point Curve, RGB channels), Color (Temp, Tint, Vibrance, Saturation), Color Grading / Split Toning, Color Mix (HSL wheels / sliders), Effects (Clarity, Dehaze, Vignette, Texture, Grain), Detail (Sharpening, Noise Reduction), Optics (Lens corrections, Defringe), Masking (Brush, Linear/Radial Gradient, Subject/Sky selection), Presets (Premium/Recommended/User presets), Actions / Quick Actions, Export / Share / Settings.
+- Identify specific UI controls shown in each image.
+- Map each individual screenshot file to its corresponding panel/category.
+- Confirm correspondence between horizontal screenshots and vertical ones.
+- DO NOT MOVE, RENAME, OR MODIFY ANY FILES. This is purely read-only analysis.
+- Document the mapping table and panel observations in `.agents/teamwork/explorer_survey_2/handoff.md` and send a completion message with summary.
 
-Constraints:
-- You are strictly READ-ONLY. Do NOT modify any code.
-- Report your findings in detail in `c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\explorer_survey_2\handoff.md`.
-- Maintain `progress.md` with timestamps in your working directory.
-- When finished, send a message to orchestrator with summary and path to your handoff.md.
 
-## 2026-10-29T07:07:10Z
-From: 44240a21-53d3-40ab-9781-d6b2d37ac308 (Parent/Orchestrator)
+## 2026-11-17T09:02:48Z
+From: cccad627-2c2d-4414-a5e3-3ca885a5664d
 Priority: MESSAGE_PRIORITY_HIGH
 
-**Context**: Phase 0 (Design & SVG Spec Survey)
-**Content**: Checking in on your survey progress. I see you've created scripts to catalog SVGs and analyze reference screenshots.
-**Action**: Please update your progress.md with your latest findings and synthesize the SVG mapping and visual parity spec into handoff.md.
+**Context**: Survey Phase - UI Panel Feature & Control Mapping
+**Content**: Checking in on status. explorer_survey_1 has completed the 102-file inventory and hash extraction. Please provide an update on your visual analysis of the Lightroom Mobile panels and screenshot mapping progress.
+**Action**: Reply with your current progress and estimate of completion.
+
+
+## 2026-11-17T18:22:29Z
+From: cccad627-2c2d-4414-a5e3-3ca885a5664d
+Priority: MESSAGE_PRIORITY_HIGH
+
+**Context**: Post-server restart revival
+**Content**: The server was restarted. Please resume your analysis and deliver your final handoff.md report for the UI Panel Feature & Control Mapping survey across all 102 screenshots.
+**Action**: Finish writing .agents/teamwork/explorer_survey_2/handoff.md and send a completion message with summary.
