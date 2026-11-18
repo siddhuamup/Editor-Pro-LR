@@ -12,4 +12,13 @@ CleanLightroom/dump.xml
 .tmp.driveupload
 __pycache__/
 *.pyc
+*.pyo
+.pytest_cache/
+desktop.ini
+Thumbs.db
+/*_dump.xml
+/dump.xml
+/anr.xml
+/live_portrait.xml
+
 

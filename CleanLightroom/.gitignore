@@ -1,6 +1,13 @@
 .idea/
 .kotlin/
-.design-reference/
+.gradle/
+build/
+app/build/
+local.properties
+
+# Design reference screenshots (102 local PNGs; Svg Icons and manifest remain tracked)
+design-reference/**/*.png
+
 # Bundled offline AI weights (populated via scripts/fetch_bundled_models.py)
 app/src/main/assets/models/*.onnx
 app/src/main/assets/models/*.ort
@@ -8,4 +15,16 @@ app/src/main/assets/models/*.onnx_data
 app/src/main/assets/models/*.bin
 app/src/main/assets/models/*.safetensors
 scripts/.model_cache/
+
+# Build outputs & ad-hoc emulator captures/dumps at project root
 *.apk
+/*.png
+/*.xml
+
+# Python caches & temporary/backup files
+__pycache__/
+*.pyc
+*.log
+*.bak
+*.orig
+*.tmp
