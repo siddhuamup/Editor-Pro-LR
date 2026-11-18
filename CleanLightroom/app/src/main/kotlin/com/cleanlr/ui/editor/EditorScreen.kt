@@ -155,6 +155,18 @@ fun EditorScreen(
     val showGenAiSettingsDialog by viewModel.showGenAiSettingsDialog.collectAsState()
     val removeBrushPoints by viewModel.removeBrushPoints.collectAsState()
     val useGenerativeAiRemove by viewModel.useGenerativeAiRemove.collectAsState()
+    val removeToolMode by viewModel.removeToolMode.collectAsState()
+    val healFeather by viewModel.healFeather.collectAsState()
+    val healOpacity by viewModel.healOpacity.collectAsState()
+    val detectObjectsRemove by viewModel.detectObjectsRemove.collectAsState()
+    val isRefineEraseMode by viewModel.isRefineEraseMode.collectAsState()
+    val healCloneSourceNorm by viewModel.healCloneSourceNorm.collectAsState()
+    val modelStates by viewModel.modelStates.collectAsState()
+    val showModelManagerSheet by viewModel.showModelManagerSheet.collectAsState()
+    val discoveredLanServers by viewModel.discoveredLanServers.collectAsState()
+    val isLanScanning by viewModel.isLanScanning.collectAsState()
+    val opticalBlurPack by viewModel.opticalBlurPack.collectAsState()
+    val opticalStageStatus by viewModel.opticalStageStatus.collectAsState()
     val panelSnapState by viewModel.panelSnapState.collectAsState()
     val isSliderDragging by viewModel.isSliderDragging.collectAsState()
     val bypassedTabs by viewModel.bypassedTabs.collectAsState()
@@ -210,6 +222,17 @@ fun EditorScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { viewModel.importXmpPreset(it, context) }
+    }
+
+    var pendingImportModelId by remember { mutableStateOf<String?>(null) }
+    val localModelPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        val mid = pendingImportModelId
+        if (uri != null && mid != null) {
+            viewModel.importLocalByomModel(mid, uri)
+        }
+        pendingImportModelId = null
     }
 
     val activeBatchProgress by viewModel.activeBatchProgress.collectAsState()
@@ -768,7 +791,12 @@ fun EditorScreen(
                     isGuidedUprightActive = (cropSubPage == "Geometry" && recipe.crop.uprightMode == "Guided"),
                     isRemoveBrushActive = (selectedMobileTool == "Remove"),
                     removeBrushPoints = removeBrushPoints,
+                    removeToolMode = removeToolMode,
+                    isRefineEraseMode = isRefineEraseMode,
+                    healCloneSourceNorm = healCloneSourceNorm,
+                    onHealCloneSourceChanged = { nx, ny -> viewModel.setHealCloneSourceNorm(nx, ny) },
                     isGenAiProcessing = isGenAiProcessing,
+                    opticalBlurPack = opticalBlurPack,
                     onRemoveBrushPoint = { nx, ny -> viewModel.addRemoveBrushPoint(nx, ny) },
                     onCropRectChanged = { l, t, r, b -> viewModel.setCropRect(l, t, r, b) },
                     onGuidedLineChanged = { id, x1, y1, x2, y2 -> viewModel.updateGuidedLine(id, x1, y1, x2, y2) },
@@ -880,35 +908,36 @@ fun EditorScreen(
                     )
                 }
 
-                // Floating pill: "Remove extra people" (Reference Screenshot 083752)
-                if (selectedMobileTool == "Remove" && !isCleanScreenMode) {
+                // Floating pill: "Remove extra people" (Reference Screenshot 083752 & 201127)
+                if (selectedMobileTool == "Remove" && removeToolMode == com.cleanlr.engine.RemoveToolMode.REMOVE && !isCleanScreenMode) {
                     Surface(
-                        color = Color(0xFF2C2C2C),
-                        shape = RoundedCornerShape(20.dp),
-                        border = BorderStroke(1.dp, Color(0xFF3E3E3E)),
+                        color = Color(0xE62A2A2C),
+                        shape = RoundedCornerShape(24.dp),
+                        border = BorderStroke(1.dp, Color(0xFF4A4A4F)),
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 16.dp)
-                            .clickable {
+                            .clickable(enabled = !isGenAiProcessing) {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                viewModel.executeRemoveExtraPeople()
                             }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.ic_lr_extra_people),
-                                contentDescription = null,
+                                painter = painterResource(R.drawable.ic_lr_distracting_people),
+                                contentDescription = "Remove extra people",
                                 tint = Color.White,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(19.dp)
                             )
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(9.dp))
                             Text(
                                 text = "Remove extra people",
-                                color = Color.White,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium
+                                color = Color(0xFFE8E8EA),
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.Normal
                             )
                         }
                     }
@@ -1022,7 +1051,7 @@ fun EditorScreen(
                     targetValue = if (selectedMobileTool != null && selectedMobileTool != "Actions") {
                         if (isDedicatedSubMode) {
                             if (activeTab == EditorToolTab.CURVES) 130.dp
-                            else if (activeTab == EditorToolTab.BLUR) 150.dp
+                            else if (activeTab == EditorToolTab.BLUR) 245.dp
                             else if (activeTab == EditorToolTab.PROFILES) 160.dp
                             else 360.dp
                         } else if (selectedMobileTool == "Masking" && recipe.masks.isEmpty()) {
@@ -1164,16 +1193,25 @@ fun EditorScreen(
                                         }
                                     )
                                     selectedMobileTool == "Remove" -> RemoveToolPanel(
+                                        activeMode = removeToolMode,
+                                        onModeSelected = { viewModel.setRemoveToolMode(it) },
                                         brushSize = brushSize,
                                         onBrushSizeChange = { viewModel.setBrushSize(it) },
+                                        feather = healFeather,
+                                        onFeatherChange = { viewModel.setHealFeather(it) },
+                                        opacity = healOpacity,
+                                        onOpacityChange = { viewModel.setHealOpacity(it) },
+                                        detectObjects = detectObjectsRemove,
+                                        onDetectObjectsChange = { viewModel.setDetectObjectsRemove(it) },
                                         useGenerativeAi = useGenerativeAiRemove,
                                         onUseGenerativeAiChange = { viewModel.setUseGenerativeAiRemove(it) },
+                                        isRefineMode = isRefineEraseMode,
+                                        onToggleRefineMode = { viewModel.toggleRefineEraseMode() },
                                         hasBrushStrokes = removeBrushPoints.isNotEmpty(),
                                         isProcessing = isGenAiProcessing,
-                                        genAiConfig = genAiConfig,
                                         onApplyRemove = { viewModel.executeRemoveStrokes() },
                                         onClearStrokes = { viewModel.clearRemoveBrushPoints() },
-                                        onOpenAiSettings = { viewModel.openGenAiSettingsDialog() }
+                                        onOpenAiInfo = { viewModel.openModelManagerSheet() }
                                     )
                         else -> when (activeTab) {
                         EditorToolTab.CROP -> {
@@ -2278,10 +2316,30 @@ fun EditorScreen(
                                 onBlurAmountChange = { amt ->
                                     viewModel.updateRecipe { it.copy(blur = it.blur.copy(amount = amt)) }
                                 },
+                                bokehBoost = recipe.blur.boost,
+                                onBokehBoostChange = { boost ->
+                                    viewModel.updateRecipe { it.copy(blur = it.blur.copy(boost = boost)) }
+                                },
+                                focalDepth = ((recipe.blur.focalRangeStart + recipe.blur.focalRangeEnd) * 0.5f),
+                                onFocalDepthChange = { focal ->
+                                    val half = 0.08f
+                                    viewModel.updateRecipe {
+                                        it.copy(
+                                            blur = it.blur.copy(
+                                                focalRangeStart = (focal - half).coerceIn(0f, 1f),
+                                                focalRangeEnd = (focal + half).coerceIn(0f, 1f)
+                                            )
+                                        )
+                                    }
+                                },
                                 selectedBokehShape = recipe.blur.bokehShape,
                                 onBokehShapeSelected = { shape ->
                                     viewModel.updateRecipe { it.copy(blur = it.blur.copy(bokehShape = shape)) }
-                                }
+                                },
+                                hasOpticalPack = opticalBlurPack != null,
+                                opticalStatusText = opticalStageStatus,
+                                onBuildOpticalCleanPlate = { viewModel.buildOpticalCleanPlateAndDepth() },
+                                onOpenByomModels = { viewModel.openModelManagerSheet() }
                             )
                         }
 
@@ -2771,6 +2829,29 @@ fun EditorScreen(
                 currentConfig = genAiConfig,
                 onDismiss = { viewModel.dismissGenAiSettingsDialog() },
                 onSave = { viewModel.saveGenAiConfig(it) }
+            )
+        }
+
+        if (showModelManagerSheet) {
+            ModelManagerBottomSheet(
+                modelStates = modelStates,
+                storageSummary = remember(modelStates) { viewModel.modelManager.getStorageSummary() },
+                discoveredLanServers = discoveredLanServers,
+                isLanScanning = isLanScanning,
+                onDismiss = { viewModel.dismissModelManagerSheet() },
+                onDownloadModel = { viewModel.downloadByomModel(it) },
+                onPauseDownload = { viewModel.pauseByomModelDownload(it) },
+                onImportLocalModel = { modelId ->
+                    pendingImportModelId = modelId
+                    localModelPickerLauncher.launch("*/*")
+                },
+                onDeleteModel = { viewModel.deleteByomModel(it) },
+                onStartLanScan = { viewModel.startLanBridgeScan() },
+                onConnectLanServer = { viewModel.connectLanServer(it) },
+                onOpenCustomEndpointDialog = {
+                    viewModel.dismissModelManagerSheet()
+                    viewModel.openGenAiSettingsDialog()
+                }
             )
         }
 
@@ -3288,7 +3369,7 @@ private fun MobilePrimaryToolbar(
         "Crop" to R.drawable.ic_lr_crop,
         "Edit" to R.drawable.ic_lr_edit_sliders,
         "Masking" to R.drawable.ic_lr_masking,
-        "Remove" to R.drawable.ic_lr_generative_remove
+        "Remove" to R.drawable.ic_lr_remove_plain
     )
 
     if (selectedTool == null) {
@@ -4340,214 +4421,428 @@ private fun CropAndExpandPanel(
 }
 
 /**
- * Remove Tool Panel matching Reference Screenshot 083752
- * Powered by SOTA FLUX.1 Fill [dev/pro] (Crop+Mask ROI -> Cloud/GPU Server -> Poisson Blend)
- * with instant offline Local Poisson Heal when Generative AI is OFF.
+ * Pixel-Accurate Adobe Lightroom Mobile Remove Panel (Reference Screenshots 083752, 201127, 201133).
+ *
+ * Includes all 3 authentic tools via the blue mode-switcher button + flyout menu:
+ *  - Remove (Magic Eraser): Size slider, Detect objects toggle, Generative AI toggle + (i) info, Refine button
+ *  - Heal (Band-Aid): Size, Feather, Opacity sliders + draggable source pin
+ *  - Clone (Rubber Stamp): Size, Feather, Opacity sliders + draggable source pin
  */
 @Composable
 private fun RemoveToolPanel(
+    activeMode: com.cleanlr.engine.RemoveToolMode = com.cleanlr.engine.RemoveToolMode.REMOVE,
+    onModeSelected: (com.cleanlr.engine.RemoveToolMode) -> Unit = {},
     brushSize: Float = 10f,
     onBrushSizeChange: (Float) -> Unit = {},
+    feather: Float = 50f,
+    onFeatherChange: (Float) -> Unit = {},
+    opacity: Float = 100f,
+    onOpacityChange: (Float) -> Unit = {},
+    detectObjects: Boolean = false,
+    onDetectObjectsChange: (Boolean) -> Unit = {},
     useGenerativeAi: Boolean = true,
     onUseGenerativeAiChange: (Boolean) -> Unit = {},
+    isRefineMode: Boolean = false,
+    onToggleRefineMode: () -> Unit = {},
     hasBrushStrokes: Boolean = false,
     isProcessing: Boolean = false,
-    genAiConfig: com.cleanlr.engine.GenerativeAiConfig = com.cleanlr.engine.GenerativeAiConfig(),
     onApplyRemove: () -> Unit = {},
     onClearStrokes: () -> Unit = {},
-    onOpenAiSettings: () -> Unit = {}
+    onOpenAiInfo: () -> Unit = {}
 ) {
     val view = LocalView.current
-    var localBrushSize by remember(brushSize) { mutableFloatStateOf(brushSize) }
-    var detectObjects by remember { mutableStateOf(false) }
+    var showModeFlyout by remember { mutableStateOf(false) }
+
+    val activeIconRes = when (activeMode) {
+        com.cleanlr.engine.RemoveToolMode.REMOVE ->
+            if (useGenerativeAi) R.drawable.ic_lr_magic_eraser else R.drawable.ic_lr_remove_plain
+        com.cleanlr.engine.RemoveToolMode.HEAL -> R.drawable.ic_lr_heal
+        com.cleanlr.engine.RemoveToolMode.CLONE -> R.drawable.ic_lr_clone
+    }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(SpectrumSurface)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .background(Color(0xFF18181A))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Row 1: Remove tool icon button + Size Slider
+        // ─── ROW 1: Blue Mode Switcher Square (with Flyout Menu: Remove / Heal / Clone) + Size Slider ───
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .width(48.dp)
-                    .clickable(enabled = !isProcessing) {
-                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                        onApplyRemove()
-                    }
-            ) {
-                Box(
+            Box {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (hasBrushStrokes) Color(0xFF1473E6) else Color(0xFF28282C)),
-                    contentAlignment = Alignment.Center
+                        .width(46.dp)
+                        .clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            showModeFlyout = true
+                        }
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_lr_generative_remove),
-                        contentDescription = "Remove",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
+                    // Authentic #1473E6 blue rounded square with tiny bottom-right flyout triangle notch
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF1473E6)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(activeIconRes),
+                            contentDescription = activeMode.label,
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        // Bottom-right white triangle notch (exact match to Screenshot 083752 & 201127)
+                        androidx.compose.foundation.Canvas(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(3.dp)
+                                .size(6.dp)
+                        ) {
+                            val path = androidx.compose.ui.graphics.Path().apply {
+                                moveTo(size.width, 0f)
+                                lineTo(size.width, size.height)
+                                lineTo(0f, size.height)
+                                close()
+                            }
+                            drawPath(path, color = Color.White)
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = activeMode.label,
+                        color = Color(0xFFE6E6E8),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Normal,
+                        maxLines = 1
                     )
                 }
-                Spacer(Modifier.height(3.dp))
-                Text(
-                    text = if (hasBrushStrokes) "Erase" else "Remove",
-                    color = if (hasBrushStrokes) Color(0xFF38A9FF) else Color.White,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
-                )
+
+                // Authentic Lightroom Remove / Heal / Clone Flyout Menu (Reference Screenshot 201133)
+                DropdownMenu(
+                    expanded = showModeFlyout,
+                    onDismissRequest = { showModeFlyout = false },
+                    modifier = Modifier
+                        .width(156.dp)
+                        .background(Color(0xFF242426), RoundedCornerShape(8.dp))
+                        .border(0.8.dp, Color(0xFF3E3E42), RoundedCornerShape(8.dp))
+                ) {
+                    val modeItems = listOf(
+                        Triple(
+                            com.cleanlr.engine.RemoveToolMode.REMOVE,
+                            if (useGenerativeAi) R.drawable.ic_lr_magic_eraser else R.drawable.ic_lr_remove_plain,
+                            "Remove"
+                        ),
+                        Triple(com.cleanlr.engine.RemoveToolMode.HEAL, R.drawable.ic_lr_heal, "Heal"),
+                        Triple(com.cleanlr.engine.RemoveToolMode.CLONE, R.drawable.ic_lr_clone, "Clone")
+                    )
+                    modeItems.forEach { (mode, iconRes, label) ->
+                        val isSelected = (mode == activeMode)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(if (isSelected) Color(0xFF1473E6) else Color.Transparent)
+                                .clickable {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    onModeSelected(mode)
+                                    showModeFlyout = false
+                                }
+                                .padding(horizontal = 14.dp, vertical = 11.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(iconRes),
+                                contentDescription = label,
+                                tint = if (isSelected) Color.White else Color(0xFFC4C4C8),
+                                modifier = Modifier.size(19.dp)
+                            )
+                            Text(
+                                text = label,
+                                color = if (isSelected) Color.White else Color(0xFFDCDCE0),
+                                fontSize = 14.sp,
+                                fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
             }
 
-            Box(modifier = Modifier.weight(1f)) {
+            // Size Slider (Matches Screenshot 083752 hollow circle thumb & clean label/value header)
+            Box(modifier = Modifier.weight(1f).padding(top = 2.dp)) {
                 RampedSlider(
                     label = "Size",
-                    value = localBrushSize,
+                    value = brushSize,
                     minVal = 4f,
                     maxVal = 100f,
-                    defaultValue = 10f,
+                    defaultValue = if (activeMode == com.cleanlr.engine.RemoveToolMode.REMOVE) 10f else 25f,
                     isBipolar = false,
                     formatPattern = "%.0f",
-                    onValueChange = {
-                        localBrushSize = it
-                        onBrushSizeChange(it)
-                    }
+                    onValueChange = onBrushSizeChange
                 )
             }
         }
 
-        // Row 2: Detect objects + Clear / Apply action chips when strokes exist
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        // ─── MODE-SPECIFIC ROWS 2 & 3 ───
+        if (activeMode == com.cleanlr.engine.RemoveToolMode.REMOVE) {
+            // Row 2: Detect objects pill switch (+ inline Clear / Remove buttons when strokes are painted)
             Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.clickable {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        onDetectObjectsChange(!detectObjects)
+                    }
+                ) {
+                    LightroomCompactToggle(
+                        checked = detectObjects,
+                        onCheckedChange = onDetectObjectsChange
+                    )
+                    Text(
+                        text = "Detect objects",
+                        color = Color(0xFFEBEBED),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+
+                if (hasBrushStrokes) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(
+                            color = Color(0xFF28282B),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(0.8.dp, Color(0xFF3E3E42)),
+                            modifier = Modifier.clickable(enabled = !isProcessing) { onClearStrokes() }
+                        ) {
+                            Text(
+                                text = "Clear",
+                                color = Color(0xFFD0D0D4),
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            )
+                        }
+                        Surface(
+                            color = Color(0xFF1473E6),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.clickable(enabled = !isProcessing) {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                onApplyRemove()
+                            }
+                        ) {
+                            Text(
+                                text = "Remove",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Row 3: Generative AI toggle + (i) info button + right-aligned Refine button (Screenshot 083752)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    LightroomCompactToggle(
+                        checked = useGenerativeAi,
+                        onCheckedChange = onUseGenerativeAiChange
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Generative AI",
+                            color = Color(0xFFEBEBED),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Normal,
+                            modifier = Modifier.clickable { onUseGenerativeAiChange(!useGenerativeAi) }
+                        )
+                        // Authentic circular (i) icon — opens Offline AI Diagnostics & Optional LAN Bridge
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clip(CircleShape)
+                                .border(1.2.dp, Color(0xFFC8C8CC), CircleShape)
+                                .clickable {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    onOpenAiInfo()
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "i",
+                                color = Color(0xFFD8D8DC),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+
+                // Authentic right-aligned outlined "Refine" button (Screenshot 083752 & 201127)
+                val refineEnabled = hasBrushStrokes && !isProcessing
+                Surface(
+                    color = if (isRefineMode && refineEnabled) Color(0xFF1E3A5F) else Color(0xFF1F1F22),
+                    shape = RoundedCornerShape(6.dp),
+                    border = BorderStroke(
+                        1.dp,
+                        when {
+                            isRefineMode && refineEnabled -> Color(0xFF38A9FF)
+                            refineEnabled -> Color(0xFF56565C)
+                            else -> Color(0xFF2D2D31)
+                        }
+                    ),
+                    modifier = Modifier.clickable(enabled = refineEnabled) {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        onToggleRefineMode()
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_lr_mask_brush),
+                            contentDescription = "Refine",
+                            tint = when {
+                                isRefineMode && refineEnabled -> Color(0xFF38A9FF)
+                                refineEnabled -> Color(0xFFE6E6E8)
+                                else -> Color(0xFF5C5C62)
+                            },
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = if (isRefineMode && refineEnabled) "Erasing" else "Refine",
+                            color = when {
+                                isRefineMode && refineEnabled -> Color(0xFF38A9FF)
+                                refineEnabled -> Color(0xFFE6E6E8)
+                                else -> Color(0xFF5C5C62)
+                            },
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        } else {
+            // ─── HEAL & CLONE AUTHENTIC CONTROLS: Feather + Opacity sliders + Source / Apply bar ───
+            RampedSlider(
+                label = "Feather",
+                value = feather,
+                minVal = 0f,
+                maxVal = 100f,
+                defaultValue = if (activeMode == com.cleanlr.engine.RemoveToolMode.HEAL) 50f else 40f,
+                isBipolar = false,
+                formatPattern = "%.0f",
+                onValueChange = onFeatherChange
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Switch(
-                    checked = detectObjects,
-                    onCheckedChange = { detectObjects = it },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = Color(0xFF1473E6),
-                        uncheckedThumbColor = Color(0xFFB0B0B0),
-                        uncheckedTrackColor = Color(0xFF383838)
+                Box(modifier = Modifier.weight(1f)) {
+                    RampedSlider(
+                        label = "Opacity",
+                        value = opacity,
+                        minVal = 1f,
+                        maxVal = 100f,
+                        defaultValue = 100f,
+                        isBipolar = false,
+                        formatPattern = "%.0f",
+                        onValueChange = onOpacityChange
                     )
-                )
-                Text(
-                    text = "Detect objects",
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+                }
 
-            if (hasBrushStrokes) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Surface(
-                        color = Color(0xFF26262A),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.clickable(enabled = !isProcessing) { onClearStrokes() }
-                    ) {
-                        Text(
-                            text = "Clear",
-                            color = Color(0xFFCCCCCC),
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                        )
-                    }
-                    Surface(
-                        color = Color(0xFF1473E6),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.clickable(enabled = !isProcessing) {
-                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                            onApplyRemove()
+                if (hasBrushStrokes) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Surface(
+                            color = Color(0xFF28282B),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(0.8.dp, Color(0xFF3E3E42)),
+                            modifier = Modifier.clickable(enabled = !isProcessing) { onClearStrokes() }
+                        ) {
+                            Text(
+                                text = "Clear",
+                                color = Color(0xFFD0D0D4),
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                            )
                         }
-                    ) {
-                        Text(
-                            text = if (useGenerativeAi) "FLUX Remove" else "Heal",
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
-                        )
+                        Surface(
+                            color = Color(0xFF1473E6),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.clickable(enabled = !isProcessing) {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                onApplyRemove()
+                            }
+                        ) {
+                            Text(
+                                text = "Apply ${activeMode.label}",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp)
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
 
-        // Row 3: Generative AI (FLUX.1 Fill) toggle + Server Setup pill
-        Row(
+/**
+ * Authentic Adobe Lightroom Mobile Compact Pill Toggle Switch (Reference Screenshot 083752).
+ */
+@Composable
+private fun LightroomCompactToggle(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    val view = LocalView.current
+    val trackColor = if (checked) Color(0xFF1473E6) else Color(0xFFB5B5BA)
+    val thumbBg = if (checked) Color.White else Color(0xFF3E3E42)
+    Box(
+        modifier = Modifier
+            .width(38.dp)
+            .height(21.dp)
+            .clip(RoundedCornerShape(11.dp))
+            .background(trackColor)
+            .clickable {
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                onCheckedChange(!checked)
+            }
+            .padding(2.dp),
+        contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Switch(
-                    checked = useGenerativeAi,
-                    onCheckedChange = { onUseGenerativeAiChange(it) },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = Color(0xFF1473E6),
-                        uncheckedThumbColor = Color(0xFFB0B0B0),
-                        uncheckedTrackColor = Color(0xFF383838)
-                    )
-                )
-                Column {
-                    Text(
-                        text = "Generative AI (FLUX.1 Fill)",
-                        color = Color.White,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = if (genAiConfig.isReady) "${genAiConfig.backend.displayName} • Poisson Blend" else "Tap Server Setup to connect GPU/API",
-                        color = if (genAiConfig.isReady) Color(0xFF4CD964) else Color(0xFF9A9AA0),
-                        fontSize = 10.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            Surface(
-                color = Color(0xFF26262A),
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(0.8.dp, if (genAiConfig.isReady) Color(0xFF38A9FF) else Color(0xFF48484D)),
-                modifier = Modifier.clickable {
-                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                    onOpenAiSettings()
-                }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = if (genAiConfig.isReady) "AI Server ✓" else "Setup AI",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        }
+                .size(17.dp)
+                .clip(CircleShape)
+                .background(thumbBg)
+        )
     }
 }
 
@@ -4710,66 +5005,126 @@ private fun FluxFillServerConfigDialog(
 }
 
 /**
- * Lens Blur Panel matching Reference Screenshot 083626
+ * 5-Stage Optical Lens Blur Panel (Clean-Plate + 16-bit Depth CoC + Linear HDR Bokeh +
+ * 7 Aperture Blade Shapes + Partial Occlusion + Sensor Grain Matching)
  */
 @Composable
 private fun LensBlurPanel(
     blurAmount: Float,
     onBlurAmountChange: (Float) -> Unit,
+    bokehBoost: Float = 50f,
+    onBokehBoostChange: (Float) -> Unit = {},
+    focalDepth: Float = 0.42f,
+    onFocalDepthChange: (Float) -> Unit = {},
     selectedBokehShape: String,
-    onBokehShapeSelected: (String) -> Unit
+    onBokehShapeSelected: (String) -> Unit,
+    hasOpticalPack: Boolean = false,
+    opticalStatusText: String? = null,
+    onBuildOpticalCleanPlate: () -> Unit = {},
+    onOpenByomModels: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(spectrum_surface_dark)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Blur amount slider
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        // 5-Stage Optical Clean-Plate & 16-bit Depth Action Bar
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                color = if (hasOpticalPack) Color(0xFF1F3B2C) else Color(0xFF1E2D45),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, if (hasOpticalPack) Color(0xFF4CD964) else SpectrumBlue),
+                modifier = Modifier.clickable { onBuildOpticalCleanPlate() }
             ) {
                 Text(
-                    text = "Blur amount",
+                    text = if (hasOpticalPack) "5-Stage Clean-Plate Ready ✓" else "Build Clean-Plate & 16-bit Depth",
                     color = Color.White,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                val isModified = abs(blurAmount) > 0.001f
-                Text(
-                    text = if (blurAmount > 0.001f) "+${blurAmount.toInt()}" else "${blurAmount.toInt()}",
-                    color = if (isModified) Color(0xFF38A9FF) else Color(0xFF8E8E8E),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    style = TextStyle(
-                        fontFeatureSettings = "tnum",
-                        textAlign = TextAlign.End
-                    ),
-                    modifier = Modifier.widthIn(min = 40.dp)
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                 )
             }
-            Slider(
-                value = blurAmount,
-                onValueChange = { onBlurAmountChange(it) },
-                valueRange = 0f..100f,
-                colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = Color.White,
-                    inactiveTrackColor = Color(0xFF444444)
+            Surface(
+                color = Color(0xFF28282C),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.clickable { onOpenByomModels() }
+            ) {
+                Text(
+                    text = "AI Engine ✓",
+                    color = Color(0xFF4CD964),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                 )
+            }
+        }
+
+        if (!opticalStatusText.isNullOrBlank()) {
+            Text(
+                text = opticalStatusText,
+                color = Color(0xFF9A9AA2),
+                fontSize = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
-        // Bokeh Shapes row
+        // Blur amount slider
+        RampedSlider(
+            label = "Blur amount (Aperture K)",
+            value = blurAmount,
+            minVal = 0f,
+            maxVal = 100f,
+            defaultValue = 0f,
+            isBipolar = false,
+            formatPattern = "%.0f",
+            onValueChange = onBlurAmountChange
+        )
+
+        // HDR Specular Bokeh Boost + Focal Plane Depth S
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                RampedSlider(
+                    label = "HDR Bokeh Boost",
+                    value = bokehBoost,
+                    minVal = 0f,
+                    maxVal = 100f,
+                    defaultValue = 50f,
+                    isBipolar = false,
+                    formatPattern = "%.0f",
+                    onValueChange = onBokehBoostChange
+                )
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                RampedSlider(
+                    label = "Focal Plane (S)",
+                    value = focalDepth * 100f,
+                    minVal = 10f,
+                    maxVal = 95f,
+                    defaultValue = 42f,
+                    isBipolar = false,
+                    formatPattern = "%.0f",
+                    onValueChange = { onFocalDepthChange(it / 100f) }
+                )
+            }
+        }
+
+        // All 7 Aperture Blade Shapes (Circle, Bubble, 5/7/9-blade, Anamorphic Oval, Cat eye)
         val bokehShapes = listOf(
             "Circle" to R.drawable.ic_lr_lens_blur,
             "Bubble" to R.drawable.ic_lr_lens_blur,
             "5-blade" to R.drawable.ic_lr_lens_blur,
-            "Ring" to R.drawable.ic_lr_lens_blur,
+            "7-blade" to R.drawable.ic_lr_lens_blur,
+            "9-blade" to R.drawable.ic_lr_lens_blur,
             "Oval" to R.drawable.ic_lr_lens_blur,
             "Cat eye" to R.drawable.ic_lr_lens_blur
         )
@@ -4782,14 +5137,14 @@ private fun LensBlurPanel(
             verticalAlignment = Alignment.CenterVertically
         ) {
             bokehShapes.forEach { (name, iconRes) ->
-                val isSelected = selectedBokehShape == name
+                val isSelected = selectedBokehShape.equals(name, ignoreCase = true)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable { onBokehShapeSelected(name) }
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
+                            .size(48.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(if (isSelected) Color(0xFF2E2E2E) else Color(0xFF1E1E1E))
                             .border(
@@ -4803,52 +5158,16 @@ private fun LensBlurPanel(
                             painter = painterResource(iconRes),
                             contentDescription = name,
                             tint = if (isSelected) Color(0xFF1473E6) else Color(0xFF888888),
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(3.dp))
                     Text(
                         text = name,
                         color = if (isSelected) Color.White else Color(0xFF888888),
                         fontSize = 10.sp
                     )
                 }
-            }
-
-            // Vertical divider line before Focus
-            Box(
-                modifier = Modifier
-                    .height(36.dp)
-                    .width(1.dp)
-                    .background(Color(0xFF383838))
-            )
-
-            // Focus button
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { }
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF1E1E1E))
-                        .border(1.dp, Color(0xFF333333), RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_lr_manual_focus),
-                        contentDescription = "Focus",
-                        tint = Color(0xFF888888),
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "Focus",
-                    color = Color(0xFF888888),
-                    fontSize = 10.sp
-                )
             }
         }
     }

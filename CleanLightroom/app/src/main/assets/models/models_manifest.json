@@ -1,0 +1,307 @@
+{
+  "suiteVersion": "2.0.0-offline-bundled",
+  "totalModels": 8,
+  "totalBytes": 779706601,
+  "totalMb": 743.59,
+  "models": [
+    {
+      "id": "mobilesam_int8",
+      "fileName": "mobilesam_int8.onnx",
+      "quantization": "INT8",
+      "sizeBytes": 53002795,
+      "sha256": "bb93629d897c07493b3df46b1e40b2a27c9211f0ae623c748c6e801910bd730c",
+      "sourceRepo": "onnx-community/sam2.1-hiera-tiny-ONNX",
+      "io": {
+        "inputs": [
+          {
+            "name": "pixel_values",
+            "shape": [
+              "batch_size",
+              "3",
+              "1024",
+              "1024"
+            ],
+            "type": "tensor(float)"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "image_embeddings.0",
+            "shape": [
+              "batch_size",
+              "32",
+              "256",
+              "256"
+            ],
+            "type": "tensor(float)"
+          },
+          {
+            "name": "image_embeddings.1",
+            "shape": [
+              "batch_size",
+              "64",
+              "128",
+              "128"
+            ],
+            "type": "tensor(float)"
+          },
+          {
+            "name": "image_embeddings.2",
+            "shape": [
+              "batch_size",
+              "Reshapeimage_embeddings.2_dim_1",
+              "Reshapeimage_embeddings.2_dim_2",
+              "Reshapeimage_embeddings.2_dim_3"
+            ],
+            "type": "tensor(float)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "birefnet_lite_fp16",
+      "fileName": "birefnet_lite_fp16.onnx",
+      "quantization": "FP16",
+      "sizeBytes": 114538221,
+      "sha256": "d39b897ceb16ae654c1731f3dba0cf9b368d9cae74b5a57459b455cc8bfec402",
+      "sourceRepo": "onnx-community/BiRefNet_lite-ONNX",
+      "io": {
+        "inputs": [
+          {
+            "name": "input_image",
+            "shape": [
+              "1",
+              "3",
+              "1024",
+              "1024"
+            ],
+            "type": "tensor(float)"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "output_image",
+            "shape": [
+              "1",
+              "1",
+              "1024",
+              "1024"
+            ],
+            "type": "tensor(float)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "depth_anything_v2_small_fp16",
+      "fileName": "depth_anything_v2_small_fp16.onnx",
+      "quantization": "FP16",
+      "sizeBytes": 49642442,
+      "sha256": "2df6223f206b5164e21f664ace61dabeb9bb6a49b8b5a3e00510b4807d0f5b04",
+      "sourceRepo": "onnx-community/depth-anything-v2-small",
+      "io": {
+        "inputs": [
+          {
+            "name": "pixel_values",
+            "shape": [
+              "batch_size",
+              "3",
+              "height",
+              "width"
+            ],
+            "type": "tensor(float)"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "predicted_depth",
+            "shape": [
+              "floor(1.0*batch_size)",
+              "14*floor(height/14)",
+              "14*floor(width/14)"
+            ],
+            "type": "tensor(float)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lama_fp16",
+      "fileName": "lama_fp16.onnx",
+      "quantization": "FP16",
+      "sizeBytes": 106284730,
+      "sha256": "b2b1d6971fa703b925e56f41e7c46022fbe67b34f7d4acfae3dff03c23d6f820",
+      "sourceRepo": "Carve/LaMa-ONNX (auto-quantized FP32->FP16)",
+      "io": {
+        "inputs": [
+          {
+            "name": "image",
+            "shape": [
+              "batch",
+              "3",
+              "512",
+              "512"
+            ],
+            "type": "tensor(float)"
+          },
+          {
+            "name": "mask",
+            "shape": [
+              "batch",
+              "1",
+              "512",
+              "512"
+            ],
+            "type": "tensor(float)"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "output",
+            "shape": [
+              "batch",
+              "3",
+              "512",
+              "512"
+            ],
+            "type": "tensor(float)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sd_turbo_inpaint_int8",
+      "fileName": "sd_turbo_inpaint_int8.onnx",
+      "quantization": "INT8",
+      "sizeBytes": 366521732,
+      "sha256": "933b206211c370be04aa15084a072a3b51d0635ef0a47c924929f06b5779a1ca",
+      "sourceRepo": "kmpartner/sdxs-dreamshaper-onnx (auto-quantized FP32->INT8)",
+      "io": {
+        "inputs": [
+          {
+            "name": "sample",
+            "shape": [
+              "batch_size",
+              "num_channels",
+              "height",
+              "width"
+            ],
+            "type": "tensor(float)"
+          },
+          {
+            "name": "timestep",
+            "shape": [
+              "steps"
+            ],
+            "type": "tensor(int64)"
+          },
+          {
+            "name": "encoder_hidden_states",
+            "shape": [
+              "batch_size",
+              "sequence_length",
+              "768"
+            ],
+            "type": "tensor(float)"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "out_sample",
+            "shape": [
+              "batch_size",
+              "4",
+              "height",
+              "width"
+            ],
+            "type": "tensor(float)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sd_vae_encoder_int8",
+      "fileName": "sd_vae_encoder_int8.onnx",
+      "quantization": "INT8",
+      "sizeBytes": 37185669,
+      "sha256": "dbbfe2d5c4e3d15262f65b9357aaf1436ecee5c36f40467700d10d862d9b128e",
+      "sourceRepo": "kmpartner/sdxs-dreamshaper-onnx/vae_encoder (auto-quantized INT8)",
+      "io": {
+        "inputs": [
+          {
+            "name": "sample",
+            "shape": [
+              "batch_size",
+              "num_channels",
+              "height",
+              "width"
+            ],
+            "type": "tensor(float)"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "latent_sample",
+            "shape": [
+              "batch_size",
+              "num_channels_latent",
+              "height_latent",
+              "width_latent"
+            ],
+            "type": "tensor(float)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sd_vae_decoder_int8",
+      "fileName": "sd_vae_decoder_int8.onnx",
+      "quantization": "INT8",
+      "sizeBytes": 52057924,
+      "sha256": "eb90fd020a5d6a160c3fc7c0f877cdd74d4f3a78d080ca82861397ff536651c2",
+      "sourceRepo": "kmpartner/sdxs-dreamshaper-onnx/vae_decoder (auto-quantized INT8)",
+      "io": {
+        "inputs": [
+          {
+            "name": "latent_sample",
+            "shape": [
+              "batch_size",
+              "num_channels_latent",
+              "height_latent",
+              "width_latent"
+            ],
+            "type": "tensor(float)"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "sample",
+            "shape": [
+              "batch_size",
+              "3",
+              "height",
+              "width"
+            ],
+            "type": "tensor(float)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sd_prompt_embeds",
+      "fileName": "sd_prompt_embeds.bin",
+      "quantization": "FP32",
+      "sizeBytes": 473088,
+      "sha256": "3637cbc380671f80edbde0b6015f438c118d56068f725474fe753e680a494ca1",
+      "sourceRepo": "kmpartner/sdxs-dreamshaper-onnx/text_encoder (precomputed [2,77,768])",
+      "io": {
+        "shape": [
+          2,
+          77,
+          768
+        ],
+        "dtype": "float32_le"
+      }
+    }
+  ]
+}

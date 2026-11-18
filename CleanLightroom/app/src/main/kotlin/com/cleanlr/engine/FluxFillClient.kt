@@ -28,8 +28,18 @@ enum class GenerativeAiBackend(
     val defaultModel: String,
     val defaultEndpoint: String
 ) {
+    LOCAL_LAN_BRIDGE(
+        displayName = "Desktop LAN Bridge (FLUX.2 Klein 4B GGUF • 0 Cost)",
+        defaultModel = "flux2-klein-4b-Q4_K_M.gguf",
+        defaultEndpoint = "http://192.168.1.100:8000/v1/flux-fill"
+    ),
+    CUSTOM_GPU_SERVER(
+        displayName = "Self-Hosted GPU / Gradio / HF BYOE (0 API Cost)",
+        defaultModel = "black-forest-labs/FLUX.1-Fill-dev",
+        defaultEndpoint = "http://10.0.2.2:8000/v1/flux-fill"
+    ),
     FAL_AI(
-        displayName = "Fal.ai (FLUX.1 Fill • 1-2s)",
+        displayName = "Fal.ai (FLUX.1 Fill • Cloud 1-2s)",
         defaultModel = "fal-ai/flux-pro/v1/fill",
         defaultEndpoint = "https://fal.run/fal-ai/flux-pro/v1/fill"
     ),
@@ -42,25 +52,21 @@ enum class GenerativeAiBackend(
         displayName = "RunPod Serverless GPU",
         defaultModel = "black-forest-labs/FLUX.1-Fill-dev",
         defaultEndpoint = "https://api.runpod.ai/v2/YOUR_ENDPOINT_ID/runsync"
-    ),
-    CUSTOM_GPU_SERVER(
-        displayName = "Self-Hosted GPU Server (FLUX.1 / BrushNet)",
-        defaultModel = "black-forest-labs/FLUX.1-Fill-dev",
-        defaultEndpoint = "http://10.0.2.2:8000/v1/flux-fill"
     )
 }
 
 data class GenerativeAiConfig(
-    val backend: GenerativeAiBackend = GenerativeAiBackend.FAL_AI,
+    val backend: GenerativeAiBackend = GenerativeAiBackend.LOCAL_LAN_BRIDGE,
     val apiKey: String = "",
-    val endpointUrl: String = GenerativeAiBackend.FAL_AI.defaultEndpoint,
-    val modelId: String = GenerativeAiBackend.FAL_AI.defaultModel,
+    val endpointUrl: String = GenerativeAiBackend.LOCAL_LAN_BRIDGE.defaultEndpoint,
+    val modelId: String = GenerativeAiBackend.LOCAL_LAN_BRIDGE.defaultModel,
     val usePoissonBlending: Boolean = true,
     val inferenceSteps: Int = 28,
     val guidanceScale: Float = 30.0f
 ) {
     val isReady: Boolean
         get() = when (backend) {
+            GenerativeAiBackend.LOCAL_LAN_BRIDGE,
             GenerativeAiBackend.CUSTOM_GPU_SERVER -> endpointUrl.isNotBlank()
             else -> apiKey.isNotBlank() && endpointUrl.isNotBlank()
         }
@@ -145,6 +151,7 @@ class FluxFillClient(private val config: GenerativeAiConfig) {
                 GenerativeAiBackend.FAL_AI -> callFalAi(imgB64, maskB64, prompt)
                 GenerativeAiBackend.REPLICATE -> callReplicate(imgB64, maskB64, prompt)
                 GenerativeAiBackend.RUNPOD -> callRunPod(imgB64, maskB64, prompt, mode)
+                GenerativeAiBackend.LOCAL_LAN_BRIDGE,
                 GenerativeAiBackend.CUSTOM_GPU_SERVER -> callCustomServer(imgB64, maskB64, prompt, mode)
             }
 

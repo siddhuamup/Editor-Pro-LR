@@ -286,6 +286,42 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val _useGenerativeAiRemove = MutableStateFlow(true)
     val useGenerativeAiRemove: StateFlow<Boolean> = _useGenerativeAiRemove.asStateFlow()
 
+    // Authentic Lightroom Remove Tool Modes (Remove, Heal, Clone) + Feather / Opacity / Refine / Source Pin
+    private val _removeToolMode = MutableStateFlow(com.cleanlr.engine.RemoveToolMode.REMOVE)
+    val removeToolMode: StateFlow<com.cleanlr.engine.RemoveToolMode> = _removeToolMode.asStateFlow()
+
+    private val _healFeather = MutableStateFlow(50f)
+    val healFeather: StateFlow<Float> = _healFeather.asStateFlow()
+
+    private val _healOpacity = MutableStateFlow(100f)
+    val healOpacity: StateFlow<Float> = _healOpacity.asStateFlow()
+
+    private val _detectObjectsRemove = MutableStateFlow(false)
+    val detectObjectsRemove: StateFlow<Boolean> = _detectObjectsRemove.asStateFlow()
+
+    private val _isRefineEraseMode = MutableStateFlow(false)
+    val isRefineEraseMode: StateFlow<Boolean> = _isRefineEraseMode.asStateFlow()
+
+    private val _healCloneSourceNorm = MutableStateFlow<Pair<Float, Float>?>(null)
+    val healCloneSourceNorm: StateFlow<Pair<Float, Float>?> = _healCloneSourceNorm.asStateFlow()
+
+    // Phase 1-4: Modular BYOM ModelManager, LAN Wi-Fi Bridge & 5-Stage Optical Blur Pack
+    val modelManager = com.cleanlr.ai.ModelManager(application.applicationContext)
+    val modelStates: StateFlow<Map<String, com.cleanlr.ai.ModelRuntimeState>> = modelManager.states
+
+    private val lanBridge = com.cleanlr.ai.LanBridgeDiscovery(application.applicationContext)
+    val discoveredLanServers: StateFlow<List<com.cleanlr.ai.DiscoveredLanServer>> = lanBridge.discoveredServers
+    val isLanScanning: StateFlow<Boolean> = lanBridge.isScanning
+
+    private val _showModelManagerSheet = MutableStateFlow(false)
+    val showModelManagerSheet: StateFlow<Boolean> = _showModelManagerSheet.asStateFlow()
+
+    private val _opticalBlurPack = MutableStateFlow<com.cleanlr.ai.AiVisionPipeline.OpticalBlurPack?>(null)
+    val opticalBlurPack: StateFlow<com.cleanlr.ai.AiVisionPipeline.OpticalBlurPack?> = _opticalBlurPack.asStateFlow()
+
+    private val _opticalStageStatus = MutableStateFlow<String?>(null)
+    val opticalStageStatus: StateFlow<String?> = _opticalStageStatus.asStateFlow()
+
     private val bitmapUndoStack = ArrayDeque<Bitmap>()
 
     // Clipboard for Edit Settings (Ctrl+C / Ctrl+V)
@@ -1090,34 +1126,65 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
             return
         }
         val cfg = _genAiConfig.value
-        if (!cfg.isReady) {
-            _exportStatus.value = "Expand ${region.outputWidth}×${region.outputHeight} (+${region.expansionPercent}%) — Configure FLUX.1 Fill server"
-            _showGenAiSettingsDialog.value = true
-            return
-        }
-        val provider = com.cleanlr.engine.FluxFillExpandProvider(cfg)
-        com.cleanlr.engine.GenerativeExpandEngine.activeProvider = provider
+        val hasConnectedLanBridge = discoveredLanServers.value.isNotEmpty() &&
+            cfg.backend == com.cleanlr.engine.GenerativeAiBackend.LOCAL_LAN_BRIDGE &&
+            cfg.isReady
+        val hasCloudKey = cfg.backend != com.cleanlr.engine.GenerativeAiBackend.LOCAL_LAN_BRIDGE && cfg.isReady
+        val useRemoteServer = hasConnectedLanBridge || hasCloudKey
+
         _isGenAiProcessing.value = true
-        _exportStatus.value = "FLUX.1 Fill generating expansion (${region.outputWidth}×${region.outputHeight})..."
+        _exportStatus.value = if (useRemoteServer) {
+            "Desktop LAN / FLUX generating expansion (${region.outputWidth}×${region.outputHeight})..."
+        } else {
+            "Offline SD-Turbo INT8 outpainting (${region.outputWidth}×${region.outputHeight})..."
+        }
 
         viewModelScope.launch(Dispatchers.Default) {
-            val (padded, mask) = com.cleanlr.engine.GenerativeExpandEngine.buildOutpaintInputs(bmp, region)
-            val result = provider.generateExpansion(padded, mask, region)
-            withContext(Dispatchers.Main) {
-                _isGenAiProcessing.value = false
-                result.onSuccess { expandedBmp ->
+            try {
+                var expandedResultBmp: Bitmap? = null
+                var statusMsg = ""
+
+                if (useRemoteServer) {
+                    val provider = com.cleanlr.engine.FluxFillExpandProvider(cfg)
+                    com.cleanlr.engine.GenerativeExpandEngine.activeProvider = provider
+                    val (padded, mask) = com.cleanlr.engine.GenerativeExpandEngine.buildOutpaintInputs(bmp, region)
+                    val remoteRes = provider.generateExpansion(padded, mask, region)
+                    if (remoteRes.isSuccess) {
+                        expandedResultBmp = remoteRes.getOrNull()
+                        statusMsg = if (cfg.usePoissonBlending) {
+                            "LAN / FLUX Expand applied with Poisson Blending!"
+                        } else {
+                            "LAN / FLUX Expand applied!"
+                        }
+                    }
+                }
+
+                // Default Offline Mobile AI Expand (sd_turbo_inpaint_int8.onnx) whenever LAN Bridge is not connected/reachable
+                if (expandedResultBmp == null) {
+                    val offlineOut = com.cleanlr.ai.AiVisionPipeline.runOfflineMobileExpand(
+                        originalBitmap = bmp,
+                        region = region,
+                        modelManager = modelManager,
+                        onProgress = { msg -> _exportStatus.value = msg }
+                    )
+                    expandedResultBmp = offlineOut.bitmap
+                    val modeTag = if (offlineOut.usedNativeOnnx) "SD-Turbo INT8 (${offlineOut.delegateName})" else "Offline SD-Turbo Tiled"
+                    statusMsg = "$modeTag Expand applied (${offlineOut.tilesProcessed} tiles, 24px cosine feather + grain match)!"
+                }
+
+                withContext(Dispatchers.Main) {
+                    _isGenAiProcessing.value = false
                     pushBitmapUndoSnapshot(bmp)
-                    _bitmap.value = expandedBmp
+                    _bitmap.value = expandedResultBmp
                     updateRecipe("Apply Generative Expand") {
                         it.copy(crop = it.crop.copy(left = 0f, top = 0f, right = 1f, bottom = 1f, isExpandEnabled = false))
                     }
-                    _exportStatus.value = if (cfg.usePoissonBlending) {
-                        "FLUX.1 Expand applied with Poisson Blending!"
-                    } else {
-                        "FLUX.1 Expand applied!"
-                    }
-                }.onFailure { err ->
-                    _exportStatus.value = "Expand failed: ${err.message}"
+                    _exportStatus.value = statusMsg
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _isGenAiProcessing.value = false
+                    _exportStatus.value = "Expand failed: ${e.message}"
                 }
             }
         }
@@ -1135,6 +1202,100 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         _showGenAiSettingsDialog.value = false
     }
 
+    fun openModelManagerSheet() {
+        modelManager.refreshAllStates()
+        _showModelManagerSheet.value = true
+    }
+
+    fun dismissModelManagerSheet() {
+        lanBridge.stopDiscovery()
+        _showModelManagerSheet.value = false
+    }
+
+    fun downloadByomModel(modelId: String) {
+        viewModelScope.launch {
+            val res = modelManager.downloadModel(modelId)
+            res.onSuccess {
+                _exportStatus.value = "Downloaded & verified ${modelId} (SHA-256 OK)"
+            }.onFailure { err ->
+                if (err.message != "Download paused") {
+                    _exportStatus.value = "Download error: ${err.message}"
+                }
+            }
+        }
+    }
+
+    fun pauseByomModelDownload(modelId: String) {
+        modelManager.pauseDownload(modelId)
+    }
+
+    fun importLocalByomModel(modelId: String, uri: Uri) {
+        viewModelScope.launch {
+            val res = modelManager.importLocalModel(modelId, uri)
+            res.onSuccess {
+                _exportStatus.value = "Imported local model: ${it.name}"
+            }.onFailure { err ->
+                _exportStatus.value = "Import failed: ${err.message}"
+            }
+        }
+    }
+
+    fun deleteByomModel(modelId: String) {
+        modelManager.deleteModel(modelId)
+        _exportStatus.value = "Removed model $modelId from storage"
+    }
+
+    fun startLanBridgeScan() {
+        lanBridge.startDiscovery()
+        _exportStatus.value = "Scanning Wi-Fi LAN for CleanLR Desktop (mDNS)..."
+    }
+
+    fun connectLanServer(server: com.cleanlr.ai.DiscoveredLanServer) {
+        val cfg = _genAiConfig.value.copy(
+            backend = com.cleanlr.engine.GenerativeAiBackend.LOCAL_LAN_BRIDGE,
+            endpointUrl = server.endpointUrl,
+            modelId = server.modelName,
+            apiKey = ""
+        )
+        saveGenAiConfig(cfg)
+        _exportStatus.value = "Connected to LAN Desktop: ${server.serviceName}"
+    }
+
+    /**
+     * Phase 3: Builds the complete 5-Stage Optical Lens Blur Pack sequentially:
+     * BiRefNet AlphaMatte -> DepthAnythingV2 16-bit Depth -> LaMa Clean-Plate -> Noise Sigma.
+     */
+    fun buildOpticalCleanPlateAndDepth() {
+        val bmp = _bitmap.value ?: return
+        if (_isGenAiProcessing.value) return
+        _isGenAiProcessing.value = true
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                val pack = com.cleanlr.ai.AiVisionPipeline.buildOpticalBlurPack(
+                    bitmap = bmp,
+                    modelManager = modelManager,
+                    onProgress = { msg -> _opticalStageStatus.value = msg }
+                )
+                withContext(Dispatchers.Main) {
+                    _opticalBlurPack.value = pack
+                    _opticalStageStatus.value = "Clean-Plate Ready • Focal S=${String.format(java.util.Locale.US, "%.2f", pack.focalPlaneDepthS)} • Grain σ=${String.format(java.util.Locale.US, "%.3f", pack.subjectNoiseSigma)}"
+                    _isGenAiProcessing.value = false
+                    _exportStatus.value = "5-Stage Optical Clean-Plate & 16-bit Depth ready!"
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _isGenAiProcessing.value = false
+                    _opticalStageStatus.value = "Optical build failed: ${e.message}"
+                }
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        lanBridge.stopDiscovery()
+    }
+
     fun saveGenAiConfig(config: com.cleanlr.engine.GenerativeAiConfig) {
         _genAiConfig.value = config
         com.cleanlr.engine.GenerativeAiConfigStore.save(getApplication<Application>(), config)
@@ -1149,17 +1310,148 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         _useGenerativeAiRemove.value = enabled
     }
 
+    fun setRemoveToolMode(mode: com.cleanlr.engine.RemoveToolMode) {
+        _removeToolMode.value = mode
+        _isRefineEraseMode.value = false
+        if (mode == com.cleanlr.engine.RemoveToolMode.REMOVE) {
+            _healCloneSourceNorm.value = null
+        } else if (_removeBrushPoints.value.isNotEmpty() && _healCloneSourceNorm.value == null) {
+            val avgX = _removeBrushPoints.value.map { it.x }.average().toFloat()
+            val avgY = _removeBrushPoints.value.map { it.y }.average().toFloat()
+            val sx = if (avgX < 0.72f) (avgX + 0.16f).coerceIn(0.05f, 0.95f) else (avgX - 0.16f).coerceIn(0.05f, 0.95f)
+            _healCloneSourceNorm.value = Pair(sx, avgY.coerceIn(0.05f, 0.95f))
+        }
+    }
+
+    fun setHealFeather(value: Float) {
+        _healFeather.value = value.coerceIn(0f, 100f)
+    }
+
+    fun setHealOpacity(value: Float) {
+        _healOpacity.value = value.coerceIn(0f, 100f)
+    }
+
+    fun setDetectObjectsRemove(enabled: Boolean) {
+        _detectObjectsRemove.value = enabled
+    }
+
+    fun toggleRefineEraseMode() {
+        _isRefineEraseMode.value = !_isRefineEraseMode.value
+    }
+
+    fun setHealCloneSourceNorm(nx: Float, ny: Float) {
+        _healCloneSourceNorm.value = Pair(nx.coerceIn(0.02f, 0.98f), ny.coerceIn(0.02f, 0.98f))
+    }
+
     fun addRemoveBrushPoint(normX: Float, normY: Float) {
+        val cx = normX.coerceIn(0f, 1f)
+        val cy = normY.coerceIn(0f, 1f)
+        if (_isRefineEraseMode.value) {
+            val eraseRadiusNorm = (_brushSize.value.coerceIn(4f, 100f) / 360f).coerceIn(0.015f, 0.25f)
+            _removeBrushPoints.value = _removeBrushPoints.value.filter { pt ->
+                kotlin.math.hypot(pt.x - cx, pt.y - cy) > eraseRadiusNorm
+            }
+            if (_removeBrushPoints.value.isEmpty()) {
+                _isRefineEraseMode.value = false
+                _healCloneSourceNorm.value = null
+            }
+            return
+        }
         val pt = BrushStrokePoint(
-            x = normX.coerceIn(0f, 1f),
-            y = normY.coerceIn(0f, 1f),
+            x = cx,
+            y = cy,
             radius = _brushSize.value.coerceIn(4f, 100f)
         )
         _removeBrushPoints.value = _removeBrushPoints.value + pt
+
+        // Auto-place draggable Lightroom source pin for Heal & Clone on first painted stroke
+        if (_removeToolMode.value != com.cleanlr.engine.RemoveToolMode.REMOVE && _healCloneSourceNorm.value == null) {
+            val sx = if (cx < 0.72f) (cx + 0.16f).coerceIn(0.05f, 0.95f) else (cx - 0.16f).coerceIn(0.05f, 0.95f)
+            _healCloneSourceNorm.value = Pair(sx, cy.coerceIn(0.05f, 0.95f))
+        }
     }
 
     fun clearRemoveBrushPoints() {
         _removeBrushPoints.value = emptyList()
+        _isRefineEraseMode.value = false
+        _healCloneSourceNorm.value = null
+    }
+
+    /**
+     * Floating "Remove extra people" pill action:
+     * Uses bundled BiRefNet-Lite + LaMa FP16 to clean peripheral background clutter/bystanders
+     * while preserving the primary centered portrait subject.
+     */
+    fun executeRemoveExtraPeople() {
+        val bmp = _bitmap.value ?: return
+        if (_isGenAiProcessing.value) return
+        _isGenAiProcessing.value = true
+        _exportStatus.value = "Detecting & removing background bystanders (Offline AI)..."
+
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                // Sample edge peripheral bystanders while protecting center subject
+                val pack = com.cleanlr.ai.AiVisionPipeline.buildOpticalBlurPack(
+                    bitmap = bmp,
+                    modelManager = modelManager,
+                    onProgress = { msg -> _exportStatus.value = "Remove extra people: $msg" }
+                )
+                // Synthesize peripheral distraction mask along outer left/right margins (keeping main subject untouched)
+                val w = bmp.width
+                val h = bmp.height
+                val alphaScaled = Bitmap.createScaledBitmap(pack.alphaMatte, w, h, true)
+                val cleanScaled = Bitmap.createScaledBitmap(pack.cleanBackgroundPlate, w, h, true)
+                val origPx = IntArray(w * h)
+                val alphaPx = IntArray(w * h)
+                val cleanPx = IntArray(w * h)
+                bmp.getPixels(origPx, 0, w, 0, 0, w, h)
+                alphaScaled.getPixels(alphaPx, 0, w, 0, 0, w, h)
+                cleanScaled.getPixels(cleanPx, 0, w, 0, 0, w, h)
+
+                val outPx = origPx.copyOf()
+                var modified = 0
+                for (y in 0 until h) {
+                    val ny = y.toFloat() / h
+                    val row = y * w
+                    for (x in 0 until w) {
+                        val nx = x.toFloat() / w
+                        val inPeriphery = (nx < 0.22f || nx > 0.78f) && ny in 0.25f..0.92f
+                        if (!inPeriphery) continue
+                        val a = android.graphics.Color.red(alphaPx[row + x]) / 255f
+                        if (a > 0.45f) {
+                            // Secondary foreground figure detected in outer margin -> replace cleanly with LaMa plate
+                            outPx[row + x] = cleanPx[row + x]
+                            modified++
+                        }
+                    }
+                }
+                alphaScaled.recycle()
+                cleanScaled.recycle()
+                pack.decontaminatedForeground.recycle()
+                pack.cleanBackgroundPlate.recycle()
+                pack.alphaMatte.recycle()
+                pack.depthMap16Bit.recycle()
+
+                withContext(Dispatchers.Main) {
+                    _isGenAiProcessing.value = false
+                    if (modified > 32) {
+                        val updated = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).apply {
+                            setPixels(outPx, 0, w, 0, 0, w, h)
+                        }
+                        pushBitmapUndoSnapshot(bmp)
+                        _bitmap.value = updated
+                        _exportStatus.value = "Removed peripheral extra people (Offline LaMa FP16)!"
+                    } else {
+                        _exportStatus.value = "No extra background people detected — brush over any object to remove"
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _isGenAiProcessing.value = false
+                    _exportStatus.value = "Remove extra people failed: ${e.message}"
+                }
+            }
+        }
     }
 
     private fun pushBitmapUndoSnapshot(bmp: Bitmap) {
@@ -1180,24 +1472,77 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         val bmp = _bitmap.value ?: return
         val strokes = _removeBrushPoints.value
         if (strokes.isEmpty()) {
-            _exportStatus.value = "Paint over an object on the photo first"
+            _exportStatus.value = "Paint over an area on the photo first"
             return
         }
 
-        val useCloudFlux = _useGenerativeAiRemove.value
+        val activeMode = _removeToolMode.value
+        val featherVal = _healFeather.value
+        val opacityVal = _healOpacity.value
+        val sourcePin = _healCloneSourceNorm.value
+        val detectObj = _detectObjectsRemove.value
+
+        // ── MODE: HEAL or CLONE (Instant On-Device Spot Heal / Clone Stamp) ──
+        if (activeMode == com.cleanlr.engine.RemoveToolMode.HEAL || activeMode == com.cleanlr.engine.RemoveToolMode.CLONE) {
+            _isGenAiProcessing.value = true
+            _exportStatus.value = if (activeMode == com.cleanlr.engine.RemoveToolMode.HEAL) {
+                "Applying Content-Aware Heal (Feather ${featherVal.toInt()}%, Opacity ${opacityVal.toInt()}%)..."
+            } else {
+                "Applying Clone Stamp (Feather ${featherVal.toInt()}%, Opacity ${opacityVal.toInt()}%)..."
+            }
+            viewModelScope.launch(Dispatchers.Default) {
+                try {
+                    val updated = if (activeMode == com.cleanlr.engine.RemoveToolMode.HEAL) {
+                        com.cleanlr.engine.HealCloneEngine.applyHeal(
+                            originalBitmap = bmp,
+                            strokes = strokes,
+                            feather = featherVal,
+                            opacity = opacityVal,
+                            sourceNorm = sourcePin
+                        )
+                    } else {
+                        com.cleanlr.engine.HealCloneEngine.applyClone(
+                            originalBitmap = bmp,
+                            strokes = strokes,
+                            feather = featherVal,
+                            opacity = opacityVal,
+                            sourceNorm = sourcePin
+                        )
+                    }
+                    withContext(Dispatchers.Main) {
+                        pushBitmapUndoSnapshot(bmp)
+                        _bitmap.value = updated
+                        _removeBrushPoints.value = emptyList()
+                        _healCloneSourceNorm.value = null
+                        _isRefineEraseMode.value = false
+                        _isGenAiProcessing.value = false
+                        _exportStatus.value = "${activeMode.label} applied!"
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        _isGenAiProcessing.value = false
+                        _exportStatus.value = "${activeMode.label} failed: ${e.message}"
+                    }
+                }
+            }
+            return
+        }
+
+        // ── MODE: REMOVE (Generative AI LaMa FP16 / Optional LAN FLUX / Local Poisson + Optional MobileSAM Detect Objects) ──
         val cfg = _genAiConfig.value
-
-        if (useCloudFlux && !cfg.isReady) {
-            _exportStatus.value = "Configure FLUX.1 Fill server (or turn off Generative AI for local heal)"
-            _showGenAiSettingsDialog.value = true
-            return
-        }
+        val hasConnectedLanBridge = discoveredLanServers.value.isNotEmpty() &&
+            cfg.backend == com.cleanlr.engine.GenerativeAiBackend.LOCAL_LAN_BRIDGE &&
+            cfg.isReady
+        val hasCloudKey = cfg.backend != com.cleanlr.engine.GenerativeAiBackend.LOCAL_LAN_BRIDGE && cfg.isReady
+        val useGenAi = _useGenerativeAiRemove.value
+        val useRemoteFlux = useGenAi && (hasConnectedLanBridge || hasCloudKey)
 
         _isGenAiProcessing.value = true
-        _exportStatus.value = if (useCloudFlux) {
-            "Extracting Crop+Mask ROI & calling FLUX.1 Fill..."
-        } else {
-            "Applying local Poisson content-aware removal..."
+        _exportStatus.value = when {
+            useRemoteFlux -> "Extracting Crop+Mask ROI & calling Desktop LAN / FLUX..."
+            useGenAi && detectObj -> "Detecting object (MobileSAM INT8) & removing via LaMa FP16..."
+            useGenAi -> "Running Bundled Offline LaMa FP16 + Poisson Blending..."
+            else -> "Running instant Content-Aware Poisson Remove..."
         }
 
         viewModelScope.launch(Dispatchers.Default) {
@@ -1211,51 +1556,107 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
             }
 
             try {
-                val updatedBitmap: Bitmap = if (!useCloudFlux) {
-                    com.cleanlr.engine.PoissonBlender.localContentAwareRemove(
-                        originalBitmap = bmp,
-                        maskBitmap = extracted.binaryMask,
-                        offsetX = extracted.roiBounds.left,
-                        offsetY = extracted.roiBounds.top
+                // If Detect Objects is ON, snap mask to object silhouette via MobileSAM INT8
+                val effectiveMask: Bitmap = if (detectObj) {
+                    val avgX = strokes.map { it.x }.average().toFloat()
+                    val avgY = strokes.map { it.y }.average().toFloat()
+                    val samMask = com.cleanlr.ai.AiVisionPipeline.segmentInteractive(
+                        bitmap = bmp,
+                        modelManager = modelManager,
+                        tapNormX = avgX,
+                        tapNormY = avgY
                     )
-                } else {
-                    val client = com.cleanlr.engine.FluxFillClient(cfg)
-                    val patchResult = client.generatePatch(
-                        croppedImage = extracted.croppedImage,
-                        binaryMask = extracted.binaryMask,
-                        prompt = customPrompt?.takeIf { it.isNotBlank() }
-                            ?: com.cleanlr.engine.FluxFillClient.DEFAULT_REMOVE_PROMPT,
-                        mode = "remove",
-                        uploadWidth = extracted.uploadWidth,
-                        uploadHeight = extracted.uploadHeight
+                    val croppedSam = Bitmap.createScaledBitmap(samMask, bmp.width, bmp.height, true)
+                    samMask.recycle()
+                    val roiSam = Bitmap.createBitmap(
+                        croppedSam,
+                        extracted.roiBounds.left,
+                        extracted.roiBounds.top,
+                        extracted.roiBounds.width,
+                        extracted.roiBounds.height
                     )
-                    val patch = patchResult.getOrThrow()
-                    val blended = if (cfg.usePoissonBlending) {
-                        com.cleanlr.engine.PoissonBlender.blendPatchIntoOriginal(
-                            originalBitmap = bmp,
-                            sourcePatch = patch,
-                            maskBitmap = extracted.binaryMask,
-                            offsetX = extracted.roiBounds.left,
-                            offsetY = extracted.roiBounds.top,
-                            iterations = 120,
-                            mixedGradients = false
-                        )
-                    } else {
-                        // Direct copy inside mask without Poisson if user disabled toggle
-                        com.cleanlr.engine.PoissonBlender.blendPatchIntoOriginal(
-                            originalBitmap = bmp,
-                            sourcePatch = patch,
-                            maskBitmap = extracted.binaryMask,
-                            offsetX = extracted.roiBounds.left,
-                            offsetY = extracted.roiBounds.top,
-                            iterations = 1,
-                            mixedGradients = false
-                        )
+                    croppedSam.recycle()
+                    val rw = extracted.binaryMask.width
+                    val rh = extracted.binaryMask.height
+                    val merged = Bitmap.createBitmap(rw, rh, Bitmap.Config.ARGB_8888)
+                    val bPx = IntArray(rw * rh)
+                    val sPx = IntArray(rw * rh)
+                    extracted.binaryMask.getPixels(bPx, 0, rw, 0, 0, rw, rh)
+                    val scaledRoiSam = Bitmap.createScaledBitmap(roiSam, rw, rh, true)
+                    roiSam.recycle()
+                    scaledRoiSam.getPixels(sPx, 0, rw, 0, 0, rw, rh)
+                    scaledRoiSam.recycle()
+                    for (i in bPx.indices) {
+                        if (android.graphics.Color.red(sPx[i]) > 140) bPx[i] = android.graphics.Color.WHITE
                     }
-                    patch.recycle()
-                    blended
+                    merged.setPixels(bPx, 0, rw, 0, 0, rw, rh)
+                    merged
+                } else {
+                    extracted.binaryMask
                 }
 
+                var usedRemote = false
+                val updatedBitmap: Bitmap = when {
+                    useRemoteFlux -> {
+                        val client = com.cleanlr.engine.FluxFillClient(cfg)
+                        val patchResult = client.generatePatch(
+                            croppedImage = extracted.croppedImage,
+                            binaryMask = effectiveMask,
+                            prompt = customPrompt?.takeIf { it.isNotBlank() }
+                                ?: com.cleanlr.engine.FluxFillClient.DEFAULT_REMOVE_PROMPT,
+                            mode = "remove",
+                            uploadWidth = extracted.uploadWidth,
+                            uploadHeight = extracted.uploadHeight
+                        )
+                        if (patchResult.isSuccess) {
+                            usedRemote = true
+                            val patch = patchResult.getOrThrow()
+                            val blended = com.cleanlr.engine.PoissonBlender.blendPatchIntoOriginal(
+                                originalBitmap = bmp,
+                                sourcePatch = patch,
+                                maskBitmap = effectiveMask,
+                                offsetX = extracted.roiBounds.left,
+                                offsetY = extracted.roiBounds.top,
+                                iterations = if (cfg.usePoissonBlending) 120 else 1,
+                                mixedGradients = false
+                            )
+                            patch.recycle()
+                            blended
+                        } else {
+                            com.cleanlr.ai.AiVisionPipeline.runOfflineLamaRemove(
+                                originalBitmap = bmp,
+                                strokes = strokes,
+                                modelManager = modelManager
+                            )
+                        }
+                    }
+                    useGenAi -> {
+                        com.cleanlr.ai.AiVisionPipeline.runOfflineLamaRemove(
+                            originalBitmap = bmp,
+                            strokes = strokes,
+                            modelManager = modelManager
+                        )
+                    }
+                    else -> {
+                        val localPatch = com.cleanlr.engine.PoissonBlender.localContentAwareRemove(
+                            originalBitmap = extracted.croppedImage,
+                            maskBitmap = effectiveMask,
+                            offsetX = 0,
+                            offsetY = 0,
+                            iterations = 180
+                        )
+                        com.cleanlr.engine.PoissonBlender.blendPatchIntoOriginal(
+                            originalBitmap = bmp,
+                            sourcePatch = localPatch,
+                            maskBitmap = effectiveMask,
+                            offsetX = extracted.roiBounds.left,
+                            offsetY = extracted.roiBounds.top,
+                            iterations = 100
+                        ).also { localPatch.recycle() }
+                    }
+                }
+
+                if (effectiveMask !== extracted.binaryMask) effectiveMask.recycle()
                 extracted.croppedImage.recycle()
                 extracted.binaryMask.recycle()
 
@@ -1263,11 +1664,12 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                     pushBitmapUndoSnapshot(bmp)
                     _bitmap.value = updatedBitmap
                     _removeBrushPoints.value = emptyList()
+                    _isRefineEraseMode.value = false
                     _isGenAiProcessing.value = false
-                    _exportStatus.value = if (useCloudFlux) {
-                        "FLUX.1 Fill + Poisson Blend complete (100% original pixels preserved)"
-                    } else {
-                        "Local Poisson Remove applied!"
+                    _exportStatus.value = when {
+                        usedRemote -> "FLUX LAN + Poisson Blend complete!"
+                        useGenAi -> "Generative AI Remove (Offline LaMa FP16) applied!"
+                        else -> "Content-Aware Remove applied!"
                     }
                 }
             } catch (e: Exception) {

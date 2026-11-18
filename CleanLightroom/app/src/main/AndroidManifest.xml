@@ -15,6 +15,7 @@
     <application
         android:name=".CleanLrApplication"
         android:allowBackup="true"
+        android:largeHeap="true"
         android:icon="@android:drawable/ic_menu_camera"
         android:label="Clean Lightroom"
         android:roundIcon="@android:drawable/ic_menu_camera"

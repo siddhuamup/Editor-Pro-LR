@@ -1,3 +1,11 @@
 .idea/
 .kotlin/
 .design-reference/
+# Bundled offline AI weights (populated via scripts/fetch_bundled_models.py)
+app/src/main/assets/models/*.onnx
+app/src/main/assets/models/*.ort
+app/src/main/assets/models/*.onnx_data
+app/src/main/assets/models/*.bin
+app/src/main/assets/models/*.safetensors
+scripts/.model_cache/
+*.apk

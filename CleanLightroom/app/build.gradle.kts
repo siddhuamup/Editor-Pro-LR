@@ -17,11 +17,27 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // ABI Optimization:
+        // - Pass `-PphoneOnly=true` (e.g. for Motorola Edge 60 Fusion / modern arm64 phones) to package ONLY arm64-v8a (~35-52MB smaller APK!).
+        // - Default debug packages 64-bit arm64-v8a + x86_64 (drops legacy 32-bit armeabi-v7a & x86, saving ~25MB while supporting both phone & emulator).
+        val phoneOnly = (project.findProperty("phoneOnly") as? String)?.toBoolean() ?: false
+        ndk {
+            if (phoneOnly) {
+                abiFilters += listOf("arm64-v8a")
+            } else {
+                abiFilters += listOf("arm64-v8a", "x86_64")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            ndk {
+                abiFilters.clear()
+                abiFilters += listOf("arm64-v8a")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -38,6 +54,9 @@ android {
     buildFeatures {
         compose = true
     }
+    androidResources {
+        noCompress += listOf("onnx", "ort", "bin", "safetensors")
+    }
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
@@ -47,6 +66,9 @@ dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
+    
+    // Native ONNX Runtime Android (QNN / NNAPI / GPU / XNNPACK)
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.20.0")
     
     // Compose
     val composeBom = platform("androidx.compose:compose-bom:2024.10.00")

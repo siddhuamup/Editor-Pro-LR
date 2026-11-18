@@ -119,6 +119,14 @@ class LoupeGLView(context: Context) : GLSurfaceView(context) {
             requestRender()
         }
     }
+
+    // Phase 3: Upload 5-Stage Optical Lens Blur textures (Clean-Plate + AlphaMatte + 16-bit Depth)
+    fun setOpticalBlurPack(pack: com.cleanlr.ai.AiVisionPipeline.OpticalBlurPack?) {
+        queueEvent {
+            renderer.setOpticalBlurPack(pack)
+            requestRender()
+        }
+    }
 }
 
 class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
@@ -133,6 +141,7 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var isCropActive = false
     private var film3dLut = com.cleanlr.engine.stage.Film3dLut.NONE
     private var film3dLutIntensity = 1.0f
+    private var pendingOpticalPack: com.cleanlr.ai.AiVisionPipeline.OpticalBlurPack? = null
     private var surfaceWidth = 0
     private var surfaceHeight = 0
 
@@ -149,6 +158,19 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
         pendingBitmap?.let {
             pipeline?.loadBitmap(it)
             pendingBitmap = null
+        }
+        pendingOpticalPack?.let {
+            pipeline?.uploadOpticalBlurPack(it)
+            pendingOpticalPack = null
+        }
+    }
+
+    fun setOpticalBlurPack(pack: com.cleanlr.ai.AiVisionPipeline.OpticalBlurPack?) {
+        val p = pipeline
+        if (p != null) {
+            if (pack != null) p.uploadOpticalBlurPack(pack) else p.clearOpticalBlurPack()
+        } else {
+            pendingOpticalPack = pack
         }
     }
 
@@ -285,7 +307,12 @@ fun LoupeCanvas(
     isGuidedUprightActive: Boolean = false,
     isRemoveBrushActive: Boolean = false,
     removeBrushPoints: List<com.cleanlr.model.BrushStrokePoint> = emptyList(),
+    removeToolMode: com.cleanlr.engine.RemoveToolMode = com.cleanlr.engine.RemoveToolMode.REMOVE,
+    isRefineEraseMode: Boolean = false,
+    healCloneSourceNorm: Pair<Float, Float>? = null,
+    onHealCloneSourceChanged: ((Float, Float) -> Unit)? = null,
     isGenAiProcessing: Boolean = false,
+    opticalBlurPack: com.cleanlr.ai.AiVisionPipeline.OpticalBlurPack? = null,
     onRemoveBrushPoint: ((Float, Float) -> Unit)? = null,
     onCropRectChanged: ((Float, Float, Float, Float) -> Unit)? = null,
     onGuidedLineChanged: ((String, Float, Float, Float, Float) -> Unit)? = null,
@@ -402,6 +429,11 @@ fun LoupeCanvas(
         if (bmp != null && gv != null) {
             gv.setBitmap(bmp, onHistogramUpdated)
         }
+    }
+
+    // Upload 5-Stage Optical Lens Blur textures (Clean-Plate + BiRefNet Alpha + 16-bit Depth)
+    LaunchedEffect(opticalBlurPack, glView) {
+        glView?.setOpticalBlurPack(opticalBlurPack)
     }
 
     Box(
@@ -1127,7 +1159,11 @@ fun LoupeCanvas(
                 imageHeight = bmpH,
                 brushSize = brushSize,
                 points = removeBrushPoints,
-                onPointAdded = { nx, ny -> onRemoveBrushPoint?.invoke(nx, ny) }
+                removeToolMode = removeToolMode,
+                isRefineEraseMode = isRefineEraseMode,
+                healCloneSourceNorm = healCloneSourceNorm,
+                onPointAdded = { nx, ny -> onRemoveBrushPoint?.invoke(nx, ny) },
+                onSourcePinDragged = { nx, ny -> onHealCloneSourceChanged?.invoke(nx, ny) }
             )
         }
 
@@ -1584,12 +1620,20 @@ private fun RemoveBrushCanvasOverlay(
     imageHeight: Int,
     brushSize: Float,
     points: List<com.cleanlr.model.BrushStrokePoint>,
+    removeToolMode: com.cleanlr.engine.RemoveToolMode = com.cleanlr.engine.RemoveToolMode.REMOVE,
+    isRefineEraseMode: Boolean = false,
+    healCloneSourceNorm: Pair<Float, Float>? = null,
     onPointAdded: (Float, Float) -> Unit,
+    onSourcePinDragged: ((Float, Float) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val currentCrop by rememberUpdatedState(crop)
     val currentOnPointAdded by rememberUpdatedState(onPointAdded)
+    val currentOnSourcePinDragged by rememberUpdatedState(onSourcePinDragged)
+    val currentSourceNorm by rememberUpdatedState(healCloneSourceNorm)
+    val currentMode by rememberUpdatedState(removeToolMode)
     var activeCursor by remember { mutableStateOf<Offset?>(null) }
+    var draggingSourcePin by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -1614,7 +1658,6 @@ private fun RemoveBrushCanvasOverlay(
             .pointerInput(imageWidth, imageHeight) {
                 detectDragGestures(
                     onDragStart = { start ->
-                        activeCursor = start
                         val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
                             viewportWidth = size.width.toFloat(),
                             viewportHeight = size.height.toFloat(),
@@ -1623,6 +1666,19 @@ private fun RemoveBrushCanvasOverlay(
                             crop = currentCrop,
                             isCropActive = false
                         )
+                        // Check if user grabbed the Heal/Clone Source Ring pin
+                        val src = currentSourceNorm
+                        if (currentMode != com.cleanlr.engine.RemoveToolMode.REMOVE && src != null && disp.width > 1f && disp.height > 1f) {
+                            val sx = disp.left + src.first * disp.width
+                            val sy = disp.top + src.second * disp.height
+                            if (kotlin.math.hypot(start.x - sx, start.y - sy) <= 56f) {
+                                draggingSourcePin = true
+                                activeCursor = null
+                                return@detectDragGestures
+                            }
+                        }
+                        draggingSourcePin = false
+                        activeCursor = start
                         if (disp.width > 1f && disp.height > 1f) {
                             val nx = ((start.x - disp.left) / disp.width).coerceIn(0f, 1f)
                             val ny = ((start.y - disp.top) / disp.height).coerceIn(0f, 1f)
@@ -1632,7 +1688,6 @@ private fun RemoveBrushCanvasOverlay(
                     onDrag = { change, _ ->
                         change.consume()
                         val pos = change.position
-                        activeCursor = pos
                         val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
                             viewportWidth = size.width.toFloat(),
                             viewportHeight = size.height.toFloat(),
@@ -1644,11 +1699,22 @@ private fun RemoveBrushCanvasOverlay(
                         if (disp.width > 1f && disp.height > 1f) {
                             val nx = ((pos.x - disp.left) / disp.width).coerceIn(0f, 1f)
                             val ny = ((pos.y - disp.top) / disp.height).coerceIn(0f, 1f)
-                            currentOnPointAdded(nx, ny)
+                            if (draggingSourcePin) {
+                                currentOnSourcePinDragged?.invoke(nx, ny)
+                            } else {
+                                activeCursor = pos
+                                currentOnPointAdded(nx, ny)
+                            }
                         }
                     },
-                    onDragEnd = { activeCursor = null },
-                    onDragCancel = { activeCursor = null }
+                    onDragEnd = {
+                        activeCursor = null
+                        draggingSourcePin = false
+                    },
+                    onDragCancel = {
+                        activeCursor = null
+                        draggingSourcePin = false
+                    }
                 )
             }
     ) {
@@ -1662,14 +1728,56 @@ private fun RemoveBrushCanvasOverlay(
                 isCropActive = false
             )
             val minDispDim = min(disp.width, disp.height).coerceAtLeast(1f)
-            val maskFill = Color(0x88FF3B6B)
-            val maskOutline = Color(0xCCFFFFFF)
+            val maskFill = when (removeToolMode) {
+                com.cleanlr.engine.RemoveToolMode.REMOVE -> Color(0x88F0F0F5)
+                com.cleanlr.engine.RemoveToolMode.HEAL -> Color(0x78FF4A78)
+                com.cleanlr.engine.RemoveToolMode.CLONE -> Color(0x7838A9FF)
+            }
+            val maskOutline = if (isRefineEraseMode) Color(0xFF38A9FF) else Color(0xE6FFFFFF)
 
             points.forEach { pt ->
                 val px = disp.left + pt.x * disp.width
                 val py = disp.top + pt.y * disp.height
                 val rad = ((pt.radius.coerceIn(2f, 120f) / 400f) * minDispDim).coerceAtLeast(8f)
                 drawCircle(color = maskFill, radius = rad, center = Offset(px, py))
+            }
+
+            // Authentic Lightroom Heal / Clone Source Ring + Connector Arrow
+            if (removeToolMode != com.cleanlr.engine.RemoveToolMode.REMOVE && healCloneSourceNorm != null && points.isNotEmpty()) {
+                val avgX = points.map { it.x }.average().toFloat()
+                val avgY = points.map { it.y }.average().toFloat()
+                val targetCenter = Offset(disp.left + avgX * disp.width, disp.top + avgY * disp.height)
+                val sourceCenter = Offset(
+                    disp.left + healCloneSourceNorm.first * disp.width,
+                    disp.top + healCloneSourceNorm.second * disp.height
+                )
+                val pinRad = ((brushSize.coerceIn(4f, 100f) / 400f) * minDispDim).coerceIn(14f, 52f)
+
+                // Connecting line from source -> target
+                drawLine(
+                    color = Color.White.copy(alpha = 0.85f),
+                    start = sourceCenter,
+                    end = targetCenter,
+                    strokeWidth = 1.6.dp.toPx()
+                )
+                // Draggable Source Ring (dashed white outline + inner crosshair dot)
+                drawCircle(
+                    color = Color.Black.copy(alpha = 0.35f),
+                    radius = pinRad + 1.dp.toPx(),
+                    center = sourceCenter,
+                    style = Stroke(3.dp.toPx())
+                )
+                drawCircle(
+                    color = Color.White,
+                    radius = pinRad,
+                    center = sourceCenter,
+                    style = Stroke(1.8.dp.toPx())
+                )
+                drawCircle(
+                    color = Color(0xFF1473E6),
+                    radius = 4.dp.toPx(),
+                    center = sourceCenter
+                )
             }
 
             activeCursor?.let { cur ->

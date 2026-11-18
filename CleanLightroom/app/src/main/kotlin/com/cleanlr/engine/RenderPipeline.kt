@@ -99,6 +99,7 @@ class RenderPipeline(private val context: Context) {
     private val stage6ColorScience = Stage6ColorScience(context)
     private val stage7CurvesLut = Stage7CurvesLut(context)
     private val stage8Details = Stage8Details(context)
+    private val stageOpticalLensBlur = StageOpticalLensBlur(context)
     private val stage9ColorManagement = Stage9ColorManagement(context)
 
     // GPU 256-Bin Histogram Pass (reductionsum.fsh / moments.fsh)
@@ -168,6 +169,7 @@ class RenderPipeline(private val context: Context) {
         stage6ColorScience.initGL()
         stage7CurvesLut.initGL()
         stage8Details.initGL()
+        stageOpticalLensBlur.initGL()
         stage9ColorManagement.initGL()
 
         // 2. Initialize GPU Histogram Pass (reductionsum.fsh)
@@ -573,14 +575,25 @@ class RenderPipeline(private val context: Context) {
                 pingPong = pingPong,
                 vaoId = vaoFboId
             )
+
+            // -----------------------------------------------------------------
+            // STAGE 8.5: 5-Stage Optical Lens Blur (Clean-Plate + 16-bit Depth CoC
+            // + Linear HDR Specular Bokeh + Partial Occlusion + Sensor Grain)
+            // Bypassed cleanly at 0ms when blur.amount <= 0.5f.
+            // -----------------------------------------------------------------
+            if (activeRecipe.blur.amount > 0.5f) {
+                stageOpticalLensBlur.process(
+                    blur = activeRecipe.blur,
+                    pingPong = pingPong,
+                    vaoId = vaoFboId,
+                    imageWidth = imageWidth,
+                    imageHeight = imageHeight
+                )
+            }
         }
 
         // ---------------------------------------------------------------------
         // STAGE 9: Color Management & Output Display (lin2srgb.fsh EOTF & Blit)
-        // (Section 2.1 Order of Operations: Step 12 Output Conversion)
-        // Blits the high-dynamic range ProPhoto Linear buffer to the screen/target
-        // Tip 81: Passes imageWidth & imageHeight for aspect-ratio fit-center viewport
-        // Tip 302: Pass dynamic sharpenMasking threshold for Alt+Masking visualization
         // ---------------------------------------------------------------------
         val finalInputTexture = pingPong.currentRead?.textureId ?: imageTextureId
         stage9ColorManagement.renderToScreen(
@@ -596,8 +609,8 @@ class RenderPipeline(private val context: Context) {
             imageHeight = imageHeight,
             crop = activeRecipe.crop,
             isCropActive = isCropActive,
-            blurAmount = if (showOriginal) 0f else activeRecipe.blur.amount,
-            blurBoost = if (showOriginal) 0f else activeRecipe.blur.boost
+            blurAmount = 0f, // Handled with full 5-Stage Optical Lens Blur pass above
+            blurBoost = 0f
         )
     }
 
@@ -697,6 +710,7 @@ class RenderPipeline(private val context: Context) {
         stage6ColorScience.release()
         stage7CurvesLut.release()
         stage8Details.release()
+        stageOpticalLensBlur.release()
         stage9ColorManagement.release()
 
         pingPong.release()
@@ -769,6 +783,18 @@ class RenderPipeline(private val context: Context) {
             GLES30.glDeleteTextures(1, intArrayOf(maskTextureId), 0)
             maskTextureId = 0
         }
+    }
+
+    /**
+     * Uploads BiRefNet AlphaMatte, 16-bit DepthAnythingV2 DepthMap, and LaMa Clean Background Plate
+     * to the 5-Stage Optical Lens Blur GLSL shader.
+     */
+    fun uploadOpticalBlurPack(pack: com.cleanlr.ai.AiVisionPipeline.OpticalBlurPack) {
+        stageOpticalLensBlur.uploadOpticalPack(pack)
+    }
+
+    fun clearOpticalBlurPack() {
+        stageOpticalLensBlur.clearOpticalPack()
     }
 
     private fun readAsset(path: String): String {
