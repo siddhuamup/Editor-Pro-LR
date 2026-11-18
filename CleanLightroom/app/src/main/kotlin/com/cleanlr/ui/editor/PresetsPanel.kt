@@ -1,5 +1,6 @@
 package com.cleanlr.ui.editor
 
+import android.graphics.Bitmap
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -7,21 +8,28 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,24 +37,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cleanlr.R
 import com.cleanlr.preset.Preset
+import com.cleanlr.preset.PresetPreviewEngine
 import com.cleanlr.ui.components.RampedSlider
 import com.cleanlr.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Adobe Lightroom Mobile Signature Presets Panel
- * Exact 1:1 Pixel Parity with Reference Screenshots 083251, 083253, and 083256:
- * - Sub-tabs: "Recommended" | "Premium" | "Yours" with white active indicator
- * - "Recommended" state: Photo frame icon + "Analyzing your photo..." (Screenshot 083251)
- * - "Premium" collections list: Adaptive Portrait, Sky, Subject, Landscape with cloud icons, counts & chevrons (Screenshot 083253)
- * - "Yours" collections list: User Presets, Autumn Forest, Dark & Moody, Astrophotography with item counts & chevrons (Screenshot 083256)
- * - In-collection browsing with Amount slider (0%–200%), None (Original) chip, and checkmark badges
+ * 1:1 Parity with Reference Screenshots 083251, 083253, 083256, 200546, 200549, 200557, 200600:
+ * - Sticky Sub-Tabs: "Recommended" | "Premium" | "Yours" with subtle dark active highlight + white bar
+ * - "Recommended": Photo-analyzed live color-science recommendations with All | Subtle | Strong | B&W filters
+ * - "Premium": All 30 authentic collections with original `.webp` thumbnails mined from Lightroom APK
+ * - "Yours": User Presets (+ Save / Import XMP) + all classic Adobe preset collections with exact live counts
+ * - Opened Collection: Live photo-preview 2-column grid with white active border, slider overlay toggle,
+ *   and full 0%-200% Color Science Amount slider
  */
 @Composable
 fun PresetsPanel(
@@ -62,152 +78,255 @@ fun PresetsPanel(
     onResetToOriginal: () -> Unit = {},
     onSaveCurrentAsPreset: () -> Unit = {},
     onImportXmpPreset: () -> Unit = {},
+    previewBitmap: Bitmap? = null,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val view = LocalView.current
-    var activeSubTab by remember { mutableStateOf("Yours") } // Default to "Yours" or "Premium"
-    var openedCollection by remember { mutableStateOf<String?>(null) }
 
-    // Authentic collections matching Lightroom Mobile curated and mined styles
-    val premiumCollectionDefs = listOf(
-        Pair("Adaptive: Portrait", listOf(Color(0xFFE67E22), Color(0xFFF39C12))),
-        Pair("Adaptive: Sky", listOf(Color(0xFF2980B9), Color(0xFF6DD5FA))),
-        Pair("Adaptive: Subject", listOf(Color(0xFF27AE60), Color(0xFF2ECC71))),
-        Pair("Adaptive: Landscape", listOf(Color(0xFF16A085), Color(0xFF1ABC9C))),
-        Pair("Adaptive: Blur Background", listOf(Color(0xFF8E44AD), Color(0xFF9B59B6))),
-        Pair("Style: Cinematic", listOf(Color(0xFFD35400), Color(0xFFE67E22))),
-        Pair("Style: Cinematic II", listOf(Color(0xFFE67E22), Color(0xFFF39C12))),
-        Pair("Style: Vintage", listOf(Color(0xFFC0392B), Color(0xFFE74C3C))),
-        Pair("Style: Black & White", listOf(Color(0xFF2C3E50), Color(0xFF7F8C8D))),
-        Pair("Style: Futuristic", listOf(Color(0xFF8E44AD), Color(0xFF3498DB))),
-        Pair("Style: Film-Inspired", listOf(Color(0xFF16A085), Color(0xFFF1C40F))),
-        Pair("Seasons: Autumn", listOf(Color(0xFFD35400), Color(0xFFF39C12))),
-        Pair("Seasons: Spring", listOf(Color(0xFF27AE60), Color(0xFF2ECC71))),
-        Pair("Seasons: Summer", listOf(Color(0xFFF39C12), Color(0xFFF1C40F))),
-        Pair("Seasons: Winter", listOf(Color(0xFF2980B9), Color(0xFFBDC3C7))),
-        Pair("Subject: Travel", listOf(Color(0xFF2980B9), Color(0xFF1ABC9C))),
-        Pair("Subject: Urban Architecture", listOf(Color(0xFF34495E), Color(0xFF95A5A6))),
-        Pair("Subject: Landscape", listOf(Color(0xFF27AE60), Color(0xFF16A085))),
-        Pair("Subject: Food", listOf(Color(0xFFE74C3C), Color(0xFFE67E22)))
-    )
-    val premiumCollections: List<Triple<String, Int, List<Color>>> = premiumCollectionDefs.map { (title, grad) ->
-        val count = presets.count { it.group.equals(title, ignoreCase = true) }
-        Triple(title, if (count > 0) count else 10, grad)
+    var activeSubTab by remember { mutableStateOf("Premium") }
+    var openedCollection by remember { mutableStateOf<String?>(null) }
+    var recommendedFilter by remember { mutableStateOf("All") }
+    var showAmountSlider by remember { mutableStateOf(false) }
+
+    // Reusable 112x112 base thumbnail of the active photo for ultra-fast color-science preset cards
+    var baseThumb by remember { mutableStateOf<Bitmap?>(null) }
+    val bitmapKey = remember(previewBitmap) { System.identityHashCode(previewBitmap) }
+    LaunchedEffect(previewBitmap) {
+        baseThumb = if (previewBitmap != null) {
+            withContext(Dispatchers.Default) {
+                PresetPreviewEngine.createPreviewBase(previewBitmap, 112)
+            }
+        } else null
     }
 
-    val yoursCollectionTitles = listOf(
-        "User Presets",
-        "Color",
-        "Creative",
-        "B&W",
-        "Portraits",
-        "Vintage",
-        "Landscape",
-        "Defaults",
-        "Curve",
-        "Grain",
-        "Sharpening"
-    )
-    val yoursCollections = yoursCollectionTitles.map { title ->
-        val count = if (title == "User Presets") {
-            presets.count { it.group.equals("User", ignoreCase = true) || it.group.equals("User Presets", ignoreCase = true) || it.isCustom }.coerceAtLeast(2)
-        } else {
-            presets.count { it.group.equals(title, ignoreCase = true) }
+    // Photo-aware Recommended presets computed asynchronously on Dispatchers.Default
+    var recommendedPresets by remember { mutableStateOf<List<Preset>>(emptyList()) }
+    var isAnalyzingPhoto by remember { mutableStateOf(true) }
+    LaunchedEffect(previewBitmap, presets, recommendedFilter) {
+        isAnalyzingPhoto = recommendedPresets.isEmpty()
+        recommendedPresets = withContext(Dispatchers.Default) {
+            PresetPreviewEngine.recommendPresets(previewBitmap, presets, recommendedFilter)
         }
-        Pair(title, count)
-    }.filter { it.second > 0 || it.first == "User Presets" }
+        isAnalyzingPhoto = false
+    }
+
+    // All 30 authentic Premium collections paired with original mined `.webp` thumbnail assets
+    val premiumCollections = remember(presets) {
+        PresetPreviewEngine.PREMIUM_COLLECTION_THUMBS.map { (title, thumbAsset) ->
+            val count = presets.count { it.group.equals(title, ignoreCase = true) }
+            Triple(title, count, thumbAsset)
+        }.filter { it.second > 0 }
+    }
+
+    val premiumGroupSet = remember {
+        PresetPreviewEngine.PREMIUM_COLLECTION_THUMBS.map { it.first.lowercase() }.toSet()
+    }
+
+    // Yours collections: User Presets first, followed by all authentic non-premium Adobe collections
+    val yoursCollections = remember(presets) {
+        val preferredOrder = listOf(
+            "Color", "Creative", "B&W", "Portraits", "Portrait", "Landscape", "Vintage",
+            "Curve", "Grain", "Sharpening", "Vignetting", "Optics", "Defaults",
+            "Artistic", "Modern", "Scene Balance", "Samsung",
+            "Legacy: Color", "Legacy: Creative", "Legacy: B&W", "Legacy: Detail", "Adaptive"
+        )
+        val nonPremiumGroups = presets
+            .map { it.group }
+            .distinct()
+            .filter { g ->
+                val low = g.lowercase()
+                low !in premiumGroupSet && low != "user" && low != "user presets" && low != "profiles"
+            }
+        val ordered = preferredOrder.filter { p -> nonPremiumGroups.any { it.equals(p, ignoreCase = true) } } +
+            nonPremiumGroups.filter { g -> preferredOrder.none { it.equals(g, ignoreCase = true) } }.sorted()
+
+        val userCount = presets.count {
+            it.isCustom || it.group.equals("User", ignoreCase = true) || it.group.equals("User Presets", ignoreCase = true)
+        }
+        listOf("User Presets" to userCount) + ordered.map { g ->
+            g to presets.count { it.group.equals(g, ignoreCase = true) }
+        }.filter { it.second > 0 }
+    }
 
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .background(SpectrumSurface)
+            .fillMaxSize()
+            .background(Color(0xFF19191B))
     ) {
-        // 1. Sub-Tabs Header: Recommended | Premium | Yours (Screenshots 083251, 083253, 083256)
+        // ═════════════════════════════════════════════════════════════════
+        // 1. HEADER BAR: Sub-Tabs OR Opened Collection Back Header
+        // ═════════════════════════════════════════════════════════════════
         if (openedCollection == null) {
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF1E1E1E))
+                    .background(Color(0xFF1E1E20))
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    listOf("Recommended", "Premium", "Yours").forEach { tabName ->
-                        val isSelected = activeSubTab == tabName
-                        Column(
-                            modifier = Modifier
-                                .clickable {
-                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                    activeSubTab = tabName
-                                }
-                                .padding(top = 14.dp, bottom = 10.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = tabName,
-                                color = if (isSelected) Color.White else Color(0xFF8E8E93),
-                                fontSize = 14.sp,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                            )
-                            Spacer(Modifier.height(8.dp))
+                listOf("Recommended", "Premium", "Yours").forEach { tabName ->
+                    val isSelected = activeSubTab == tabName
+                    Box(
+                        modifier = Modifier
+                            .background(if (isSelected) Color(0xFF28282B) else Color.Transparent)
+                            .clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                activeSubTab = tabName
+                            }
+                            .padding(horizontal = 16.dp)
+                            .height(44.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = tabName,
+                            color = if (isSelected) Color.White else Color(0xFFB0B0B6),
+                            fontSize = 14.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                        )
+                        if (isSelected) {
                             Box(
-                                Modifier
-                                    .width(if (tabName == "Recommended") 95.dp else if (tabName == "Premium") 60.dp else 45.dp)
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .width(if (tabName == "Recommended") 92.dp else if (tabName == "Premium") 58.dp else 40.dp)
                                     .height(2.dp)
-                                    .background(if (isSelected) Color.White else Color.Transparent)
+                                    .background(Color.White)
                             )
                         }
                     }
                 }
+
+                Spacer(Modifier.weight(1f))
+
+                if (activeSubTab == "Yours") {
+                    IconButton(
+                        onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            onSaveCurrentAsPreset()
+                        },
+                        modifier = Modifier.size(34.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Create Preset",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            onImportXmpPreset()
+                        },
+                        modifier = Modifier.size(34.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FileUpload,
+                            contentDescription = "Import XMP",
+                            tint = Color(0xFFB0B0B6),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
-            HorizontalDivider(color = Color(0xFF2E2E2E), thickness = 1.dp)
+            HorizontalDivider(color = Color(0xFF2E2E32), thickness = 1.dp)
         } else {
-            // Collection Navigation Header
+            // Opened Collection Navigation Header (Matching Screenshot 200546)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                    .background(Color(0xFF1E1E20))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = {
                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                         openedCollection = null
+                        showAmountSlider = false
                     },
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back to collections",
+                        contentDescription = "Back",
                         tint = Color.White,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(6.dp))
                 Text(
                     text = openedCollection ?: "",
                     color = Color.White,
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
+
+                if (activePreset != null) {
+                    Surface(
+                        color = if (showAmountSlider) SpectrumBlue else Color(0xFF2A2A2E),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                showAmountSlider = !showAmountSlider
+                            }
+                            .padding(end = 6.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Tune,
+                                contentDescription = "Preset Amount",
+                                tint = Color.White,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = "${presetAmount.toInt()}%",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Original",
+                        color = Color(0xFF9A9AA2),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                showAmountSlider = false
+                                onResetToOriginal()
+                            }
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    )
+                }
             }
-            HorizontalDivider(color = Color(0xFF262626), thickness = 1.dp)
+            HorizontalDivider(color = Color(0xFF2E2E32), thickness = 1.dp)
         }
 
-        // 2. Active Preset Amount Slider (0%–200%)
+        // ═════════════════════════════════════════════════════════════════
+        // 2. COLLAPSIBLE AMOUNT SLIDER (0%–200%) WHEN ACTIVE PRESET SELECTED
+        // ═════════════════════════════════════════════════════════════════
         AnimatedVisibility(
-            visible = activePreset != null,
+            visible = activePreset != null && showAmountSlider,
             enter = expandVertically() + fadeIn(),
             exit = shrinkVertically() + fadeOut()
         ) {
             if (activePreset != null) {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .background(Color(0xFF222225))
                         .padding(horizontal = 14.dp, vertical = 4.dp)
                 ) {
                     RampedSlider(
@@ -217,7 +336,8 @@ fun PresetsPanel(
                         maxVal = 200.0f,
                         defaultValue = 100.0f,
                         isBipolar = false,
-                        formatPattern = "%.0f%%",
+                        formatPattern = "%.0f",
+                        unitSuffix = "%",
                         onValueChange = onAmountChange,
                         onValueChangeEnd = onAmountChangeEnd
                     )
@@ -225,122 +345,82 @@ fun PresetsPanel(
             }
         }
 
-        // 3. Tab Body
+        // ═════════════════════════════════════════════════════════════════
+        // 3. PANEL BODY (Full remaining height, zero nested scroll conflict!)
+        // ═════════════════════════════════════════════════════════════════
         if (openedCollection != null) {
-            // Preset Cards Horizontal Row for opened collection
-            val collectionPresets = presets.filter {
+            val collectionPresets = remember(openedCollection, presets) {
                 val grp = openedCollection ?: ""
                 if (grp.equals("User Presets", ignoreCase = true)) {
-                    it.group.equals("User", ignoreCase = true) || it.group.equals("User Presets", ignoreCase = true) || it.isCustom
+                    presets.filter {
+                        it.isCustom || it.group.equals("User", ignoreCase = true) || it.group.equals("User Presets", ignoreCase = true)
+                    }
                 } else {
-                    it.group.equals(grp, ignoreCase = true) ||
-                    it.group.startsWith(grp, ignoreCase = true) ||
-                    grp.startsWith(it.group, ignoreCase = true)
+                    presets.filter { it.group.equals(grp, ignoreCase = true) }
                 }
-            }.ifEmpty { presets }
+            }
+            val subtitle = PresetPreviewEngine.COLLECTION_SUBTITLES[openedCollection]
 
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Card 0: None (Original) Reset Button
-                item {
-                    Surface(
-                        color = if (activePreset == null) SpectrumBlue.copy(alpha = 0.15f) else Color(0xFF252525),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(
-                            width = if (activePreset == null) 1.5.dp else 1.dp,
-                            color = if (activePreset == null) SpectrumBlue else Color(0xFF383838)
-                        ),
-                        modifier = Modifier
-                            .width(100.dp)
-                            .height(80.dp)
-                            .clickable {
-                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                onResetToOriginal()
+            if (collectionPresets.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("No user presets saved yet", color = Color(0xFF9A9AA2), fontSize = 13.sp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Button(
+                                onClick = onSaveCurrentAsPreset,
+                                colors = ButtonDefaults.buttonColors(containerColor = SpectrumBlue)
+                            ) {
+                                Text("Save Current Edit", fontSize = 12.sp)
                             }
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_lr_reset_all),
-                                contentDescription = "Original",
-                                tint = if (activePreset == null) SpectrumBlue else Color(0xFFAAAAAA),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = "Original",
-                                color = Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium
-                            )
+                            OutlinedButton(onClick = onImportXmpPreset) {
+                                Text("Import .XMP", color = Color.White, fontSize = 12.sp)
+                            }
                         }
                     }
                 }
+            } else {
+                Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    if (subtitle != null) {
+                        Text(
+                            text = subtitle,
+                            color = Color(0xFFB8B8BE),
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                        )
+                    }
 
-                items(collectionPresets) { preset ->
-                    val isSelected = preset.id == activePreset?.id
-                    Surface(
-                        color = if (isSelected) SpectrumBlue.copy(alpha = 0.15f) else Color(0xFF252525),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(
-                            width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) SpectrumBlue else Color(0xFF383838)
-                        ),
+                    // 2-Column Live Color-Science Photo Preview Grid (Matching Screenshot 200546)
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
                         modifier = Modifier
-                            .width(115.dp)
-                            .height(80.dp)
-                            .clickable {
-                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                onSelectPreset(preset)
-                            }
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(8.dp),
-                            verticalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_lr_presets),
-                                    contentDescription = null,
-                                    tint = if (isSelected) SpectrumBlue else Color(0xFFAAAAAA),
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                if (isSelected) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(16.dp)
-                                            .clip(CircleShape)
-                                            .background(SpectrumBlue),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.ic_lr_select_checkmark),
-                                            contentDescription = "Selected",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(10.dp)
-                                        )
+                        items(collectionPresets, key = { it.id }) { preset ->
+                            val isSelected = preset.id == activePreset?.id
+                            LivePresetPreviewCard(
+                                preset = preset,
+                                baseThumb = baseThumb,
+                                bitmapKey = bitmapKey,
+                                isSelected = isSelected,
+                                onClick = {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    if (isSelected) {
+                                        showAmountSlider = !showAmountSlider
+                                    } else {
+                                        onSelectPreset(preset)
+                                        showAmountSlider = true
                                     }
                                 }
-                            }
-                            Text(
-                                text = preset.name,
-                                color = Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1
                             )
                         }
                     }
@@ -348,95 +428,190 @@ fun PresetsPanel(
             }
         } else {
             when (activeSubTab) {
-                // SCREENSHOT 083251: Recommended ("Analyzing your photo...")
+                // ─────────────────────────────────────────────────────────
+                // RECOMMENDED TAB (Matching Screenshot 200557)
+                // ─────────────────────────────────────────────────────────
                 "Recommended" -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                    Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                        // Filter chips: All | Subtle | Strong | B&W
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Image,
-                                contentDescription = null,
-                                tint = Color(0xFF5E5E62),
-                                modifier = Modifier.size(48.dp)
-                            )
-                            Spacer(Modifier.height(10.dp))
-                            Text(
-                                text = "Analyzing your photo...",
-                                color = Color(0xFF8E8E93),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Normal
-                            )
+                            listOf("All", "Subtle", "Strong", "B&W").forEach { chip ->
+                                val selected = recommendedFilter == chip
+                                Surface(
+                                    color = if (selected) Color(0xFF3A3A3F) else Color(0xFF222225),
+                                    shape = RoundedCornerShape(6.dp),
+                                    border = BorderStroke(
+                                        width = 1.dp,
+                                        color = if (selected) Color(0xFF6E6E74) else Color(0xFF343438)
+                                    ),
+                                    modifier = Modifier.clickable {
+                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                        recommendedFilter = chip
+                                    }
+                                ) {
+                                    Text(
+                                        text = chip,
+                                        color = if (selected) Color.White else Color(0xFFB8B8BE),
+                                        fontSize = 12.sp,
+                                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+                            if (activePreset != null) {
+                                Spacer(Modifier.width(4.dp))
+                                Surface(
+                                    color = Color(0xFF26262A),
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier.clickable {
+                                        showAmountSlider = false
+                                        onResetToOriginal()
+                                    }
+                                ) {
+                                    Text(
+                                        text = "Reset",
+                                        color = Color(0xFF38A9FF),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        if (isAnalyzingPhoto) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().weight(1f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    CircularProgressIndicator(
+                                        color = Color(0xFF8E8E93),
+                                        strokeWidth = 2.dp,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(Modifier.height(10.dp))
+                                    Text("Analyzing your photo...", color = Color(0xFF8E8E93), fontSize = 13.sp)
+                                }
+                            }
+                        } else {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(3),
+                                modifier = Modifier.fillMaxWidth().weight(1f),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(recommendedPresets, key = { it.id }) { preset ->
+                                    val isSelected = preset.id == activePreset?.id
+                                    LivePresetPreviewCard(
+                                        preset = preset,
+                                        baseThumb = baseThumb,
+                                        bitmapKey = bitmapKey,
+                                        isSelected = isSelected,
+                                        onClick = {
+                                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                            if (isSelected) {
+                                                showAmountSlider = !showAmountSlider
+                                            } else {
+                                                onSelectPreset(preset)
+                                                showAmountSlider = true
+                                            }
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
 
-                // SCREENSHOT 083253: Premium Collections List
+                // ─────────────────────────────────────────────────────────
+                // PREMIUM TAB: Authentic Mined Adobe `.webp` Thumbnails (Screenshots 083253 & 200549)
+                // ─────────────────────────────────────────────────────────
                 "Premium" -> {
-                    Column(
+                    LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 240.dp)
-                            .verticalScroll(rememberScrollState())
-                            .padding(vertical = 4.dp)
+                            .weight(1f),
+                        contentPadding = PaddingValues(vertical = 6.dp)
                     ) {
-                        premiumCollections.forEach { (title, count, gradient) ->
+                        items(premiumCollections, key = { it.first }) { (title, count, thumbAsset) ->
+                            val thumbBitmap = remember(thumbAsset) {
+                                PresetPreviewEngine.loadPremiumThumb(context, thumbAsset)
+                            }
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
                                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                         openedCollection = title
+                                        onSelectGroup(title)
                                     }
-                                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                                    .padding(horizontal = 16.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Square thumbnail with gradient
+                                // Authentic Original Adobe Lightroom Photograph Thumbnail (48dp rounded square)
                                 Box(
                                     modifier = Modifier
-                                        .size(42.dp)
+                                        .size(48.dp)
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(Brush.linearGradient(gradient)),
+                                        .background(Color(0xFF28282C)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_lr_presets),
-                                        contentDescription = null,
-                                        tint = Color.White.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(20.dp)
-                                    )
+                                    if (thumbBitmap != null) {
+                                        Image(
+                                            bitmap = thumbBitmap.asImageBitmap(),
+                                            contentDescription = title,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    } else {
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_lr_presets),
+                                            contentDescription = null,
+                                            tint = Color(0xFF88888E),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
-                                Spacer(Modifier.width(12.dp))
+
+                                Spacer(Modifier.width(14.dp))
+
                                 Text(
                                     text = title,
-                                    color = Color.White,
+                                    color = Color(0xFFDCDCE0),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Normal,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f)
                                 )
+
                                 Icon(
                                     imageVector = Icons.Default.Cloud,
-                                    contentDescription = "Cloud synced",
-                                    tint = Color(0xFF7E7E82),
-                                    modifier = Modifier.size(16.dp)
+                                    contentDescription = "Cloud pack",
+                                    tint = Color(0xFF9A9AA0),
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(Modifier.width(8.dp))
+                                Spacer(Modifier.width(14.dp))
                                 Text(
                                     text = "$count",
-                                    color = Color(0xFF7E7E82),
-                                    fontSize = 13.sp
+                                    color = Color(0xFF9A9AA0),
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.widthIn(min = 20.dp)
                                 )
-                                Spacer(Modifier.width(6.dp))
+                                Spacer(Modifier.width(8.dp))
                                 Icon(
                                     imageVector = Icons.Default.ChevronRight,
                                     contentDescription = null,
-                                    tint = Color(0xFF7E7E82),
+                                    tint = Color(0xFF9A9AA0),
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -444,53 +619,148 @@ fun PresetsPanel(
                     }
                 }
 
-                // SCREENSHOT 083256: Yours Collections List
+                // ─────────────────────────────────────────────────────────
+                // YOURS TAB (Matching Screenshots 083256 & 200600)
+                // ─────────────────────────────────────────────────────────
                 "Yours" -> {
-                    Column(
+                    LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 240.dp)
-                            .verticalScroll(rememberScrollState())
-                            .padding(vertical = 4.dp)
+                            .weight(1f),
+                        contentPadding = PaddingValues(vertical = 4.dp)
                     ) {
-                        yoursCollections.forEachIndexed { index, (title, count) ->
+                        itemsIndexed(yoursCollections, key = { _, item -> item.first }) { index, (title, count) ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
                                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                         openedCollection = title
+                                        onSelectGroup(title)
                                     }
-                                    .padding(horizontal = 14.dp, vertical = 11.dp),
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
                                     text = title,
-                                    color = Color.White,
+                                    color = Color(0xFFE5E5EA),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Normal,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f)
                                 )
                                 Text(
                                     text = "$count",
-                                    color = Color(0xFF7E7E82),
+                                    color = Color(0xFF9A9AA0),
                                     fontSize = 13.sp
                                 )
-                                Spacer(Modifier.width(6.dp))
+                                Spacer(Modifier.width(10.dp))
                                 Icon(
                                     imageVector = Icons.Default.ChevronRight,
                                     contentDescription = null,
-                                    tint = Color(0xFF7E7E82),
+                                    tint = Color(0xFF9A9AA0),
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
                             if (index == 0) {
-                                HorizontalDivider(color = Color(0xFF262626), thickness = 1.dp)
+                                HorizontalDivider(color = Color(0xFF2C2C30), thickness = 1.dp)
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * Live Photo-Preview Preset Card (Matching Reference Screenshots 200546 & 200557).
+ * Renders the user's actual photo graded with the preset's color science, bottom scrim label,
+ * white 2dp active border, and centered slider toggle icon when selected.
+ */
+@Composable
+private fun LivePresetPreviewCard(
+    preset: Preset,
+    baseThumb: Bitmap?,
+    bitmapKey: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    var gradedBitmap by remember(preset.id, bitmapKey) { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(preset.id, baseThumb, bitmapKey) {
+        if (baseThumb != null) {
+            gradedBitmap = withContext(Dispatchers.Default) {
+                PresetPreviewEngine.renderPresetPreview(baseThumb, bitmapKey, preset)
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(6.dp))
+            .background(Color(0xFF26262A))
+            .border(
+                width = if (isSelected) 2.dp else 0.5.dp,
+                color = if (isSelected) Color.White else Color(0xFF343438),
+                shape = RoundedCornerShape(6.dp)
+            )
+            .clickable(onClick = onClick)
+    ) {
+        val bmp = gradedBitmap ?: baseThumb
+        if (bmp != null) {
+            Image(
+                bitmap = bmp.asImageBitmap(),
+                contentDescription = preset.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        // Bottom readability scrim
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(32.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Transparent, Color(0xCC000000))
+                    )
+                )
+        )
+
+        // Centered slider icon on active card (Exact Lightroom Screenshot 200546 signature!)
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .background(Color(0x88000000)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Tune,
+                    contentDescription = "Adjust amount",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        Text(
+            text = preset.name,
+            color = Color.White,
+            fontSize = 11.sp,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(horizontal = 6.dp, vertical = 4.dp)
+        )
     }
 }

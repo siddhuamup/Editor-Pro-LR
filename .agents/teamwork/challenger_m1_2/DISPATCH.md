@@ -1,28 +1,21 @@
-## 2026-11-08T09:07:21Z
+## Task Assignment: Milestone 1 Empirical Challenger 2 (challenger_m1_2)
 
-You are challenger_m1_2, an adversarial verifier (teamwork_challenger).
-Your working directory is: c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\challenger_m1_2\
-Your parent is: ee54e32c-82f7-47db-a4c1-749165b59911
-
-MANDATORY FIRST STEP:
 Read:
-1. c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\ORIGINAL_REQUEST.md
-2. c:\Users\Siddhu\Desktop\apps testing\PROJECT.md
-3. c:\Users\Siddhu\Desktop\apps testing\TEST_INFRA.md
-4. c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\worker_mining_1\handoff.md
+1. `c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\ORIGINAL_REQUEST.md`
+2. `c:\Users\Siddhu\Desktop\apps testing\PROJECT.md`
+3. `c:\Users\Siddhu\Desktop\apps testing\TEST_INFRA.md`
+4. `c:\Users\Siddhu\Desktop\apps testing\TEST_READY.md`
+5. `c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\worker_m1_1\handoff.md`
 
-OBJECTIVE:
-Perform empirical and parser-level stress testing on the mined SVGs.
+Working directory: `.agents/teamwork/challenger_m1_2/`
 
-CHALLENGE TASKS:
-1. Test parse all 1,267 SVGs using Python's standard `xml.etree.ElementTree` and, if available, other XML/DOM parsers.
-2. Verify visual integrity: ensure that no icon was converted to a solid black rectangle (common failure when alpha=0 `#00000000` is converted to `#000000`).
-3. Verify that complex drawables (those with `<group>` transforms and `<clip-path>`) preserve valid geometry and attributes.
-4. Test reproducibility: run `python mine_apk_svgs.py` into a temporary directory or verify idempotence, and verify that all hashes/counts match.
-5. Provide a definitive verdict: APPROVE or REQUEST_CHANGES.
-
-OUTPUT REQUIREMENTS:
-- Write your report to:
-  c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\challenger_m1_2\handoff.md
-- Include: Observation, Stress Test Results, Caveats, Conclusion, and VERDICT: APPROVE / REQUEST_CHANGES.
-- Send a message to parent (ee54e32c-82f7-47db-a4c1-749165b59911) when done.
+### Mission
+Conduct independent empirical verification using an independent oracle:
+- Write and execute an independent verification oracle from scratch in Python (do NOT import or reuse worker's code).
+- Independently scan all subfolders in `CleanLightroom\design-reference\`.
+- Compute SHA-256 digests and file sizes directly from disk bytes.
+- Decode every PNG using PIL or struct header parsing, verifying dimensions, channels, and bit depth.
+- Cross-check against `PANEL_MANIFEST.json` and `explorer_survey_1` baseline hashes.
+- Verify 100% bijective equality: zero missing, zero extra, zero corrupted.
+- Render explicit confirmation of correctness or defects.
+- Write full report to `.agents/teamwork/challenger_m1_2/handoff.md`.

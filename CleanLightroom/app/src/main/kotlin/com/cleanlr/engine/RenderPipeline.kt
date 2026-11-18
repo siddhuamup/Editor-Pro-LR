@@ -367,14 +367,15 @@ class RenderPipeline(private val context: Context) {
         altClippingMode: Int = 0,
         showOriginal: Boolean = false,
         splitPosition: Float? = null,
-        isSplitHorizontal: Boolean = false
+        isSplitHorizontal: Boolean = false,
+        isCropActive: Boolean = false
     ) {
         if (!isInitialized || imageTextureId == 0) return
 
         if (splitPosition != null && splitPosition in 0.01f..0.99f) {
-            renderSplit(recipe, altClippingMode, splitPosition, isSplitHorizontal)
+            renderSplit(recipe, altClippingMode, splitPosition, isSplitHorizontal, isCropActive)
         } else if (useNineStagePipeline) {
-            renderNineStage(recipe, altClippingMode, showOriginal)
+            renderNineStage(recipe, altClippingMode, showOriginal, isCropActive)
         } else {
             renderLegacy(recipe, altClippingMode, showOriginal)
         }
@@ -395,7 +396,8 @@ class RenderPipeline(private val context: Context) {
         recipe: EditRecipe,
         altClippingMode: Int,
         splitPosition: Float,
-        isSplitHorizontal: Boolean
+        isSplitHorizontal: Boolean,
+        isCropActive: Boolean = false
     ) {
         val currentViewport = IntArray(4)
         GLES30.glGetIntegerv(GLES30.GL_VIEWPORT, currentViewport, 0)
@@ -410,22 +412,22 @@ class RenderPipeline(private val context: Context) {
 
             // Pass 1: Before (original) on left
             GLES30.glScissor(0, 0, splitPx, vpHeight)
-            renderNineStage(recipe, altClippingMode, showOriginal = true)
+            renderNineStage(recipe, altClippingMode, showOriginal = true, isCropActive = isCropActive)
 
             // Pass 2: After (edited) on right
             GLES30.glScissor(splitPx, 0, vpWidth - splitPx, vpHeight)
-            renderNineStage(recipe, altClippingMode, showOriginal = false)
+            renderNineStage(recipe, altClippingMode, showOriginal = false, isCropActive = isCropActive)
         } else {
             // Tip 95: Horizontal Split: Top = Before, Bottom = After
             val splitPy = (vpHeight * (1f - splitPosition)).toInt().coerceIn(1, vpHeight - 1)
 
             // Pass 1: After on bottom
             GLES30.glScissor(0, 0, vpWidth, splitPy)
-            renderNineStage(recipe, altClippingMode, showOriginal = false)
+            renderNineStage(recipe, altClippingMode, showOriginal = false, isCropActive = isCropActive)
 
             // Pass 2: Before on top
             GLES30.glScissor(0, splitPy, vpWidth, vpHeight - splitPy)
-            renderNineStage(recipe, altClippingMode, showOriginal = true)
+            renderNineStage(recipe, altClippingMode, showOriginal = true, isCropActive = isCropActive)
         }
 
         GLES30.glDisable(GLES30.GL_SCISSOR_TEST)
@@ -437,7 +439,8 @@ class RenderPipeline(private val context: Context) {
     private fun renderNineStage(
         recipe: EditRecipe,
         altClippingMode: Int,
-        showOriginal: Boolean
+        showOriginal: Boolean,
+        isCropActive: Boolean = false
     ) {
         // 1. Capture target destination framebuffer and viewport
         val currentFbo = IntArray(1)
@@ -590,7 +593,11 @@ class RenderPipeline(private val context: Context) {
             altClippingMode = if (showOriginal) 0 else altClippingMode,
             sharpenMasking = activeRecipe.detail.masking / 100f,
             imageWidth = imageWidth,
-            imageHeight = imageHeight
+            imageHeight = imageHeight,
+            crop = activeRecipe.crop,
+            isCropActive = isCropActive,
+            blurAmount = if (showOriginal) 0f else activeRecipe.blur.amount,
+            blurBoost = if (showOriginal) 0f else activeRecipe.blur.boost
         )
     }
 

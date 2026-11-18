@@ -1,30 +1,46 @@
-## 2026-11-08T09:06:40Z
-You are challenger_m1_1, an adversarial verifier (teamwork_challenger).
-Your working directory is: c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\challenger_m1_1\
-Your parent is: ee54e32c-82f7-47db-a4c1-749165b59911
+## Task Assignment: Milestone 1 Adversarial Challenger 1 (challenger_m1_1)
 
-MANDATORY FIRST STEP:
+Read:
+1. `c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\ORIGINAL_REQUEST.md`
+2. `c:\Users\Siddhu\Desktop\apps testing\PROJECT.md`
+3. `c:\Users\Siddhu\Desktop\apps testing\TEST_INFRA.md`
+4. `c:\Users\Siddhu\Desktop\apps testing\TEST_READY.md`
+5. `c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\worker_m1_1\handoff.md`
+
+Working directory: `.agents/teamwork/challenger_m1_1/`
+
+### Mission
+Conduct adversarial stress testing on `verify_inventory.py` and `migrate_screenshots.py`:
+- In an isolated sandbox / temp directory (or using non-destructive simulation), test whether `verify_inventory.py` correctly detects:
+  1. A missing file (deletion).
+  2. A corrupted file (altered bytes / hash mismatch).
+  3. An extra/stray file in root or panels.
+  4. An altered manifest entry.
+- Verify that `verify_inventory.py` strictly exits code 1 on every failure condition.
+- Stress-test `migrate_screenshots.py` idempotency: run it multiple times on current workspace and verify 0 side effects, 0 renames, 0 file alterations.
+- Render explicit confirmation of correctness or defects.
+- Write full report to `.agents/teamwork/challenger_m1_1/handoff.md`.
+
+
+## 2026-11-17T19:01:10Z
+You are challenger_m1_1, a teamwork_challenger.
+Your working directory is: .agents/teamwork/challenger_m1_1/
 Read:
 1. c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\ORIGINAL_REQUEST.md
 2. c:\Users\Siddhu\Desktop\apps testing\PROJECT.md
 3. c:\Users\Siddhu\Desktop\apps testing\TEST_INFRA.md
-4. c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\worker_mining_1\handoff.md
+4. c:\Users\Siddhu\Desktop\apps testing\TEST_READY.md
+5. .agents/teamwork/challenger_m1_1/DISPATCH.md
+6. c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\worker_m1_1\handoff.md
 
-OBJECTIVE:
-Adversarially challenge and stress-test the extracted SVG files in `mined Svg/` and the extraction script `mine_apk_svgs.py`.
-
-CHALLENGE TASKS:
-1. Write and run an adversarial stress-test script to check ALL 1,267 files in `mined Svg/`:
-   - Search for common SVG syntax errors, unescaped characters, NaN coordinates, broken tags, or empty `d=""` paths.
-   - Check if any SVG has raw unresolved Android resource tokens like `@0x`, `?attr/`, or `?0x`.
-   - Check if any SVG has raw `android:` attributes or missing SVG namespace declarations.
-   - Check if any SVG has malformed hex colors (e.g. 7 or 9 chars).
-2. Randomly select 20 SVG files and perform a deep DOM inspection: check root viewBox, width, height, path structure, and stroke/fill values.
-3. Compare the count of vector drawables in `C:\Users\Siddhu\Downloads\Lightroom.apk` against the count of generated SVGs in `mined Svg/` to ensure 0 assets were missed.
-4. Provide a definitive verdict: APPROVE or REQUEST_CHANGES.
-
-OUTPUT REQUIREMENTS:
-- Write your report to:
-  c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\challenger_m1_1\handoff.md
-- Include: Observation, Stress Test Results, Caveats, Conclusion, and VERDICT: APPROVE / REQUEST_CHANGES.
-- Send a message to parent (ee54e32c-82f7-47db-a4c1-749165b59911) when done.
+Mission:
+Conduct adversarial stress testing on `verify_inventory.py` and `migrate_screenshots.py`:
+- In an isolated sandbox / temp directory (or using non-destructive simulation), test whether `verify_inventory.py` correctly detects:
+  1. A missing file (deletion).
+  2. A corrupted file (altered bytes / hash mismatch).
+  3. An extra/stray file in root or panels.
+  4. An altered manifest entry.
+- Verify that `verify_inventory.py` strictly exits code 1 on every failure condition.
+- Stress-test `migrate_screenshots.py` idempotency: run it multiple times on current workspace and verify 0 side effects, 0 renames, 0 file alterations.
+- Render explicit confirmation of correctness (APPROVE) or defects (REQUEST_CHANGES).
+- Write full report to `.agents/teamwork/challenger_m1_1/handoff.md` and send completion message.

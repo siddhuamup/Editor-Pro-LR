@@ -1,27 +1,46 @@
-## 2026-11-08T09:05:17Z
-You are reviewer_m1_1, a high-reliability review agent (teamwork_reviewer).
-Your working directory is: c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\reviewer_m1_1\
-Your parent is: ee54e32c-82f7-47db-a4c1-749165b59911
+## Task Assignment: Milestone 1 Reviewer 1 (reviewer_m1_1)
 
-MANDATORY FIRST STEP:
-Read the authoritative user request and specifications at:
+Read:
+1. `c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\ORIGINAL_REQUEST.md`
+2. `c:\Users\Siddhu\Desktop\apps testing\PROJECT.md`
+3. `c:\Users\Siddhu\Desktop\apps testing\TEST_INFRA.md`
+4. `c:\Users\Siddhu\Desktop\apps testing\TEST_READY.md`
+5. `c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\worker_m1_1\handoff.md`
+
+Working directory: `.agents/teamwork/reviewer_m1_1/`
+
+### Mission
+Conduct independent objective review of Milestone 1:
+- Execute `python verify_inventory.py` in `CleanLightroom\design-reference\`.
+- Execute `python migrate_screenshots.py` in `CleanLightroom\design-reference\` and verify idempotency.
+- Verify that all 102 reference screenshots are sorted into the 20 distinct panel directories.
+- Verify horizontal screenshots are categorized alongside vertical UI screenshots in matching panels.
+- Verify 0 duplicate files, 0 missing files, 0 corrupted files.
+- Verify `horizontal screen UI(same as verticle)` is safely retired.
+- Verify `Svg Icons/` is untouched.
+- Render explicit verdict: APPROVE or REQUEST_CHANGES.
+- Write full report to `.agents/teamwork/reviewer_m1_1/handoff.md`.
+
+
+## 2026-11-17T19:00:54Z
+You are reviewer_m1_1, a teamwork_reviewer.
+Your working directory is: .agents/teamwork/reviewer_m1_1/
+Read:
 1. c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\ORIGINAL_REQUEST.md
 2. c:\Users\Siddhu\Desktop\apps testing\PROJECT.md
 3. c:\Users\Siddhu\Desktop\apps testing\TEST_INFRA.md
-4. c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\worker_mining_1\handoff.md
+4. c:\Users\Siddhu\Desktop\apps testing\TEST_READY.md
+5. .agents/teamwork/reviewer_m1_1/DISPATCH.md
+6. c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\worker_m1_1\handoff.md
 
-OBJECTIVE:
-Perform a comprehensive, independent code and asset review of the SVG mining pipeline and generated SVG assets.
-
-REVIEW CRITERIA:
-1. Inspect `mine_apk_svgs.py` and `verify_mined_svgs.py`. Verify code quality, error handling, and adherence to requirements.
-2. Inspect `mined Svg/` directory: check total file count (must match or exceed 1,267), verify all files have `.svg` extension, non-zero file sizes.
-3. Sample at least 10 different SVG files across categories (`svg_*`, `ic_*`, `spectrum_*`, `aspect_*`, etc.) and verify they render valid SVG XML with valid viewBox, width, height, path geometry, and proper styling (no black square artifacts from transparent cutouts).
-4. Run `python verify_mined_svgs.py --dir "mined Svg"` and verify that all 5 gates pass cleanly with exit code 0.
-5. Provide a clear verdict: APPROVE or REQUEST_CHANGES.
-
-OUTPUT REQUIREMENTS:
-- Write your final review report to:
-  c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\reviewer_m1_1\handoff.md
-- Include: Observation, Logic Chain, Caveats, Conclusion, Verification Method, and VERDICT: APPROVE / REQUEST_CHANGES.
-- Send a message to parent (ee54e32c-82f7-47db-a4c1-749165b59911) when done.
+Mission:
+Conduct independent objective review of Milestone 1:
+- Execute `python verify_inventory.py` in `CleanLightroom\design-reference\`.
+- Execute `python migrate_screenshots.py` in `CleanLightroom\design-reference\` and verify idempotency.
+- Verify that all 102 reference screenshots are sorted into the 20 distinct panel directories.
+- Verify horizontal screenshots are categorized alongside vertical UI screenshots in matching panels.
+- Verify 0 duplicate files, 0 missing files, 0 corrupted files.
+- Verify `horizontal screen UI(same as verticle)` is safely retired.
+- Verify `Svg Icons/` is untouched.
+- Render explicit verdict: APPROVE or REQUEST_CHANGES.
+- Write full report to `.agents/teamwork/reviewer_m1_1/handoff.md` and send completion message.

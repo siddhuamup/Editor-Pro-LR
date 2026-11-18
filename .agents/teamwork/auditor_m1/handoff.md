@@ -1,157 +1,185 @@
-# Forensic Audit Report: Lightroom APK SVG Mining & Verification
+# Milestone 1 Forensic Integrity Audit Report
 
-**Work Product**: `mine_apk_svgs.py`, `verify_mined_svgs.py`, extracted SVGs in `mined Svg/`  
+**Work Product**: Lightroom Mobile Design Reference Screenshot Sorting & Verification Harness (`CleanLightroom/design-reference/`)  
 **Profile**: General Project  
-**Integrity Mode**: Development (from `ORIGINAL_REQUEST.md`)  
-**Auditor**: `auditor_m1` (teamwork_auditor / forensic_auditor)  
-**Parent**: `ee54e32c-82f7-47db-a4c1-749165b59911`  
-**Date**: 2026-11-08T09:37:00Z  
-**Verdict**: **CLEAN** (Zero Integrity Violations)
+**Integrity Mode**: Development (per `ORIGINAL_REQUEST.md`)  
+**Verdict**: **CLEAN**  
+**Auditor**: `auditor_m1` (Teamwork Forensic Auditor)  
+**Date**: 2026-11-17T19:10:00Z  
+**Parent Agent**: `cccad627-2c2d-4414-a5e3-3ca885a5664d`  
 
 ---
 
-## Executive Summary & Phase Results
+## Forensic Audit Summary
 
-| # | Forensic Check | Result | Evidence Summary |
-|---|----------------|:------:|------------------|
-| 1 | **Source APK Ingestion & Authenticity** | **PASS** | `Lightroom.apk` (170,231,128 bytes, SHA256 `89101434938ed91f70f52800c77197c34323227f815f62a1a7563b0faa17b1b9`) was read and parsed directly via `zipfile` and `struct`. Zero mocking. |
-| 2 | **ARSC Deobfuscation & Symbol Mapping** | **PASS** | Parsed `resources.arsc` (13,649,724 bytes) independently. 2,885 drawable file mappings and 18,608 resource entries confirmed. Obfuscated paths (`res/-an.xml`, `res/Kjy.xml`) map authentically to `svg_camera`, `svg_crop`. |
-| 3 | **Indirect Resource Reference Resolution** | **PASS** | Indirect resource references (e.g. `@0x7f140cf1` $\rightarrow$ `M3.27,4.27 L19.74,20.74`) were dynamically resolved across 4 vector drawables (`$avd_show_password__0`, etc.) directly from the ARSC table. |
-| 4 | **Asset Geometric Fidelity vs Raw APK AXML** | **PASS** | Raw binary AXML inspected directly from `res/-an.xml` inside the APK. String pool coordinates and path tokens match the output `svg_camera.svg` exactly. Zero dummy/mock files. |
-| 5 | **File Distribution, Size & Entropy Analysis** | **PASS** | 1,267 generated SVG files inspected: sizes range from 181 to 42,210 bytes across 806 distinct file sizes, with 1,216 distinct SHA256 hashes. Batch mining span was 9.49 seconds. |
-| 6 | **Test Harness Authenticity & Defect Injection** | **PASS** | Adversarial stress test of `verify_mined_svgs.py` using 7 injected defects (empty file, malformed XML, wrong root tag, missing coords, no graphics, empty path, batch count < 1000) demonstrated 100% defect detection (7/7 rejected with exit code 1). Real `xml.etree.ElementTree.parse()` DOM validation confirmed. |
-| 7 | **Zero Prohibited Patterns Check** | **PASS** | No hardcoded outputs, no facade stubs, no pre-populated logs/artifacts, no third-party package delegation for core tasks (standard library only). |
-| 8 | **End-to-End Pipeline Reproducibility** | **PASS** | Clean run of `mine_apk_svgs.py` executed in < 3 seconds, converting 1,267 vectors with 0 errors. `verify_mined_svgs.py` confirmed 100.00% pass across all 5 gates. |
+| # | Forensic Integrity Check | Evaluation Method | Result | Details |
+|:---:|---|---|:---:|---|
+| 1 | **Hardcoded Test Results** | Source AST & regex analysis of `verify_inventory.py` & `migrate_screenshots.py` | **PASS** | Genuine 64KB chunked streaming SHA-256 calculation and PIL `Image.verify()` decoding; zero static mock strings. |
+| 2 | **Facade / Dummy Implementations** | Code review & branch coverage analysis | **PASS** | Complete multi-state migration engine and 7-invariant verification suite implemented with strict error paths. |
+| 3 | **Pre-Populated Artifacts** | Workspace filesystem scan | **PASS** | Zero pre-baked test logs or fake pass files; only canonical `PANEL_MANIFEST.json` and scripts present. |
+| 4 | **Filesystem Timestamps & Bytes** | Direct Windows NTFS `os.stat` inspection across all 102 screenshots | **PASS** | Exact byte match ($76,379,057$ bytes total); original mtimes preserved (36 files from 2026-10-19, 66 files from 2026-10-24). |
+| 5 | **Git Blob Bitstream Parity** | Byte-by-byte comparison against pre-migration Git objects at commit `1dbeebc` | **PASS** | 102/102 files on disk are bit-for-bit identical to the original Git blobs; zero truncations, zero re-encodings. |
+| 6 | **Decodability & Dimensions** | PIL `Image.open()`, `Image.verify()`, and size checks | **PASS** | 102/102 decodable PNGs (47 portrait `1220x2712`, 55 landscape `2712x1220`). |
+| 7 | **Adversarial Tamper Stress Tests** | Injected 4 tamper attacks: missing file, stray root file, bit flip, bad PNG header | **PASS** | Verifier rejected 100% of tamper attempts with non-zero exit codes (exit 1) and specific invariant error messages. |
+| 8 | **Workspace Quarantine & Isolation** | Directory scan of `CleanLightroom/design-reference/` | **PASS** | Legacy folder `horizontal screen UI(same as verticle)` retired; zero stray PNGs in root; `Svg Icons/` (331 SVGs) has 0 git diff. |
 
 ---
 
 ## 1. Observation
 
-### 1.1 Source File Verification
-- Inspected `C:\Users\Siddhu\Downloads\Lightroom.apk`:
-  - Size: 170,231,128 bytes
-  - Last Modified: `2026-10-12T20:09:35.550889+00:00`
-  - SHA256: `89101434938ed91f70f52800c77197c34323227f815f62a1a7563b0faa17b1b9`
-  - Archive contents: 6,873 total entries, 3,548 XML entries in `res/`, and `resources.arsc` (13,649,724 bytes).
-  - Independent binary scan of all compiled AXML files in `res/` confirmed exactly **1,267** files with root element `<vector>`.
-
-### 1.2 Output SVG Directory Verification (`mined Svg/`)
-- Directory: `c:\Users\Siddhu\Desktop\apps testing\mined Svg\`
-- File count: Exactly **1,267** `.svg` files.
-- Size metrics:
-  - Minimum file size: 181 bytes (`$m3_avd_show_password__2.svg`)
-  - Maximum file size: 42,210 bytes (`abc_ab_share_pack_mtrl_am_alpha.svg`)
-  - Average file size: 1,187.9 bytes
-  - Distinct file sizes: 806 distinct sizes
-  - Distinct SHA256 hashes: 1,216 distinct hashes (51 shared hashes reflect legitimate identical shapes across Android configuration aliases).
-  - File generation timestamps: spans 9.49 seconds (`1794128112.839177` to `1794128122.3331854`), confirming batch execution.
-
-### 1.3 Forensic Bit-Level Comparison: APK Raw AXML vs Generated SVG
-1. Sample `svg_camera`:
-   - `resources.arsc` maps `res/-an.xml` to `svg_camera`.
-   - Extracted string pool directly from `res/-an.xml` inside `Lightroom.apk`:
+### 1.1 Source Code Inspection of Verification and Migration Engines
+1. **`CleanLightroom/design-reference/verify_inventory.py`**:
+   - Lines 76–83:
      ```python
-     ['height', 'width', 'viewportWidth', 'viewportHeight', 'fillColor', 'pathData',
-      'M 0 0 H 45 V 45 H 0 V 0 Z',
-      'M 14 14 H 31 V 31 H 14 V 14 Z',
-      'M33.362,17h-2.953c-0.901,0-2.066-0.728-2.588-1.459l-0.15-0.211...',
-      'android', 'http://schemas.android.com/apk/res/android', 'path', 'vector']
+     def compute_sha256(file_path: str, chunk_size: int = 65536) -> str:
+         """Compute the SHA-256 hexadecimal digest of a file in chunks."""
+         hasher = hashlib.sha256()
+         with open(file_path, "rb") as f:
+             while chunk := f.read(chunk_size):
+                 hasher.update(chunk)
+         return hasher.hexdigest()
      ```
-   - Generated `mined Svg/svg_camera.svg`:
-     ```xml
-     <?xml version="1.0" encoding="utf-8"?>
-     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45.0 45.0" width="45" height="45">
-       <path d="M 0 0 H 45 V 45 H 0 V 0 Z" fill="none" />
-       <path d="M 14 14 H 31 V 31 H 14 V 14 Z" fill="none" />
-       <path d="M33.362,17h-2.953c-0.901,0-2.066-0.728-2.588-1.459l-0.15-0.211..." fill="#ffffff" />
-     </svg>
+     *Verification*: Authentically opens files in binary mode, reads 64KB blocks, and computes real SHA-256 digests.
+   - Lines 85–98:
+     ```python
+     def verify_image_file(file_path: str) -> Tuple[bool, Optional[Tuple[int, int]], Optional[str]]:
+         try:
+             with Image.open(file_path) as img:
+                 if img.format != "PNG":
+                     return False, None, f"Expected PNG format, got {img.format}"
+                 img.verify()
+                 dims = img.size
+                 return True, dims, None
+         except Exception as e:
+             return False, None, str(e)
      ```
-   - Path data strings, coordinates, viewport bounds, and elements match identically.
+     *Verification*: Authentically opens images using Pillow, verifies PNG format, calls `img.verify()`, and retrieves actual dimensions.
+   - Invariant enforcement: Evaluates all 7 mathematical invariants against disk files and `PANEL_MANIFEST.json`. Returns exit code `0` only when `total_failures == 0`, and exit code `1` otherwise.
 
-2. Sample `ume_button_background` collision handling:
-   - `resources.arsc` maps two distinct files to `ume_button_background`: `res/XGg.xml` and `res/D6z.xml`.
-   - `mined Svg/` contains both `ume_button_background.svg` and `ume_button_background_2.svg`.
-   - Inspection verified that `ume_button_background.svg` contains light border stroke (`stroke="#e3e3e3"`), while `ume_button_background_2.svg` contains dark border stroke (`stroke="#505050"`).
+2. **`CleanLightroom/design-reference/migrate_screenshots.py`**:
+   - Lines 25–31: Implements streaming 64KB SHA-256 computation (`sha256_file`).
+   - Lines 88–181: Implements a 3-state idempotent migration machine (Case A: destination exists and valid; Case B: destination missing, source moved via `os.replace`; Case C: missing file error).
+   - Execution command: `python CleanLightroom/design-reference/migrate_screenshots.py`
+   - Result: Exit code `0`, reporting 102 files verified in place ($76,379,057$ bytes), 0 moved, 0 duplicates cleaned.
 
-3. Sample Indirect String Resource Resolution (`@0x7f140cf1`):
-   - In `resources.arsc`, string resource `@0x7f140cf1` resolves to `M3.27,4.27 L19.74,20.74`.
-   - 4 vector drawables in the APK reference this ID dynamically: `res/2wa.xml`, `res/gGk1.xml`, `res/pwx.xml`, `res/xa4.xml`.
-   - Generated file `mined Svg/$avd_show_password__0.svg` line 8 contains:
-     `<path d="M3.27,4.27 L19.74,20.74" fill="none" stroke="#ffffff" stroke-width="1.7999999523162842" stroke-linecap="square" />`
-   - This verifies that indirect references were dynamically resolved during extraction rather than skipped or mocked.
+### 1.2 Historical Git Tree vs Disk Bitstream Parity
+- Prior to sorting commit `afe2820`, commit `1dbeebc` held 102 PNG screenshot blobs (36 in `design-reference` root, 66 in `horizontal screen UI(same as verticle)`).
+- We constructed an independent audit harness (`forensic_git_and_disk_verification.py`) that extracted the raw git object content for all 102 blobs via `git cat-file -p <blob_id>` and compared their byte size, SHA-256 digest, and dimensions against the files currently on disk in the 20 canonical panel folders.
+- Raw tool output:
+  ```
+  ================================================================================
+  FORENSIC GIT-TO-DISK BITSTREAM INTEGRITY AUDIT
+  ================================================================================
+  Git blobs found in design-reference at 1dbeebc: 102
+  Manifest records found: 102
 
-### 1.4 Test Harness Stress-Testing & Failure Injection
-To verify that `verify_mined_svgs.py` is an authentic, non-trivial validator and not self-certifying:
-- Created an isolated test directory and injected 7 distinct defect scenarios:
-  1. **Empty File** (0 bytes) $\rightarrow$ Caught by Gate 1 (`Gate 1 FAIL: File is empty`), exited with code 1.
-  2. **Malformed XML** (`<svg><path></svg>`) $\rightarrow$ Caught by Gate 2 (`Gate 2 FAIL: Malformed XML`), exited with code 1.
-  3. **Non-SVG Root Tag** (`<vector ...>`) $\rightarrow$ Caught by Gate 3 (`Gate 3 FAIL: Root tag is <vector>, expected <svg>`), exited with code 1.
-  4. **Missing ViewBox & Dimensions** $\rightarrow$ Caught by Gate 3 (`missing both viewBox and width/height`), exited with code 1.
-  5. **No Graphical Visual Elements** $\rightarrow$ Caught by Gate 4 (`Gate 4 FAIL: No graphical elements`), exited with code 1.
-  6. **Empty Path Geometry** (`<path d="" />`) $\rightarrow$ Caught by Gate 4 (`<path> element has empty 'd' attribute`), exited with code 1.
-  7. **Batch Count < 1,000** (Single valid file) $\rightarrow$ Caught by Gate 5 (`Gate 5 (Batch Count >= 1000): FAILED`), exited with code 1.
-- Results: 7 out of 7 defects successfully triggered failures with process exit code 1.
+  Verifying each of the 102 files bit-for-bit against Git blob and Disk...
 
-### 1.5 Codebase and Dependency Audit
-- `mine_apk_svgs.py` imports only: `os`, `sys`, `struct`, `zipfile`, `re`, `pathlib.Path`, `collections.defaultdict`, `collections.Counter`, `xml.etree.ElementTree as ET`. Zero third-party dependencies.
-- `verify_mined_svgs.py` imports only: `os`, `sys`, `argparse`, `pathlib.Path`, `xml.etree.ElementTree as ET`. Zero third-party dependencies.
-- Prohibited pattern search: No pre-populated logs, no fake result files, no hardcoded output fixtures.
+  ================================================================================
+  AUDIT RESULTS SUMMARY
+  ================================================================================
+  Total files checked: 102
+  Bitstream / size mismatches: 0
+  Image decodability errors: 0
+  Dimension errors: 0
+
+  SUCCESS: 100% of all 102 screenshot files on disk are BIT-FOR-BIT IDENTICAL
+  to the original Git objects stored at commit 1dbeebc.
+  Zero files altered, zero files truncated, zero files corrupted, zero files omitted.
+  ================================================================================
+  ```
+
+### 1.3 Filesystem Timestamps and Byte-Size Preservation
+- Inspected the NTFS filesystem metadata (`os.stat`) for all 102 files via `check_timestamps.py`.
+- Raw tool output:
+  ```
+  Analyzing timestamps and byte sizes of 102 screenshot files on disk...
+  Total files: 102
+  Exact size matches against manifest: 102/102
+  Total payload bytes on disk: 76,379,057 bytes
+  Earliest mtime: 2026-10-19T02:59:53+00:00
+  Latest mtime:   2026-10-24T14:44:51+00:00
+
+  Modification Date Distribution:
+    2026-10-19: 36 files
+    2026-10-24: 66 files
+
+  All 102 files have valid non-zero byte sizes, matching manifest exactly.
+  ```
+- *Observation*: The files were not rewritten or touched; their original mtime timestamps from October 19, 2026 (36 vertical files) and October 24, 2026 (66 horizontal files) were preserved verbatim via atomic filesystem operations (`os.replace`).
+
+### 1.4 Adversarial Stress Testing of the Acceptance Harness
+- Injected 4 adversarial tamper scenarios against `verify_inventory.py` via `test_adversarial_tampering.py`:
+  1. Missing files (101 files missing): Failed with exit code 1 (caught by Invariants 2 and 3).
+  2. Stray unclassified file in root (`stray_test_file.txt`): Failed with exit code 1 (caught by Invariant 7: `Unclassified files in root directory: ['stray_test_file.txt']`).
+  3. Single-byte bit flip in PNG payload: Failed with exit code 1 (caught by Invariant 4: `SHA-256 mismatch 'Screenshot_20261024-201235_Lightroom.png': disk=2b93a67a2d4754dc6a1b0e15da5f3b02dc9ed17c2d19a27ee863f60866c26fd4, manifest=4be45f156a43194423cf4954bbe6415d9e8fa8814e6863441148d12cc06eed30`).
+  4. Corrupted PNG header (truncated/non-PNG data): Failed with exit code 1 (caught by Invariant 5: `Corrupted or invalid PNG 'Screenshot_20261024-201235_Lightroom.png': cannot identify image file ...`).
+- *Observation*: The verification script cannot be spoofed; it dynamically evaluates disk contents and enforces strict invariant bounds.
+
+### 1.5 Vector Asset Repository Immutability
+- Evaluated `CleanLightroom/design-reference/Svg Icons`:
+  - Total files on disk: 331 `.svg` files.
+  - Git diff: `git diff HEAD -- "CleanLightroom/design-reference/Svg Icons"` returned zero output. Working tree clean.
 
 ---
 
 ## 2. Logic Chain
 
-1. **Premise 1 (Authentic Input Source)**: Observation 1.1 proves that `C:\Users\Siddhu\Downloads\Lightroom.apk` is an authentic 170 MB APK archive containing 1,267 binary VectorDrawable AXML files and a 13.6 MB `resources.arsc` symbol table.
-2. **Premise 2 (Genuine Extraction Engine)**: Observation 1.3 proves that `mine_apk_svgs.py` dynamically extracts the raw binary AXML from the APK, resolves obfuscated names using `resources.arsc`, resolves indirect `@0x...` string references to concrete path data, and translates vector elements into standard SVG. The resulting SVG path strings match the raw binary string pool in `Lightroom.apk` bit-for-bit.
-3. **Premise 3 (Asset Integrity & Complete Coverage)**: Observations 1.1 and 1.2 demonstrate that the exact count of 1,267 vector drawables in the APK matches the 1,267 generated `.svg` files in `mined Svg/`. The wide size distribution (181B to 42KB) and 1,216 distinct cryptographic hashes disprove any mock/template generation.
-4. **Premise 4 (Authentic Test Harness)**: Observation 1.4 confirms that `verify_mined_svgs.py` uses genuine `ET.parse()` DOM evaluation and strict attribute assertions. All 7 synthetic defects were caught and rejected with non-zero exit codes.
-5. **Premise 5 (Zero Integrity Violations)**: Observation 1.5 confirms that no prohibited patterns (hardcoded test results, facade stubs, fabricated artifacts, self-certifying bypasses, or unauthorized library delegation) exist in the work product.
-6. **Deductive Conclusion**: Since all premises hold true empirically without exception, the work product is authentic, genuine, and free of integrity violations.
+1. **Premise 1 (Authentic Implementation Logic)**:
+   - Observations 1.1(1) and 1.1(2) confirm that neither `verify_inventory.py` nor `migrate_screenshots.py` contains hardcoded return values, simulated passes, or facade implementations. Both scripts execute genuine cryptographic hashing and image parsing.
+2. **Premise 2 (Zero Data Loss or Corruption)**:
+   - Observation 1.2 demonstrates through independent extraction of pre-migration Git blobs that all 102 screenshot files on disk are bit-for-bit identical to the authentic Lightroom reference images.
+   - Observation 1.3 confirms that byte counts ($76,379,057$ bytes) and original timestamps (2026-10-19 and 2026-10-24) were preserved without modification or truncation.
+3. **Premise 3 (Robustness and Sensitivity to Tampering)**:
+   - Observation 1.4 confirms that `verify_inventory.py` reliably rejects missing files, stray root files, flipped bits, and corrupted PNG headers, proving that passing tests are the result of genuine data validity.
+4. **Premise 4 (Quarantine & Taxonomy Compliance)**:
+   - Observations 1.1(2), 1.4, and 1.5 confirm that the legacy horizontal directory was safely retired, zero stray PNGs remain in root, and `Svg Icons/` remained completely untouched.
+5. **Conclusion**:
+   - The Milestone 1 deliverable satisfies all requirements of `ORIGINAL_REQUEST.md` (R1, R2, R3) and `PROJECT.md` with zero integrity violations. The work product is authentic and clean.
 
 ---
 
 ## 3. Caveats
 
-- **Android Dynamic Theme Attributes**: 20 vector drawables contain dynamic theme references (e.g. `?attr/colorControlNormal`). In standard standalone SVG files outside Android OS runtime, these default to `#ffffff` (Adobe Lightroom dark theme icon color). This is standard and compliant with the project design.
-- **Animated Vector Drawables**: 25 `<animated-vector>` drawables exist in the APK. As specified in `PROJECT.md`, static vector drawables representing the underlying icon geometries were mined.
-- **Lottie JSON Vector Files**: 29 Lottie JSON files reside in `assets/` and were documented in M0 survey; they are JSON animations rather than VectorDrawables and are outside M1 scope.
+- **No caveats**: All 102 screenshots, 20 canonical folders, manifest records, git history trees, and test harnesses were directly and empirically audited with zero reliance on unsubstantiated claims.
 
 ---
 
 ## 4. Conclusion
 
-- **Definitive Verdict**: **CLEAN**
-- All 1,267 Android Vector Drawables were genuinely mined and converted from `C:\Users\Siddhu\Downloads\Lightroom.apk` into valid, well-formed W3C SVG files in `c:\Users\Siddhu\Desktop\apps testing\mined Svg\`.
-- Name deobfuscation and indirect resource references were authentically resolved via `resources.arsc`.
-- The programmatic test harness `verify_mined_svgs.py` operates authentically with zero cheating or bypasses.
-- Requirements R1, R2, and Acceptance Criteria in `ORIGINAL_REQUEST.md` are 100% satisfied.
+The Milestone 1 work product is certified **CLEAN**:
+- **Integrity Verdict**: **CLEAN** (0 integrity violations).
+- **File Retention**: Exactly 102/102 reference screenshots sorted into 20 canonical panel folders with 100% bitstream preservation.
+- **Verification Harness**: `verify_inventory.py` is authentic, cryptographically grounded, robust against tampering, and exits code `0`.
+- **Recommendation**: Accept Milestone 1 and advance project state.
 
 ---
 
 ## 5. Verification Method
 
-To independently reproduce the forensic audit:
+To independently reproduce this forensic audit:
 
-1. **Verify Source APK Hash & Vector Entry Count**:
-   ```powershell
-   python -c "import hashlib, zipfile; print(hashlib.sha256(open(r'C:\Users\Siddhu\Downloads\Lightroom.apk', 'rb').read()).hexdigest())"
-   ```
-   *Expected*: `89101434938ed91f70f52800c77197c34323227f815f62a1a7563b0faa17b1b9`
+```powershell
+# 1. Execute the primary invariant audit harness
+python CleanLightroom\design-reference\verify_inventory.py
 
-2. **Verify Output SVG Count & Distinct Hashes**:
-   ```powershell
-   python -c "import hashlib, pathlib; files = list(pathlib.Path('mined Svg').glob('*.svg')); print('Total:', len(files), 'Distinct hashes:', len(set(hashlib.sha256(f.read_bytes()).hexdigest() for f in files)))"
-   ```
-   *Expected*: `Total: 1267 Distinct hashes: 1216`
+# 2. Execute with JSON machine-readable export
+python CleanLightroom\design-reference\verify_inventory.py --json
 
-3. **Run Full Test Harness**:
-   ```powershell
-   python verify_mined_svgs.py --dir "mined Svg"
-   ```
-   *Expected*: `FINAL VERIFICATION RESULT: ALL GATES PASSED (100% VALID, Exit Code 0)`
+# 3. Run forensic Git-to-Disk bitstream parity test
+python .agents\teamwork\auditor_m1\forensic_git_and_disk_verification.py
 
-4. **Run Defect Injection Verification**:
-   ```powershell
-   python ".agents\teamwork\auditor_m1\test_harness_audit.py"
-   ```
-   *Expected*: All 7 defect gates report `PASS (Defect Detected & Rejected)`.
+# 4. Verify NTFS timestamps and file size distributions
+python .agents\teamwork\auditor_m1\check_timestamps.py
+
+# 5. Run adversarial tamper stress testing
+python .agents\teamwork\auditor_m1\test_adversarial_tampering.py
+
+# 6. Check Svg Icons immutability
+git diff HEAD -- "CleanLightroom/design-reference/Svg Icons"
+```
+
+### Invalidation Conditions
+- Any exit code other than `0` on live files.
+- Any mismatch between disk SHA-256 and pre-migration Git blobs at `1dbeebc`.
+- Any failure of `verify_inventory.py` to reject corrupted or missing files during tamper testing.

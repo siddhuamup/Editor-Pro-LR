@@ -149,6 +149,12 @@ fun EditorScreen(
     val canvasMattingWidthDp by viewModel.canvasMattingWidthDp.collectAsState()
     val isCleanScreenMode by viewModel.isCleanScreenMode.collectAsState()
     val isCropActive by viewModel.isCropActive.collectAsState()
+    val cropSubPage by viewModel.cropSubPage.collectAsState()
+    val genAiConfig by viewModel.genAiConfig.collectAsState()
+    val isGenAiProcessing by viewModel.isGenAiProcessing.collectAsState()
+    val showGenAiSettingsDialog by viewModel.showGenAiSettingsDialog.collectAsState()
+    val removeBrushPoints by viewModel.removeBrushPoints.collectAsState()
+    val useGenerativeAiRemove by viewModel.useGenerativeAiRemove.collectAsState()
     val panelSnapState by viewModel.panelSnapState.collectAsState()
     val isSliderDragging by viewModel.isSliderDragging.collectAsState()
     val bypassedTabs by viewModel.bypassedTabs.collectAsState()
@@ -759,7 +765,14 @@ fun EditorScreen(
                     aspectRatioGuide = aspectRatioGuide,
                     isCropActive = (selectedMobileTool == "Crop" || isCropActive),
                     isExpandEnabled = recipe.crop.isExpandEnabled,
+                    isGuidedUprightActive = (cropSubPage == "Geometry" && recipe.crop.uprightMode == "Guided"),
+                    isRemoveBrushActive = (selectedMobileTool == "Remove"),
+                    removeBrushPoints = removeBrushPoints,
+                    isGenAiProcessing = isGenAiProcessing,
+                    onRemoveBrushPoint = { nx, ny -> viewModel.addRemoveBrushPoint(nx, ny) },
                     onCropRectChanged = { l, t, r, b -> viewModel.setCropRect(l, t, r, b) },
+                    onGuidedLineChanged = { id, x1, y1, x2, y2 -> viewModel.updateGuidedLine(id, x1, y1, x2, y2) },
+                    onTriggerExpandPreview = { viewModel.triggerGenerativeExpandPreview() },
                     isCurveActive = (activeTab == EditorToolTab.CURVES),
                     curvePoints = when (selectedCurveChannel) {
                         com.cleanlr.ui.components.CurveChannel.RGB -> recipe.curves.composite
@@ -1017,7 +1030,7 @@ fun EditorScreen(
                         } else {
                             when (panelSnapState) {
                                 PanelSnapState.COLLAPSED -> 0.dp
-                                PanelSnapState.COMPACT -> if (selectedMobileTool == "Crop") 300.dp else if (selectedMobileTool == "Presets") 260.dp else if (selectedMobileTool == "Remove") 220.dp else 210.dp
+                                PanelSnapState.COMPACT -> if (selectedMobileTool == "Crop") (if (cropSubPage == "Geometry") 336.dp else 300.dp) else if (selectedMobileTool == "Presets") 300.dp else if (selectedMobileTool == "Remove") 220.dp else 210.dp
                                 PanelSnapState.EXPANDED -> 380.dp
                             }
                         }
@@ -1072,19 +1085,27 @@ fun EditorScreen(
                         if (isCropActive || selectedMobileTool == "Crop") {
                             CropAndExpandPanel(
                                 crop = recipe.crop,
+                                page = cropSubPage,
+                                onPageChanged = { viewModel.setCropSubPage(it) },
                                 onRotate = { viewModel.rotateCrop(it) },
                                 onFlip = { viewModel.flipCrop(it) },
                                 onStraighten = { viewModel.setStraightenAngle(it) },
                                 onAutoStraighten = { viewModel.autoStraighten() },
                                 aspectRatioGuide = aspectRatioGuide,
                                 onAspectRatioSelected = { viewModel.applyAspectRatio(it) },
+                                onToggleAspectLock = { viewModel.toggleAspectLock() },
+                                onSwapAspectOrientation = { viewModel.swapAspectRatioOrientation() },
                                 onResetCrop = { viewModel.resetCrop() },
+                                onResetGeometry = { viewModel.resetGeometryOnly() },
                                 isExpandEnabled = recipe.crop.isExpandEnabled,
                                 onExpandToggled = { viewModel.setExpandEnabled(it) },
+                                onTriggerExpandPreview = { viewModel.triggerGenerativeExpandPreview() },
                                 constrainCrop = recipe.crop.constrainCrop,
                                 onConstrainCropToggled = { viewModel.setConstrainCrop(it) },
                                 uprightMode = recipe.crop.uprightMode,
                                 onUprightModeSelected = { viewModel.setUprightMode(it) },
+                                onAddGuidedLine = { viewModel.addGuidedLine() },
+                                onClearGuidedLines = { viewModel.clearGuidedLines() },
                                 distortion = recipe.crop.distortion,
                                 onDistortionChanged = { viewModel.setDistortion(it) },
                                 vertical = recipe.crop.verticalPerspective,
@@ -1104,6 +1125,29 @@ fun EditorScreen(
                                 onTouchStart = { viewModel.onSliderTouchStart() },
                                 onTouchEnd = { viewModel.onSliderTouchEnd(it) }
                             )
+                        } else if (selectedMobileTool == "Presets" || activeTab == EditorToolTab.PRESETS) {
+                            // Mounted directly without outer verticalScroll to eliminate nested scroll conflict
+                            PresetsPanel(
+                                groups = viewModel.presetGroups,
+                                selectedGroup = selectedPresetGroup,
+                                onSelectGroup = { viewModel.selectPresetGroup(it) },
+                                presets = allPresets,
+                                activePreset = activePreset,
+                                presetAmount = presetAmount,
+                                onSelectPreset = { viewModel.applyPreset(it) },
+                                onAmountChange = { viewModel.adjustPresetAmount(it) },
+                                onAmountChangeEnd = { viewModel.commitPresetAmount() },
+                                onResetToOriginal = { viewModel.resetPreset() },
+                                onSaveCurrentAsPreset = {
+                                    newPresetName = ""
+                                    showSavePresetDialog = true
+                                },
+                                onImportXmpPreset = {
+                                    xmpPickerLauncher.launch("*/*")
+                                },
+                                previewBitmap = bitmap,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         } else {
                             Column(
                                 modifier = Modifier
@@ -1121,7 +1165,15 @@ fun EditorScreen(
                                     )
                                     selectedMobileTool == "Remove" -> RemoveToolPanel(
                                         brushSize = brushSize,
-                                        onBrushSizeChange = { viewModel.setBrushSize(it) }
+                                        onBrushSizeChange = { viewModel.setBrushSize(it) },
+                                        useGenerativeAi = useGenerativeAiRemove,
+                                        onUseGenerativeAiChange = { viewModel.setUseGenerativeAiRemove(it) },
+                                        hasBrushStrokes = removeBrushPoints.isNotEmpty(),
+                                        isProcessing = isGenAiProcessing,
+                                        genAiConfig = genAiConfig,
+                                        onApplyRemove = { viewModel.executeRemoveStrokes() },
+                                        onClearStrokes = { viewModel.clearRemoveBrushPoints() },
+                                        onOpenAiSettings = { viewModel.openGenAiSettingsDialog() }
                                     )
                         else -> when (activeTab) {
                         EditorToolTab.CROP -> {
@@ -2704,15 +2756,23 @@ fun EditorScreen(
         )
     }
 
-    if (showCreateMaskSheet) {
-        CreateNewMaskBottomSheet(
-            onDismissRequest = { showCreateMaskSheet = false },
-            onSelectSubMask = { subMask ->
-                showCreateMaskSheet = false
-                viewModel.addMaskLayer(subMask)
-            }
-        )
-    }
+        if (showCreateMaskSheet) {
+            CreateNewMaskBottomSheet(
+                onDismissRequest = { showCreateMaskSheet = false },
+                onSelectSubMask = { subMask ->
+                    showCreateMaskSheet = false
+                    viewModel.addMaskLayer(subMask)
+                }
+            )
+        }
+
+        if (showGenAiSettingsDialog) {
+            FluxFillServerConfigDialog(
+                currentConfig = genAiConfig,
+                onDismiss = { viewModel.dismissGenAiSettingsDialog() },
+                onSave = { viewModel.saveGenAiConfig(it) }
+            )
+        }
 
     if (showSavePresetDialog) {
         AlertDialog(
@@ -3365,19 +3425,37 @@ private fun MobilePrimaryToolbar(
 private fun CurvedStraightenDial(
     angle: Float,
     onAngleChange: (Float) -> Unit,
+    onTouchStart: () -> Unit = {},
+    onTouchEnd: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val view = LocalView.current
+    val currentAngle by rememberUpdatedState(angle)
+    val currentOnAngleChange by rememberUpdatedState(onAngleChange)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(64.dp)
             .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    val delta = dragAmount.x / 14f
-                    val newAngle = (angle + delta).coerceIn(-45f, 45f)
-                    onAngleChange(newAngle)
-                }
+                detectDragGestures(
+                    onDragStart = { onTouchStart() },
+                    onDragEnd = { onTouchEnd("Straighten") },
+                    onDragCancel = { onTouchEnd("Straighten") },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        val delta = -dragAmount.x / 10f
+                        var newAngle = (currentAngle + delta).coerceIn(-45f, 45f)
+                        // Magnetic snap to 0.00° when crossing zero slowly
+                        if (abs(newAngle) < 0.25f && abs(delta) < 0.6f) {
+                            if (abs(currentAngle) >= 0.25f) {
+                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            }
+                            newAngle = 0f
+                        }
+                        currentOnAngleChange(newAngle)
+                    }
+                )
             },
         contentAlignment = Alignment.Center
     ) {
@@ -3385,67 +3463,82 @@ private fun CurvedStraightenDial(
             val width = size.width
             val height = size.height
             val centerX = width / 2f
-            val arcTopY = height * 0.12f
-            val arcDip = 26.dp.toPx()
-            val arcSpan = width * 0.38f
+            val arcTopY = height * 0.14f
+            val arcDip = 25.dp.toPx()
+            val arcSpan = width * 0.40f
 
-            // Draw ticks & dots along the smile curved arc
-            val tickCount = 45
-            for (i in 0 until tickCount) {
-                val tickFraction = (i - tickCount / 2f) / (tickCount / 2f) // -1.0 to +1.0
-                val tickX = centerX + tickFraction * arcSpan
-                val curveNorm = tickFraction * tickFraction // 0 at center, 1 at edges
+            // Visible tick window shifts smoothly with angle (-45°..+45°, 1 tick = 1°)
+            val halfWindowDeg = 22
+            val centerDegInt = angle.toInt()
+            for (deg in (centerDegInt - halfWindowDeg)..(centerDegInt + halfWindowDeg)) {
+                if (deg < -45 || deg > 45) continue
+                val relDeg = (deg - angle) / halfWindowDeg.toFloat() // -1.0 to +1.0
+                if (abs(relDeg) > 1.0f) continue
+
+                val tickX = centerX + relDeg * arcSpan
+                val curveNorm = relDeg * relDeg
                 val currentY = arcTopY + (1f - curveNorm) * arcDip
+                val fadeAlpha = (1f - curveNorm * 0.65f).coerceIn(0.15f, 1f)
 
-                val isCenter = i == tickCount / 2
-                val isMajor = abs(i - tickCount / 2) % 6 == 0
+                val isZeroTick = deg == 0
+                val isMajor = deg % 5 == 0
+                val isBetweenZeroAndCurrent = (angle > 0f && deg in 0..angle.toInt()) || (angle < 0f && deg in angle.toInt()..0)
 
-                if (isCenter) {
-                    // Center vertical indicator line pointing up
+                val tickColor = when {
+                    isZeroTick -> Color.White.copy(alpha = fadeAlpha)
+                    isBetweenZeroAndCurrent -> Color(0xFF38A9FF).copy(alpha = fadeAlpha)
+                    isMajor -> Color(0xFFDDDDDD).copy(alpha = fadeAlpha)
+                    else -> Color(0xFF888888).copy(alpha = fadeAlpha)
+                }
+
+                if (isZeroTick || isMajor) {
+                    val tickLen = if (isZeroTick) 9.dp.toPx() else 6.dp.toPx()
                     drawLine(
-                        color = Color.White,
-                        start = androidx.compose.ui.geometry.Offset(tickX, currentY + 4.dp.toPx()),
-                        end = androidx.compose.ui.geometry.Offset(tickX, currentY + 14.dp.toPx()),
-                        strokeWidth = 2.dp.toPx(),
-                        cap = androidx.compose.ui.graphics.StrokeCap.Round
-                    )
-                } else if (isMajor) {
-                    // Major tick mark
-                    val tickLen = 6.dp.toPx()
-                    drawLine(
-                        color = Color(0xFFDDDDDD),
+                        color = tickColor,
                         start = androidx.compose.ui.geometry.Offset(tickX, currentY),
                         end = androidx.compose.ui.geometry.Offset(tickX, currentY + tickLen),
-                        strokeWidth = 1.2.dp.toPx()
+                        strokeWidth = if (isZeroTick) 1.8.dp.toPx() else 1.2.dp.toPx()
                     )
                 } else {
-                    // Subtle dot along the smile arc
                     drawCircle(
-                        color = Color(0xFF888888),
-                        radius = 1.2.dp.toPx(),
+                        color = tickColor,
+                        radius = 1.25.dp.toPx(),
                         center = androidx.compose.ui.geometry.Offset(tickX, currentY + 2.dp.toPx())
                     )
                 }
             }
+
+            // Fixed center needle indicator pointing up
+            val needleTopY = arcTopY + arcDip + 5.dp.toPx()
+            drawLine(
+                color = if (abs(angle) > 0.01f) Color(0xFF38A9FF) else Color.White,
+                start = androidx.compose.ui.geometry.Offset(centerX, needleTopY),
+                end = androidx.compose.ui.geometry.Offset(centerX, needleTopY + 11.dp.toPx()),
+                strokeWidth = 2.dp.toPx(),
+                cap = androidx.compose.ui.graphics.StrokeCap.Round
+            )
         }
 
-        // Center degree readout pill (e.g. "0.00°") positioned above center tick
+        // Center degree readout pill (tap to reset to 0.00°)
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 10.dp)
-                .clickable { onAngleChange(0f) }
+                .padding(top = 6.dp)
+                .clickable {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    onAngleChange(0f)
+                }
         ) {
             Text(
                 text = String.format(java.util.Locale.US, "%.2f°", angle),
-                color = if (angle != 0f) Color(0xFF38A9FF) else Color(0xFF8E8E8E),
+                color = if (abs(angle) > 0.01f) Color(0xFF38A9FF) else Color(0xFF8E8E8E),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 style = TextStyle(
                     fontFeatureSettings = "tnum",
                     textAlign = TextAlign.Center
                 ),
-                modifier = Modifier.widthIn(min = 48.dp)
+                modifier = Modifier.widthIn(min = 52.dp)
             )
         }
     }
@@ -3454,19 +3547,27 @@ private fun CurvedStraightenDial(
 @Composable
 private fun CropAndExpandPanel(
     crop: com.cleanlr.model.CropAdjustments,
+    page: String = "Aspect",
+    onPageChanged: (String) -> Unit = {},
     onRotate: (Boolean) -> Unit,
     onFlip: (Boolean) -> Unit,
     onStraighten: (Float) -> Unit,
     onAutoStraighten: () -> Unit = {},
     aspectRatioGuide: String?,
     onAspectRatioSelected: (String?) -> Unit,
+    onToggleAspectLock: () -> Unit = {},
+    onSwapAspectOrientation: () -> Unit = {},
     onResetCrop: () -> Unit = {},
+    onResetGeometry: () -> Unit = {},
     isExpandEnabled: Boolean = false,
     onExpandToggled: (Boolean) -> Unit = {},
+    onTriggerExpandPreview: () -> Unit = {},
     constrainCrop: Boolean = false,
     onConstrainCropToggled: (Boolean) -> Unit = {},
-    uprightMode: String = "Auto",
+    uprightMode: String = "Off",
     onUprightModeSelected: (String) -> Unit = {},
+    onAddGuidedLine: () -> Unit = {},
+    onClearGuidedLines: () -> Unit = {},
     distortion: Float = 0f,
     onDistortionChanged: (Float) -> Unit = {},
     vertical: Float = 0f,
@@ -3487,30 +3588,37 @@ private fun CropAndExpandPanel(
     onTouchEnd: (String) -> Unit = {}
 ) {
     val view = LocalView.current
-    var page by remember { mutableStateOf("Aspect") }
     var selectedAspectCategory by remember { mutableStateOf(if (aspectRatioGuide == null || aspectRatioGuide == "Original") "Original" else "Ratios") }
-    var isAspectLocked by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showManualTransforms by remember { mutableStateOf(false) }
 
+    // Authentic Ratios matching Screenshot_20261024-200720_Lightroom.png
     val standardRatios = listOf(
-        "Free" to null,
-        "Original" to "Original",
-        "1:1" to "1:1",
-        "4:5" to "4:5",
-        "5:7" to "5:7",
-        "2:3" to "2:3",
-        "9:16" to "9:16",
-        "3:4" to "3:4",
-        "10:16" to "10:16",
-        "1:2" to "1:2"
+        "Free" to "Free",
+        "1 × 1" to "1:1",
+        "1 × 2" to "1:2",
+        "2 × 3" to "2:3",
+        "3 × 4" to "3:4",
+        "4 × 5" to "4:5",
+        "5 × 7" to "5:7",
+        "8.5 × 11" to "8.5:11",
+        "9 × 16" to "9:16",
+        "10 × 16" to "10:16",
+        "16 × 9" to "16:9"
     )
 
+    // Authentic Instagram Ratios matching Screenshot_20261024-200728_Lightroom.png
     val instagramRatios = listOf(
-        "1:1 Square" to "1:1",
-        "4:5 Portrait" to "4:5",
-        "16:9 Landscape" to "16:9",
-        "9:16 Story" to "9:16"
+        "Square" to "1:1",
+        "Story" to "9:16",
+        "Portrait" to "4:5",
+        "Landscape" to "1.91:1",
+        "Profile Photo" to "1:1"
+    )
+
+    val tiktokRatios = listOf(
+        "Video (9:16)" to "9:16",
+        "Profile Photo" to "1:1"
     )
 
     val uprightModes = listOf(
@@ -3532,7 +3640,9 @@ private fun CropAndExpandPanel(
             // ═════════════════════════════════════════════════════════════════
             CurvedStraightenDial(
                 angle = crop.straightenAngle,
-                onAngleChange = onStraighten
+                onAngleChange = onStraighten,
+                onTouchStart = onTouchStart,
+                onTouchEnd = onTouchEnd
             )
 
             // ═════════════════════════════════════════════════════════════════
@@ -3541,11 +3651,11 @@ private fun CropAndExpandPanel(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                    .padding(horizontal = 20.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left 2 buttons: Aspect Ratios, Aspect Lock
+                // Left 2 buttons: Swap Orientation / Aspect Ratios, Aspect Lock
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     Surface(
                         shape = CircleShape,
@@ -3554,14 +3664,14 @@ private fun CropAndExpandPanel(
                             .size(42.dp)
                             .clickable {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                selectedAspectCategory = if (selectedAspectCategory == "Ratios") "Original" else "Ratios"
+                                onSwapAspectOrientation()
                             }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_lr_aspect_ratio),
-                                contentDescription = "Aspect ratios",
-                                tint = if (selectedAspectCategory == "Ratios") SpectrumBlue else Color.White,
+                                contentDescription = "Swap aspect orientation",
+                                tint = if (crop.aspectRatio != "Free" && crop.aspectRatio != "Original") SpectrumBlue else Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -3574,14 +3684,14 @@ private fun CropAndExpandPanel(
                             .size(42.dp)
                             .clickable {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                isAspectLocked = !isAspectLocked
+                                onToggleAspectLock()
                             }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                painter = painterResource(if (isAspectLocked) R.drawable.ic_lr_crop_lock_closed else R.drawable.ic_lr_crop_lock_open),
+                                painter = painterResource(if (crop.aspectLocked) R.drawable.ic_lr_crop_lock_closed else R.drawable.ic_lr_crop_lock_open),
                                 contentDescription = "Aspect lock",
-                                tint = if (isAspectLocked) SpectrumBlue else Color.White,
+                                tint = if (crop.aspectLocked) SpectrumBlue else Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -3604,7 +3714,7 @@ private fun CropAndExpandPanel(
                             Icon(
                                 painter = painterResource(R.drawable.ic_lr_crop_rotate_circle),
                                 contentDescription = "Rotate 90 degrees",
-                                tint = Color.White,
+                                tint = if (crop.rotationDegrees != 0f) SpectrumBlue else Color.White,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -3625,7 +3735,7 @@ private fun CropAndExpandPanel(
                                 Icon(
                                     painter = painterResource(R.drawable.ic_lr_crop_overflow),
                                     contentDescription = "More crop tools",
-                                    tint = Color.White,
+                                    tint = if (crop.flipHorizontal || crop.flipVertical) SpectrumBlue else Color.White,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -3645,7 +3755,20 @@ private fun CropAndExpandPanel(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Flip Horizontal", color = Color.White) },
+                                text = { Text("Rotate 90° Left", color = Color.White) },
+                                onClick = {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    onRotate(false)
+                                    showOverflowMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = if (crop.flipHorizontal) "Flip Horizontal ✓" else "Flip Horizontal",
+                                        color = if (crop.flipHorizontal) Color(0xFF38A9FF) else Color.White
+                                    )
+                                },
                                 onClick = {
                                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                     onFlip(true)
@@ -3653,7 +3776,12 @@ private fun CropAndExpandPanel(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Flip Vertical", color = Color.White) },
+                                text = {
+                                    Text(
+                                        text = if (crop.flipVertical) "Flip Vertical ✓" else "Flip Vertical",
+                                        color = if (crop.flipVertical) Color(0xFF38A9FF) else Color.White
+                                    )
+                                },
                                 onClick = {
                                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                     onFlip(false)
@@ -3689,7 +3817,7 @@ private fun CropAndExpandPanel(
                     modifier = Modifier
                         .clickable {
                             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                            page = tabName
+                            onPageChanged(tabName)
                         }
                         .padding(horizontal = 24.dp, vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -3752,7 +3880,7 @@ private fun CropAndExpandPanel(
                         Spacer(Modifier.height(2.dp))
                         Text(
                             text = "Expand",
-                            color = Color.White,
+                            color = if (isExpandEnabled) Color(0xFF38A9FF) else Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Normal
                         )
@@ -3906,45 +4034,23 @@ private fun CropAndExpandPanel(
                 }
             }
 
-            // Sub-ratios horizontal strip when Ratios or Instagram is selected
-            if (selectedAspectCategory == "Ratios") {
+            // Sub-ratios horizontal strip when Ratios, Instagram, or Tiktok is selected
+            val activeStrip = when (selectedAspectCategory) {
+                "Ratios" -> standardRatios
+                "Instagram" -> instagramRatios
+                "Tiktok" -> tiktokRatios
+                else -> emptyList()
+            }
+            if (activeStrip.isNotEmpty()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                        .padding(horizontal = 14.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    standardRatios.forEach { (label, ratioVal) ->
-                        val isSelected = aspectRatioGuide == ratioVal
-                        Surface(
-                            color = if (isSelected) SpectrumBlue else Color(0xFF262628),
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.clickable {
-                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                onAspectRatioSelected(ratioVal)
-                            }
-                        ) {
-                            Text(
-                                text = label,
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                            )
-                        }
-                    }
-                }
-            } else if (selectedAspectCategory == "Instagram") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 14.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    instagramRatios.forEach { (label, ratioVal) ->
-                        val isSelected = aspectRatioGuide == ratioVal
+                    activeStrip.forEach { (label, ratioVal) ->
+                        val isSelected = crop.aspectRatio.equals(ratioVal, ignoreCase = true)
                         Surface(
                             color = if (isSelected) SpectrumBlue else Color(0xFF262628),
                             shape = RoundedCornerShape(16.dp),
@@ -3967,7 +4073,7 @@ private fun CropAndExpandPanel(
         }
 
         // ═════════════════════════════════════════════════════════════════
-        // GEOMETRY TAB CONTENT (Screenshot 083314)
+        // GEOMETRY TAB CONTENT (Screenshots 083314, 200437, 200504, 200743)
         // ═════════════════════════════════════════════════════════════════
         if (page == "Geometry") {
             Column(
@@ -3975,7 +4081,7 @@ private fun CropAndExpandPanel(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // 5 Upright Mode Cards: Auto, Level, Vertical, Full, Guided
                 Row(
@@ -3983,7 +4089,7 @@ private fun CropAndExpandPanel(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     uprightModes.forEach { (title, iconRes, modeKey) ->
-                        val isSelected = uprightMode == modeKey
+                        val isSelected = uprightMode.equals(modeKey, ignoreCase = true)
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.clickable {
@@ -3994,8 +4100,8 @@ private fun CropAndExpandPanel(
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = if (isSelected) Color(0xFF2C2C2E) else Color(0xFF1E1E1E),
-                                border = if (isSelected) BorderStroke(1.5.dp, Color.White) else BorderStroke(0.5.dp, Color(0xFF333333)),
-                                modifier = Modifier.size(56.dp)
+                                border = if (isSelected) BorderStroke(1.5.dp, SpectrumBlue) else BorderStroke(0.5.dp, Color(0xFF333333)),
+                                modifier = Modifier.size(54.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
@@ -4011,8 +4117,54 @@ private fun CropAndExpandPanel(
                                 text = title,
                                 color = if (isSelected) Color.White else Color(0xFF8E8E93),
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.Normal
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                             )
+                        }
+                    }
+                }
+
+                // Guided Upright (+) and Clear controls (Matching Screenshot 200743)
+                if (uprightMode.equals("Guided", ignoreCase = true)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.White,
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    onAddGuidedLine()
+                                }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("+", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        Spacer(Modifier.width(24.dp))
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF2A2A2D),
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable {
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    onClearGuidedLines()
+                                }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_lr_reset_all),
+                                    contentDescription = "Clear guided lines",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -4021,7 +4173,7 @@ private fun CropAndExpandPanel(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp),
+                        .padding(vertical = 2.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -4046,7 +4198,7 @@ private fun CropAndExpandPanel(
                     )
                 }
 
-                // Manual Transforms Accordion Header
+                // Manual Transforms Accordion Header + Reset Geometry pill
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -4055,12 +4207,30 @@ private fun CropAndExpandPanel(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Manual Transforms",
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Manual Transforms",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        val hasGeometryEdits = distortion != 0f || vertical != 0f || horizontal != 0f ||
+                            rotate != 0f || aspect != 0f || scale != 100f || xOffset != 0f || yOffset != 0f
+                        if (hasGeometryEdits) {
+                            Text(
+                                text = "Reset",
+                                color = Color(0xFF38A9FF),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier
+                                    .clickable {
+                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                        onResetGeometry()
+                                    }
+                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                     Icon(
                         painter = painterResource(R.drawable.ic_lr_chevron_down),
                         contentDescription = null,
@@ -4070,14 +4240,17 @@ private fun CropAndExpandPanel(
                 }
 
                 if (showManualTransforms) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         RampedSlider(
                             label = "Distortion",
                             value = distortion,
                             minVal = -100f,
                             maxVal = 100f,
                             defaultValue = 0f,
-                            onValueChange = onDistortionChanged
+                            isBipolar = true,
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = onDistortionChanged,
+                            onValueChangeEnd = { onTouchEnd("Geometry Distortion") }
                         )
                         RampedSlider(
                             label = "Vertical",
@@ -4085,7 +4258,10 @@ private fun CropAndExpandPanel(
                             minVal = -100f,
                             maxVal = 100f,
                             defaultValue = 0f,
-                            onValueChange = onVerticalChanged
+                            isBipolar = true,
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = onVerticalChanged,
+                            onValueChangeEnd = { onTouchEnd("Geometry Vertical") }
                         )
                         RampedSlider(
                             label = "Horizontal",
@@ -4093,7 +4269,10 @@ private fun CropAndExpandPanel(
                             minVal = -100f,
                             maxVal = 100f,
                             defaultValue = 0f,
-                            onValueChange = onHorizontalChanged
+                            isBipolar = true,
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = onHorizontalChanged,
+                            onValueChangeEnd = { onTouchEnd("Geometry Horizontal") }
                         )
                         RampedSlider(
                             label = "Rotate",
@@ -4101,7 +4280,12 @@ private fun CropAndExpandPanel(
                             minVal = -45f,
                             maxVal = 45f,
                             defaultValue = 0f,
-                            onValueChange = onRotateChanged
+                            isBipolar = true,
+                            formatPattern = "%.1f",
+                            unitSuffix = "°",
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = onRotateChanged,
+                            onValueChangeEnd = { onTouchEnd("Geometry Rotate") }
                         )
                         RampedSlider(
                             label = "Aspect",
@@ -4109,33 +4293,45 @@ private fun CropAndExpandPanel(
                             minVal = -100f,
                             maxVal = 100f,
                             defaultValue = 0f,
-                            onValueChange = onAspectChanged
+                            isBipolar = true,
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = onAspectChanged,
+                            onValueChangeEnd = { onTouchEnd("Geometry Aspect") }
                         )
                         RampedSlider(
                             label = "Scale",
                             value = scale,
-                            minVal = 100f,
+                            minVal = 50f,
                             maxVal = 200f,
                             defaultValue = 100f,
                             isBipolar = false,
-                            onValueChange = onScaleChanged
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = onScaleChanged,
+                            onValueChangeEnd = { onTouchEnd("Geometry Scale") }
                         )
                         RampedSlider(
-                            label = "Offset X",
+                            label = "X Offset",
                             value = xOffset,
                             minVal = -100f,
                             maxVal = 100f,
                             defaultValue = 0f,
-                            onValueChange = onXOffsetChanged
+                            isBipolar = true,
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = onXOffsetChanged,
+                            onValueChangeEnd = { onTouchEnd("Geometry X Offset") }
                         )
                         RampedSlider(
-                            label = "Offset Y",
+                            label = "Y Offset",
                             value = yOffset,
                             minVal = -100f,
                             maxVal = 100f,
                             defaultValue = 0f,
-                            onValueChange = onYOffsetChanged
+                            isBipolar = true,
+                            onValueChangeStart = onTouchStart,
+                            onValueChange = onYOffsetChanged,
+                            onValueChangeEnd = { onTouchEnd("Geometry Y Offset") }
                         )
+                        Spacer(Modifier.height(12.dp))
                     }
                 }
             }
@@ -4145,38 +4341,53 @@ private fun CropAndExpandPanel(
 
 /**
  * Remove Tool Panel matching Reference Screenshot 083752
+ * Powered by SOTA FLUX.1 Fill [dev/pro] (Crop+Mask ROI -> Cloud/GPU Server -> Poisson Blend)
+ * with instant offline Local Poisson Heal when Generative AI is OFF.
  */
 @Composable
 private fun RemoveToolPanel(
     brushSize: Float = 10f,
-    onBrushSizeChange: (Float) -> Unit = {}
+    onBrushSizeChange: (Float) -> Unit = {},
+    useGenerativeAi: Boolean = true,
+    onUseGenerativeAiChange: (Boolean) -> Unit = {},
+    hasBrushStrokes: Boolean = false,
+    isProcessing: Boolean = false,
+    genAiConfig: com.cleanlr.engine.GenerativeAiConfig = com.cleanlr.engine.GenerativeAiConfig(),
+    onApplyRemove: () -> Unit = {},
+    onClearStrokes: () -> Unit = {},
+    onOpenAiSettings: () -> Unit = {}
 ) {
+    val view = LocalView.current
     var localBrushSize by remember(brushSize) { mutableFloatStateOf(brushSize) }
     var detectObjects by remember { mutableStateOf(false) }
-    var generativeAI by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(SpectrumSurface)
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Row 1: Remove tool icon button + Size Slider
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.width(48.dp)
+                modifier = Modifier
+                    .width(48.dp)
+                    .clickable(enabled = !isProcessing) {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        onApplyRemove()
+                    }
             ) {
                 Box(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF1473E6)),
+                        .background(if (hasBrushStrokes) Color(0xFF1473E6) else Color(0xFF28282C)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -4188,8 +4399,8 @@ private fun RemoveToolPanel(
                 }
                 Spacer(Modifier.height(3.dp))
                 Text(
-                    text = "Remove",
-                    color = Color.White,
+                    text = if (hasBrushStrokes) "Erase" else "Remove",
+                    color = if (hasBrushStrokes) Color(0xFF38A9FF) else Color.White,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -4199,7 +4410,7 @@ private fun RemoveToolPanel(
                 RampedSlider(
                     label = "Size",
                     value = localBrushSize,
-                    minVal = 1f,
+                    minVal = 4f,
                     maxVal = 100f,
                     defaultValue = 10f,
                     isBipolar = false,
@@ -4212,47 +4423,21 @@ private fun RemoveToolPanel(
             }
         }
 
-        // Row 2: Detect objects
+        // Row 2: Detect objects + Clear / Apply action chips when strokes exist
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Switch(
-                checked = detectObjects,
-                onCheckedChange = { detectObjects = it },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = Color(0xFF1473E6),
-                    uncheckedThumbColor = Color(0xFFB0B0B0),
-                    uncheckedTrackColor = Color(0xFF383838)
-                )
-            )
-            Text(
-                text = "Detect objects",
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-
-        // Row 3: Generative AI + (i) + Refine button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Switch(
-                    checked = generativeAI,
-                    onCheckedChange = { generativeAI = it },
+                    checked = detectObjects,
+                    onCheckedChange = { detectObjects = it },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
                         checkedTrackColor = Color(0xFF1473E6),
@@ -4261,45 +4446,267 @@ private fun RemoveToolPanel(
                     )
                 )
                 Text(
-                    text = "Generative AI",
+                    text = "Detect objects",
                     color = Color.White,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium
-                )
-                Icon(
-                    painter = painterResource(R.drawable.ic_lr_context_help),
-                    contentDescription = "Info",
-                    tint = Color(0xFF888888),
-                    modifier = Modifier.size(18.dp)
                 )
             }
 
+            if (hasBrushStrokes) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(
+                        color = Color(0xFF26262A),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.clickable(enabled = !isProcessing) { onClearStrokes() }
+                    ) {
+                        Text(
+                            text = "Clear",
+                            color = Color(0xFFCCCCCC),
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        )
+                    }
+                    Surface(
+                        color = Color(0xFF1473E6),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.clickable(enabled = !isProcessing) {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            onApplyRemove()
+                        }
+                    ) {
+                        Text(
+                            text = if (useGenerativeAi) "FLUX Remove" else "Heal",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Row 3: Generative AI (FLUX.1 Fill) toggle + Server Setup pill
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Switch(
+                    checked = useGenerativeAi,
+                    onCheckedChange = { onUseGenerativeAiChange(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = Color(0xFF1473E6),
+                        uncheckedThumbColor = Color(0xFFB0B0B0),
+                        uncheckedTrackColor = Color(0xFF383838)
+                    )
+                )
+                Column {
+                    Text(
+                        text = "Generative AI (FLUX.1 Fill)",
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = if (genAiConfig.isReady) "${genAiConfig.backend.displayName} • Poisson Blend" else "Tap Server Setup to connect GPU/API",
+                        color = if (genAiConfig.isReady) Color(0xFF4CD964) else Color(0xFF9A9AA0),
+                        fontSize = 10.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
             Surface(
-                color = Color(0xFF222222),
-                shape = RoundedCornerShape(6.dp),
-                border = BorderStroke(0.5.dp, Color(0xFF242424))
+                color = Color(0xFF26262A),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(0.8.dp, if (genAiConfig.isReady) Color(0xFF38A9FF) else Color(0xFF48484D)),
+                modifier = Modifier.clickable {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    onOpenAiSettings()
+                }
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_lr_mask_brush),
-                        contentDescription = null,
-                        tint = Color(0xFF666666),
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "Refine",
-                        color = Color(0xFF666666),
-                        fontSize = 13.sp,
+                        text = if (genAiConfig.isReady) "AI Server ✓" else "Setup AI",
+                        color = Color.White,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
             }
         }
     }
+}
+
+/**
+ * SOTA FLUX.1 Fill Cloud / Self-Hosted GPU Server Configuration Dialog (Zero APK Bloat)
+ */
+@Composable
+private fun FluxFillServerConfigDialog(
+    currentConfig: com.cleanlr.engine.GenerativeAiConfig,
+    onDismiss: () -> Unit,
+    onSave: (com.cleanlr.engine.GenerativeAiConfig) -> Unit
+) {
+    var selectedBackend by remember(currentConfig) { mutableStateOf(currentConfig.backend) }
+    var apiKey by remember(currentConfig) { mutableStateOf(currentConfig.apiKey) }
+    var endpointUrl by remember(currentConfig) { mutableStateOf(currentConfig.endpointUrl) }
+    var modelId by remember(currentConfig) { mutableStateOf(currentConfig.modelId) }
+    var usePoisson by remember(currentConfig) { mutableStateOf(currentConfig.usePoissonBlending) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF1B1B1E),
+        title = {
+            Column {
+                Text(
+                    text = "FLUX.1 Fill • AI Server Setup",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Zero APK Bloat: sends only Crop+Mask ROI → Poisson Blend on-device",
+                    color = Color(0xFF9A9AA2),
+                    fontSize = 11.sp
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text("Select GPU Provider", color = Color(0xFFB8B8C0), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    com.cleanlr.engine.GenerativeAiBackend.entries.forEach { backend ->
+                        val isSelected = selectedBackend == backend
+                        Surface(
+                            color = if (isSelected) Color(0xFF1F3654) else Color(0xFF252529),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, if (isSelected) SpectrumBlue else Color(0xFF38383E)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedBackend = backend
+                                    endpointUrl = backend.defaultEndpoint
+                                    modelId = backend.defaultModel
+                                }
+                        ) {
+                            Text(
+                                text = backend.displayName,
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = endpointUrl,
+                    onValueChange = { endpointUrl = it },
+                    label = { Text("Endpoint URL", color = Color(0xFF9A9AA2), fontSize = 11.sp) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = SpectrumBlue,
+                        unfocusedBorderColor = Color(0xFF44444A)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = modelId,
+                    onValueChange = { modelId = it },
+                    label = { Text("Model (FLUX.1-Fill-dev / BrushNet)", color = Color(0xFF9A9AA2), fontSize = 11.sp) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = SpectrumBlue,
+                        unfocusedBorderColor = Color(0xFF44444A)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = apiKey,
+                    onValueChange = { apiKey = it },
+                    label = {
+                        Text(
+                            if (selectedBackend == com.cleanlr.engine.GenerativeAiBackend.CUSTOM_GPU_SERVER) "Bearer Token (Optional)" else "API Key",
+                            color = Color(0xFF9A9AA2),
+                            fontSize = 11.sp
+                        )
+                    },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = SpectrumBlue,
+                        unfocusedBorderColor = Color(0xFF44444A)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Seamless Poisson Blending", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text("Preserves 100% original pixels outside mask", color = Color(0xFF9A9AA2), fontSize = 10.sp)
+                    }
+                    Switch(
+                        checked = usePoisson,
+                        onCheckedChange = { usePoisson = it },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SpectrumBlue)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onSave(
+                        currentConfig.copy(
+                            backend = selectedBackend,
+                            apiKey = apiKey,
+                            endpointUrl = endpointUrl,
+                            modelId = modelId,
+                            usePoissonBlending = usePoisson
+                        )
+                    )
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = SpectrumBlue)
+            ) {
+                Text("Save & Connect", color = Color.White)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color(0xFF9A9AA2))
+            }
+        }
+    )
 }
 
 /**

@@ -440,13 +440,15 @@ object PresetManager {
     )
 
     /**
-     * All available presets: Curated starter styles merged with 500+ authentic
-     * presets mined directly from Adobe Lightroom Mobile APK.
+     * All available presets: Curated starter styles merged with 531 authentic
+     * color-science presets mined directly from Adobe Lightroom Mobile APK.
      */
-    val ALL_PRESETS: List<Preset> by lazy {
-        val starterIds = STARTER_PACK.map { it.id }.toSet()
-        STARTER_PACK + MinedPresetLibrary.PRESETS.filter { it.id !in starterIds }
-    }
+    val ALL_PRESETS: List<Preset>
+        get() {
+            val mined = MinedPresetLibrary.PRESETS
+            val starterIds = STARTER_PACK.map { it.id }.toSet()
+            return STARTER_PACK + mined.filter { it.id !in starterIds }
+        }
 
     fun getGroups(): List<String> = ALL_PRESETS.map { it.group }.distinct()
 
@@ -459,11 +461,15 @@ object PresetManager {
     /**
      * Scale a preset against a base recipe using the modern Amount slider (0% to 200%).
      *
-     * - amount = 0%: recipe unchanged (baseline)
-     * - amount = 100%: 1.0x standard preset application
-     * - amount = 200%: 2.0x intensified preset delta
-     *
-     * Tips 381 & 392: Interpolates basic, effects, detail, color grading, and runs syncLegacyFields().
+     * Full Color Science Interpolation across ALL 9 pipeline domains:
+     * - Basic (Exposure, Contrast, Highlights, Shadows, Whites, Blacks, Temp, Tint, Vibrance, Saturation)
+     * - Effects (Texture, Clarity, Dehaze, Vignette 5-param, Grain 3-param)
+     * - Detail (Sharpening, Radius, Detail, Masking, Luminance NR, Color NR)
+     * - 8-Channel HSL (Red..Magenta x Hue, Saturation, Luminance = 24 channels)
+     * - Tone Curves (Composite + R/G/B Point Curves + Parametric 4-zone splits)
+     * - 3-Way + Global Color Grading Wheels (Shadows, Midtones, Highlights, Global, Blending, Balance)
+     * - Lens Blur (Adaptive: Blur Background amount, bokeh shape, boost)
+     * - Optics & Profile
      */
     fun applyPresetWithAmount(
         base: EditRecipe,
@@ -476,6 +482,25 @@ object PresetManager {
         fun scaleFloat(baseVal: Float, targetVal: Float, min: Float, max: Float): Float {
             val delta = targetVal - baseVal
             return (baseVal + delta * scale).coerceIn(min, max)
+        }
+
+        fun scaleHsl(baseCh: HslValues, targetCh: HslValues): HslValues = HslValues(
+            hue = scaleFloat(baseCh.hue, targetCh.hue, -100f, 100f),
+            saturation = scaleFloat(baseCh.saturation, targetCh.saturation, -100f, 100f),
+            luminance = scaleFloat(baseCh.luminance, targetCh.luminance, -100f, 100f)
+        )
+
+        fun isIdentityCurve(pts: List<CurvePoint>): Boolean =
+            pts.size <= 2 && pts.all { kotlin.math.abs(it.x - it.y) < 0.5f }
+
+        fun scaleCurve(basePts: List<CurvePoint>, targetPts: List<CurvePoint>): List<CurvePoint> {
+            if (scale <= 0.001f) return basePts
+            if (isIdentityCurve(targetPts)) return basePts
+            // Interpolate each preset knot's vertical deviation (y - x) scaled by Amount
+            return targetPts.map { pt ->
+                val scaledY = (pt.x + (pt.y - pt.x) * scale).coerceIn(0f, 255f)
+                CurvePoint(pt.x, scaledY)
+            }
         }
 
         val scaledBasic = BasicAdjustments(
@@ -498,6 +523,8 @@ object PresetManager {
             vignetteAmount = scaleFloat(base.effects.vignetteAmount, p.effects.vignetteAmount, -100f, 100f),
             vignetteMidpoint = scaleFloat(base.effects.vignetteMidpoint, p.effects.vignetteMidpoint, 0f, 100f),
             vignetteFeather = scaleFloat(base.effects.vignetteFeather, p.effects.vignetteFeather, 0f, 100f),
+            vignetteRoundness = scaleFloat(base.effects.vignetteRoundness, p.effects.vignetteRoundness, -100f, 100f),
+            vignetteHighlights = scaleFloat(base.effects.vignetteHighlights, p.effects.vignetteHighlights, 0f, 100f),
             grainAmount = scaleFloat(base.effects.grainAmount, p.effects.grainAmount, 0f, 100f),
             grainSize = scaleFloat(base.effects.grainSize, p.effects.grainSize, 0f, 100f),
             grainRoughness = scaleFloat(base.effects.grainRoughness, p.effects.grainRoughness, 0f, 100f)
@@ -518,35 +545,86 @@ object PresetManager {
             grainRoughness = scaledEffects.grainRoughness
         )
 
+        val scaledHsl = HslAdjustments(
+            red = scaleHsl(base.hsl.red, p.hsl.red),
+            orange = scaleHsl(base.hsl.orange, p.hsl.orange),
+            yellow = scaleHsl(base.hsl.yellow, p.hsl.yellow),
+            green = scaleHsl(base.hsl.green, p.hsl.green),
+            aqua = scaleHsl(base.hsl.aqua, p.hsl.aqua),
+            blue = scaleHsl(base.hsl.blue, p.hsl.blue),
+            purple = scaleHsl(base.hsl.purple, p.hsl.purple),
+            magenta = scaleHsl(base.hsl.magenta, p.hsl.magenta)
+        )
+
+        val scaledCompositeCurve = scaleCurve(base.curves.composite, p.curves.composite)
+        val scaledCurves = ToneCurves(
+            composite = scaledCompositeCurve,
+            pointCurve = scaledCompositeCurve,
+            red = scaleCurve(base.curves.red, p.curves.red),
+            green = scaleCurve(base.curves.green, p.curves.green),
+            blue = scaleCurve(base.curves.blue, p.curves.blue),
+            parametricShadows = scaleFloat(base.curves.parametricShadows, p.curves.parametricShadows, -100f, 100f),
+            parametricDarks = scaleFloat(base.curves.parametricDarks, p.curves.parametricDarks, -100f, 100f),
+            parametricLights = scaleFloat(base.curves.parametricLights, p.curves.parametricLights, -100f, 100f),
+            parametricHighlights = scaleFloat(base.curves.parametricHighlights, p.curves.parametricHighlights, -100f, 100f)
+        )
+
         val scaledColorGrading = if (scale == 0f) {
             base.colorGrading
         } else {
             ColorGrading(
                 shadows = ColorGradingWheel(
                     hue = p.colorGrading.shadows.hue,
-                    saturation = p.colorGrading.shadows.saturation * scale.coerceAtMost(1.5f),
+                    saturation = (p.colorGrading.shadows.saturation * scale.coerceAtMost(1.5f)).coerceIn(0f, 100f),
                     luminance = scaleFloat(base.colorGrading.shadows.luminance, p.colorGrading.shadows.luminance, -100f, 100f)
                 ),
                 highlights = ColorGradingWheel(
                     hue = p.colorGrading.highlights.hue,
-                    saturation = p.colorGrading.highlights.saturation * scale.coerceAtMost(1.5f),
+                    saturation = (p.colorGrading.highlights.saturation * scale.coerceAtMost(1.5f)).coerceIn(0f, 100f),
                     luminance = scaleFloat(base.colorGrading.highlights.luminance, p.colorGrading.highlights.luminance, -100f, 100f)
                 ),
                 midtones = ColorGradingWheel(
                     hue = p.colorGrading.midtones.hue,
-                    saturation = p.colorGrading.midtones.saturation * scale.coerceAtMost(1.5f),
+                    saturation = (p.colorGrading.midtones.saturation * scale.coerceAtMost(1.5f)).coerceIn(0f, 100f),
                     luminance = scaleFloat(base.colorGrading.midtones.luminance, p.colorGrading.midtones.luminance, -100f, 100f)
+                ),
+                global = ColorGradingWheel(
+                    hue = p.colorGrading.global.hue,
+                    saturation = (p.colorGrading.global.saturation * scale.coerceAtMost(1.5f)).coerceIn(0f, 100f),
+                    luminance = scaleFloat(base.colorGrading.global.luminance, p.colorGrading.global.luminance, -100f, 100f)
                 ),
                 blending = p.colorGrading.blending,
                 balance = scaleFloat(base.colorGrading.balance, p.colorGrading.balance, -100f, 100f)
             )
         }
 
+        val scaledBlur = if (p.blur.amount > 0.01f) {
+            BlurAdjustments(
+                amount = scaleFloat(base.blur.amount, p.blur.amount, 0f, 100f),
+                bokehShape = p.blur.bokehShape,
+                boost = scaleFloat(base.blur.boost, p.blur.boost, 0f, 100f),
+                focalRangeStart = p.blur.focalRangeStart,
+                focalRangeEnd = p.blur.focalRangeEnd
+            )
+        } else base.blur
+
+        val scaledOptics = if (scale > 0.01f && (p.optics.removeChromaticAberration || p.optics.enableLensCorrections)) {
+            base.optics.copy(
+                removeChromaticAberration = p.optics.removeChromaticAberration || base.optics.removeChromaticAberration,
+                enableLensCorrections = p.optics.enableLensCorrections || base.optics.enableLensCorrections
+            )
+        } else base.optics
+
         return base.copy(
             basic = scaledBasic,
             effects = scaledEffects,
             detail = scaledDetail,
-            colorGrading = scaledColorGrading
+            hsl = scaledHsl,
+            curves = scaledCurves,
+            colorGrading = scaledColorGrading,
+            blur = scaledBlur,
+            optics = scaledOptics,
+            profile = if (scale > 0.01f && p.profile != "Adobe Color") p.profile else base.profile
         ).syncLegacyFields()
     }
 }

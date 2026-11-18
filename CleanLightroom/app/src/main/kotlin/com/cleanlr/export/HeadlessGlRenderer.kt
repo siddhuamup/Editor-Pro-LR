@@ -93,8 +93,14 @@ class HeadlessGlRenderer(private val context: Context) {
      * Renders a single bitmap or tile offscreen using the exact GLES 3.0 shader pipeline.
      */
     fun renderBitmap(sourceBitmap: Bitmap, recipe: EditRecipe): Bitmap {
-        val width = sourceBitmap.width
-        val height = sourceBitmap.height
+        val crop = recipe.crop
+        val (effW, effH) = com.cleanlr.engine.CropGeometryEngine.effectiveImageDimensions(
+            sourceBitmap.width, sourceBitmap.height, crop.rotationDegrees
+        )
+        val spanW = (crop.right - crop.left).coerceIn(com.cleanlr.engine.CropGeometryEngine.MIN_CROP_SPAN, 1f)
+        val spanH = (crop.bottom - crop.top).coerceIn(com.cleanlr.engine.CropGeometryEngine.MIN_CROP_SPAN, 1f)
+        val width = (effW * spanW).toInt().coerceAtLeast(1)
+        val height = (effH * spanH).toInt().coerceAtLeast(1)
 
         val wasSessionActive = isSessionActive
         if (!wasSessionActive) {
@@ -103,6 +109,7 @@ class HeadlessGlRenderer(private val context: Context) {
 
         val pipeline = activePipeline ?: throw IllegalStateException("Active RenderPipeline required")
         pipeline.loadBitmap(sourceBitmap)
+        pipeline.setSurfaceSize(width, height)
 
         // Upload tone curve LUT
         val lutData = SplineInterpolator.generateLut256(recipe.curves)

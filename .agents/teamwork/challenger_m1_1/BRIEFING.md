@@ -1,50 +1,64 @@
-# BRIEFING — 2026-11-08T09:36:00Z
+# BRIEFING — 2026-11-17T19:20:00Z
 
 ## Mission
-Adversarially challenge and stress-test the 1,267 extracted SVG files in `mined Svg/` and the extraction script `mine_apk_svgs.py`.
+Conduct adversarial stress testing on `verify_inventory.py` and `migrate_screenshots.py` in an isolated sandbox, testing failure detection (missing file, corrupted file, extra/stray file, altered manifest, exit code 1) and migration idempotency (0 side effects on re-runs).
 
 ## 🔒 My Identity
-- Archetype: challenger
+- Archetype: empirical_challenger
 - Roles: critic, specialist
-- Working directory: c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\challenger_m1_1\
-- Original parent: ee54e32c-82f7-47db-a4c1-749165b59911
-- Milestone: M1 (Extraction Verification)
+- Working directory: c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\challenger_m1_1
+- Original parent: cccad627-2c2d-4414-a5e3-3ca885a5664d
+- Milestone: Milestone 1 (Screenshot Panel Sorting & 100% Retention Audit)
 - Instance: 1 of 1
 
 ## 🔒 Key Constraints
-- Review-only — do NOT modify implementation code
-- Empirical challenger: run all verification code myself, never trust claims without empirical proof
-- Output strictly in `.agents/teamwork/challenger_m1_1/`
+- Review-only — do NOT modify implementation code (`CleanLightroom/design-reference/**`)
+- Test scripts and temporary harnesses must NOT be placed in `.agents/teamwork/`
+- All adversarial tests must run in isolated sandboxes / temporary test directories or non-destructive execution
+- Strictly verify exit codes, stdout/stderr messages, and side effects
+- Write report to `.agents/teamwork/challenger_m1_1/handoff.md` and communicate via `send_message`
 
 ## Current Parent
-- Conversation ID: ee54e32c-82f7-47db-a4c1-749165b59911
+- Conversation ID: cccad627-2c2d-4414-a5e3-3ca885a5664d
 - Updated: not yet
 
 ## Review Scope
-- **Files to review**: `mined Svg/` (*.svg), `mine_apk_svgs.py`, `verify_mined_svgs.py`
-- **Interface contracts**: `PROJECT.md`, `TEST_INFRA.md`, `ORIGINAL_REQUEST.md`
-- **Review criteria**: correctness, XML/SVG conformance, complete asset coverage, absence of Android artifacts, valid CSS colors
+- **Files to review**:
+  - `CleanLightroom/design-reference/verify_inventory.py`
+  - `CleanLightroom/design-reference/migrate_screenshots.py`
+  - `CleanLightroom/design-reference/PANEL_MANIFEST.json`
+  - `TEST_READY.md`
+- **Interface contracts**: `PROJECT.md`, `TEST_INFRA.md`
+- **Review criteria**:
+  - Failure detection correctness: missing file, corrupted file, extra file in root, extra file in panel, altered manifest entry
+  - Strict exit code 1 on failure conditions
+  - Idempotency of `migrate_screenshots.py`: 0 side effects, 0 renames, 0 file alterations across repeated runs
+  - Overall verdict: APPROVE or REQUEST_CHANGES
 
 ## Attack Surface
-- **Hypotheses tested**: 
-  - Complete APK inventory reconciliation: 1,267 vector drawables in APK vs 1,267 in mined Svg/ (Verified: 100% matched, 0 missed)
-  - XML well-formedness, broken tags, NaN coordinates, empty paths: 1,267/1,267 clean (0 errors)
-  - Raw Android token leakage (@0x, ?0x, ?attr, android:): 1,267/1,267 clean of verbatim token strings
-  - Color validity stress-test: FAILED. Tested whether all fill and stroke attributes are valid W3C CSS colors. Found 99 invalid color values in 62 files.
-- **Vulnerabilities found**:
-  - `mine_apk_svgs.py`: `parse_color()` fails to handle indirect ARSC integer resource IDs (`str(v_data)`) and ColorStateList XML paths (`res/color/*.xml`), writing raw values like `fill="2130970235"` and `fill="res/color/adobe_spectrum_dropdown_error_icon.xml"` into 62 SVG files.
-  - `verify_mined_svgs.py`: Validator Gate 4 only checks non-empty `d` path data and fails to validate `fill` / `stroke` attribute formats, creating a false-positive 100% pass rate.
-- **Untested angles**:
-  - None within M1 scope.
+- **Hypotheses tested**:
+  - H1: `verify_inventory.py` detects a deleted/missing file and exits 1 [CONFIRMED / PASSED]
+  - H2: `verify_inventory.py` detects a corrupted/byte-altered file and exits 1 [CONFIRMED / PASSED]
+  - H3: `verify_inventory.py` detects a non-PNG corrupted file and exits 1 [CONFIRMED / PASSED]
+  - H4: `verify_inventory.py` detects stray files in root and non-canonical directories and exits 1 [CONFIRMED / PASSED]
+  - H5: `verify_inventory.py` detects extra/stray PNG files in panel directories and exits 1 [CONFIRMED / PASSED]
+  - H6: `verify_inventory.py` detects altered manifest entries (count, hash, size, dimension) and exits 1 [CONFIRMED / PASSED]
+  - H7: `migrate_screenshots.py` is strictly idempotent across multiple runs on live workspace with 0 file changes [CONFIRMED / PASSED]
+- **Vulnerabilities found**: None. Both scripts demonstrate rigorous fault detection and strict exit code compliance.
+- **Untested angles**: None. 32 distinct adversarial scenarios executed across all 7 invariants and migration lifecycle.
+
+## Loaded Skills
+- None explicitly requested by dispatch
 
 ## Key Decisions Made
-- Executed exhaustive automated stress test (`tests/test_adversarial_svgs.py`) across all 1,267 SVGs.
-- Conducted deep DOM inspection on 20 random SVGs.
-- Confirmed asset count matches 100% (1,267 / 1,267).
-- Verdict determined: REQUEST_CHANGES due to 62 corrupted SVG files.
+- Authored isolated empirical test suite at `tests/test_adversarial_inventory.py` (32 tests across 6 categories).
+- Ran baseline and 3x repeated migration executions on live repository: 0 renames, 0 deletions, 0 byte mutations, 0 git diffs in `CleanLightroom/design-reference`.
+- Verified exit code 1 is unconditionally returned across all 23 failure scenarios tested.
+- Verdict: APPROVE.
 
 ## Artifact Index
-- DISPATCH.md — Initial dispatch message
-- BRIEFING.md — Situational awareness
-- progress.md — Liveness & progress tracking
-- handoff.md — Comprehensive handoff report with empirical findings and verdict
+- `.agents/teamwork/challenger_m1_1/BRIEFING.md` — persistent memory & state
+- `.agents/teamwork/challenger_m1_1/progress.md` — liveness heartbeat
+- `.agents/teamwork/challenger_m1_1/DISPATCH.md` — received instructions
+- `tests/test_adversarial_inventory.py` — adversarial test runner
+- `.agents/teamwork/challenger_m1_1/handoff.md` — final 5-component handoff report

@@ -1,56 +1,83 @@
-# Project: Lightroom APK SVG Icon Mining & Conversion
+# Project: Lightroom Mobile Design Reference Screenshot Analysis & Sorting
 
 ## Architecture
-The system extracts all vector icon and graphic assets from the authentic Adobe Lightroom Mobile APK (`C:\Users\Siddhu\Downloads\Lightroom.apk`), decodes compiled Android Binary XML (AXML) into Vector Drawable structures, resolves obfuscated resource filenames to canonical semantic names using the APK's `resources.arsc` symbol table, and converts all vector drawables into standard W3C compliant `.svg` files stored in `mined Svg/`. A programmatic test suite verifies well-formedness, dimensions, and graphical element integrity.
+The system organizes 102 authentic Adobe Lightroom Mobile reference screenshots (36 vertical captures in `design-reference` root and 66 horizontal captures in `horizontal screen UI(same as verticle)`) into 20 canonical panel folders according to Lightroom's navigation, editing, and tool hierarchy. An automated, cryptographically grounded inventory audit verifies 100% file retention, zero data loss, zero duplication, zero image corruption, and zero unclassified omissions.
 
-### Data Flow & Conversion Pipeline
-1. **APK Archive Ingestion**: Open `C:\Users\Siddhu\Downloads\Lightroom.apk` via Python `zipfile`.
-2. **Resource Name Deobfuscation**: Parse `resources.arsc` table (package `0x7f` `com.adobe.lrmobile`) to map obfuscated `res/*.xml` paths (e.g. `res/-18.xml`, `res/RUT.xml`) to canonical human-readable identifiers (e.g. `svg_camera`, `ic_overflow_copy_settings`).
-3. **In-Memory Streaming AXML Decoder**: Stream binary AXML chunks (`0x0001` string pool, `0x0102` start element, `0x0103` end element), resolving string pool tokens and attribute resource IDs.
-4. **Vector-to-SVG Semantic Mapping**:
-   - `<vector>` root: User coordinate system `viewBox="0 0 {viewportWidth} {viewportHeight}"`, intrinsic `width` and `height` (stripped of `dp`/`px` units), standard namespace `xmlns="http://www.w3.org/2000/svg"`.
-   - `<path>` geometry: `android:pathData` mapped directly to `d="..."`. Indirect `@0x...` string references resolved via ARSC string pool.
-   - Color & Opacity: `#AARRGGBB` hex split into `#RRGGBB` + `fill-opacity` / `stroke-opacity`. `#00000000` mapped to `fill="none"` / `stroke="none"`. Missing `android:fillColor` explicitly mapped to `fill="none"` to prevent SVG default black fill.
-   - Stroke styling: `stroke`, `stroke-width`, `stroke-linecap`, `stroke-linejoin`, `stroke-miterlimit`.
-   - Fill rule: `android:fillType="1"` / `evenOdd` mapped to `fill-rule="evenodd"`.
-   - Groups & Transforms: Pivot-aware transformation matrix `translate(px + tx, py + ty) rotate(rot) scale(sx, sy) translate(-px, -py)`.
-   - Clip paths: `<clip-path>` emitted as `<clipPath id="..."><path d="..."/></clipPath>` and attached via `clip-path="url(#...)"`.
-5. **Output Organization**: Cleanly write all generated `.svg` files to `mined Svg/`.
-6. **Programmatic Verification**: Execute `verify_mined_svgs.py` verifying file existence, non-zero size, XML well-formedness, root `<svg>` tag and attributes, and presence of valid graphical elements.
+### Canonical Directory Taxonomy (20 Panels)
+```
+CleanLightroom/design-reference/
+├── Actions/                  (4 screenshots: Quick Actions bar, AI Auto, Enhance, Subject)
+├── Camera/                   (5 screenshots: Pro camera viewfinder, manual ISO/Shutter/WB, settings)
+├── Color/                    (4 screenshots: White Balance, Temp, Tint, Vibrance, Saturation, B&W)
+├── Color_Grading/            (5 screenshots: 3-way color wheels Shadows, Midtones, Highlights, Global)
+├── Color_Mix/                (3 screenshots: 8-color HSL mixer chips, sliders, Targeted Adjustment Tool)
+├── Community/                (1 screenshot: Community Discover feed, remixes, tutorials)
+├── Crop/                     (13 screenshots: Aspect ratios, Free/Lock, Straighten dial, Generative Expand, Guided Upright)
+├── Detail/                   (5 screenshots: Sharpening, Radius, Detail, Masking, Noise, Color Noise)
+├── Editor_and_Export/        (9 screenshots: Loupe resting states, 3-dots overflow, Share & Export modals)
+├── Effects/                  (7 screenshots: Texture, Clarity, Dehaze, Vignette, Grain)
+├── Gallery/                  (3 screenshots: Device photos grid, Cloud imports, View options sheet)
+├── Lens_Blur/                (3 screenshots: AI depth map detection, focus histogram, bokeh shapes)
+├── Light/                    (4 screenshots: Exposure, Contrast, Highlights, Shadows, Whites, Blacks, HDR mode)
+├── Masking/                  (11 screenshots: AI Subject/Sky/Bg, Brush, Gradients, Layer dock, local adjustments)
+├── Optics/                   (1 screenshot: Chromatic Aberration, Lens Profile Corrections)
+├── Presets/                  (7 screenshots: Recommended, Premium adaptive packs, User presets)
+├── Profiles/                 (3 screenshots: Camera and creative look profiles browser)
+├── Remove/                   (3 screenshots: Generative AI Remove, Heal, Clone Stamp, object detection)
+├── Settings_and_Account/     (6 screenshots: Navigation drawer, Preferences, Account, Storage, Cloud sync)
+├── Tone_Curve/               (5 screenshots: Point Curves White/Red/Green/Blue, Parametric 3-split curve)
+├── Svg Icons/                (Excluded: Vector asset repository)
+└── PANEL_MANIFEST.json       (Cryptographic audit index mapping all 102 files)
+```
 
 ---
 
 ## Feature Inventory
 | # | Feature | Description | Milestone | Source |
 |---|---------|-------------|-----------|--------|
-| 1 | APK Verification & Discovery | Ingest `C:\Users\Siddhu\Downloads\Lightroom.apk` (170 MB), scan all 3,552 AXML files, identify all 1,267 `<vector>` drawables | M1 | Survey 1, Survey 2 |
-| 2 | ARSC Resource Deobfuscation | Parse `resources.arsc` to map all 1,267 obfuscated `res/*.xml` paths to canonical human-readable names (`svg_*`, `ic_*`, `spectrum_*`) | M1 | Survey 1, Survey 2 |
-| 3 | Fast In-Memory AXML Parser | Decode binary AXML files directly in memory without external binary dependencies | M1 | Survey 1, Survey 2 |
-| 4 | Indirect String Ref Resolution | Resolve `@0x...` string reference IDs in `pathData` to path strings from ARSC string pool | M1 | Survey 2 |
-| 5 | Viewport & Sizing Normalization | Map `viewportWidth/Height` to `viewBox` and clean `width/height` attributes | M1 | Survey 2, Survey 3 |
-| 6 | Color & Transparency Mapping | Split ARGB `#AARRGGBB`, map `#00000000` to `fill="none"`, avoid black fill on stroke paths | M1 | Survey 2, Survey 3 |
-| 7 | Stroke & FillRule Translation | Map stroke caps/joins/width and `fillType="evenOdd"` to SVG `fill-rule="evenodd"` | M1 | Survey 2, Survey 3 |
-| 8 | Group Pivot Transformation | Map `pivotX/Y`, `rotation`, `scaleX/Y`, `translateX/Y` to SVG group `transform` | M1 | Survey 2, Survey 3 |
-| 9 | ClipPath Generation | Map `<clip-path>` to SVG `<clipPath>` definitions and references | M1 | Survey 2, Survey 3 |
-| 10 | Output Organization to `mined Svg` | Write all extracted `.svg` files into `mined Svg/` directory | M1 | ORIGINAL_REQUEST R2 |
-| 11 | Programmatic Test Harness | Implement 5-gate validator `verify_mined_svgs.py` verifying size > 0, XML validity, SVG schema | M1 | ORIGINAL_REQUEST AC |
-| 12 | 100% Quality Assurance Gate | Execute test script and confirm 100% of mined SVGs pass all gates with 0 errors | M1 | ORIGINAL_REQUEST AC |
+| 1 | Baseline File Inventory & Hashes | Enumerate all 102 screenshot files (36 vertical, 66 horizontal) with file sizes, dimensions, and SHA-256 digests | M1 | explorer_survey_1 |
+| 2 | Canonical Panel Taxonomy | Define 20 standardized panel folders matching Lightroom Mobile UI navigation and editing tools | M1 | spec_miner_survey_3 |
+| 3 | Per-File Semantic Mapping | Map each screenshot (vertical and horizontal) to its exact canonical panel folder and sub-tool state | M1 | explorer_survey_2 |
+| 4 | Edge-Case Resolution | Map the 11 portrait-oriented screenshots residing in horizontal folder to functional panels (Camera, Settings, Community) | M1 | spec_miner_survey_3 |
+| 5 | Collision-Free Migration Engine | Move (not copy/duplicate) screenshots into their target panel folders without losing original filenames or data | M1 | ORIGINAL_REQUEST R2 |
+| 6 | Subfolder Cleanup | Safely retire `horizontal screen UI(same as verticle)` once all 66 horizontal files are moved to their target panel folders | M1 | ORIGINAL_REQUEST R2 |
+| 7 | Machine-Readable Audit Manifest | Maintain `PANEL_MANIFEST.json` detailing original path, new path, dimensions, orientation, and SHA-256 digest | M1 | explorer_survey_2 |
+| 8 | Automated Retention & Integrity Audit | Implement `verify_inventory.py` executing 7 invariant checks: count=102, bijective hash set equality, byte size equality, zero corruption | M1 | ORIGINAL_REQUEST R3, AC |
 
 ---
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Complete APK SVG Mining & Verification | Implement `mine_apk_svgs.py` and `verify_mined_svgs.py`. Extract and convert all 1,267+ vector assets from `Lightroom.apk` to standard `.svg` in `mined Svg/`. Run programmatic test suite and confirm 100% pass rate. | none | DONE |
+| M1 | Screenshot Panel Sorting & 100% Retention Audit | Create 20 panel folders; move all 36 vertical and 66 horizontal screenshots into their respective panel folders; execute migration; run automated audit script `verify_inventory.py` to confirm 100% file retention (102/102 files, 0 missing, 0 duplicates, 0 corrupted). | Survey | DONE |
 
 ---
 
-## Code Layout & File Ownership Matrix
+## Interface Contracts
+### Migration Script ↔ File System
+- **Input**:
+  - `CleanLightroom/design-reference/*.png` (36 files)
+  - `CleanLightroom/design-reference/horizontal screen UI(same as verticle)/*.png` (66 files)
+  - `CleanLightroom/design-reference/PANEL_MANIFEST.json`
+- **Output**:
+  - Exactly 20 panel folders under `CleanLightroom/design-reference/` containing all 102 files.
+  - Zero files left in root (except `PANEL_MANIFEST.json` and directory `Svg Icons/`).
+  - Empty source directory `horizontal screen UI(same as verticle)` removed after migration.
+
+### Verification Script ↔ Acceptance Gate
+- **Invocation**: `python CleanLightroom/design-reference/verify_inventory.py`
+- **Output**:
+  - Exit code `0` if all 7 invariants pass.
+  - Exit code `1` if any file is missing, duplicate, misplaced, corrupt, or hash mismatched.
+
+---
+
+## Code Layout & Ownership Matrix
 
 | Stream / Role | Exclusive Write Scope | Read-Only Access |
 |:--------------|:----------------------|:-----------------|
-| Worker (`teamwork_worker`) | `mine_apk_svgs.py`, `verify_mined_svgs.py`, `mined Svg/**` | `C:\Users\Siddhu\Downloads\Lightroom.apk`, `.agents/teamwork/**` |
-| Reviewers / Challengers / Auditor | Verification reports in their respective `.agents/teamwork/` directories | All files, `mined Svg/**` |
+| Worker (`teamwork_worker`) | `CleanLightroom/design-reference/**` (panel folders, migration script, `verify_inventory.py`) | All files, `.agents/teamwork/**` |
+| Reviewers / Challengers / Auditor | Verification reports in their respective `.agents/teamwork/` directories | All files, `CleanLightroom/design-reference/**` |
 
 **Protected Resources**:
-`C:\Users\Siddhu\Downloads\Lightroom.apk` must remain unmodified (read-only source).
+- No screenshot file may be deleted or modified in place; all file movements must preserve exact byte size and SHA-256 digest.

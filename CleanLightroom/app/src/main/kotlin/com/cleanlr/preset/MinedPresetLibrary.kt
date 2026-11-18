@@ -685,15 +685,36 @@ object MinedPresetLibrary {
         )
     )
 
+    @Volatile
+    private var cachedPresets: List<Preset>? = null
+
     /**
-     * Complete mined preset collection (531 presets).
+     * Initializes the complete 531-preset catalog from Android assets/mined_presets.json.
+     * MUST be called from Application.onCreate() or ViewModel init so Android does not fall back
+     * to the 60-item CURATED_MINED_PRESETS subset.
      */
-    val PRESETS: List<Preset> by lazy {
-        loadAll()
+    fun init(context: Context) {
+        if (cachedPresets != null && cachedPresets!!.size > CURATED_MINED_PRESETS.size) return
+        val loaded = loadAll(context)
+        if (loaded.isNotEmpty()) {
+            cachedPresets = loaded
+        }
     }
 
     /**
-     * Loads all 500+ presets from bundled JSON asset or classpath resource stream.
+     * Complete mined preset collection (531 authentic color-science presets).
+     */
+    val PRESETS: List<Preset>
+        get() {
+            val existing = cachedPresets
+            if (existing != null) return existing
+            val loaded = loadAll(null)
+            cachedPresets = loaded
+            return loaded
+        }
+
+    /**
+     * Loads all 531 presets from bundled JSON asset or classpath resource stream.
      */
     fun loadAll(context: Context? = null): List<Preset> {
         return try {

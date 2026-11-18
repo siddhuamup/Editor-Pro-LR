@@ -103,7 +103,19 @@ data class EditRecipe(
 }
 
 /**
- * Tips 401–420: Non-Destructive Crop & Geometry Adjustments
+ * Guided Upright Reference Line (normalized 0..1 coordinates on the image)
+ */
+@Serializable
+data class GuidedLine(
+    val id: String = "",
+    val x1: Float = 0.25f,
+    val y1: Float = 0.2f,
+    val x2: Float = 0.25f,
+    val y2: Float = 0.8f
+)
+
+/**
+ * Tips 401–420: Non-Destructive Crop, Expand & Geometry Adjustments
  */
 @Serializable
 data class CropAdjustments(
@@ -115,18 +127,20 @@ data class CropAdjustments(
     val straightenAngle: Float = 0.0f,      // -45.0f to +45.0f degrees
     val flipHorizontal: Boolean = false,
     val flipVertical: Boolean = false,
-    val aspectRatio: String = "Free",       // "Free", "Original", "1:1", "4:5", "16:9", "9:16", "3:2", "4:3"
+    val aspectRatio: String = "Free",       // "Free", "Original", "1:1", "4:5", "16:9", "9:16", "3:2", "4:3", etc.
+    val aspectLocked: Boolean = false,
     val verticalPerspective: Float = 0.0f,  // -100f to +100f (Tip 413)
     val horizontalPerspective: Float = 0.0f, // -100f to +100f (Tip 413)
     val isExpandEnabled: Boolean = false,
     val constrainCrop: Boolean = false,
-    val uprightMode: String = "Auto",
-    val distortion: Float = 0.0f,
-    val geometryRotate: Float = 0.0f,
-    val geometryAspect: Float = 0.0f,
-    val geometryScale: Float = 100.0f,
-    val geometryXOffset: Float = 0.0f,
-    val geometryYOffset: Float = 0.0f
+    val uprightMode: String = "Off",        // "Off", "Auto", "Level", "Vertical", "Full", "Guided"
+    val distortion: Float = 0.0f,           // -100f to +100f (barrel / pincushion)
+    val geometryRotate: Float = 0.0f,       // -45f to +45f
+    val geometryAspect: Float = 0.0f,       // -100f to +100f
+    val geometryScale: Float = 100.0f,      // 50f to 200f
+    val geometryXOffset: Float = 0.0f,      // -100f to +100f
+    val geometryYOffset: Float = 0.0f,      // -100f to +100f
+    val guidedLines: List<GuidedLine> = emptyList()
 )
 
 @Serializable

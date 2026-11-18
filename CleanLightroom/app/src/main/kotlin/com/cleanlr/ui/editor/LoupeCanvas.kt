@@ -96,10 +96,11 @@ class LoupeGLView(context: Context) : GLSurfaceView(context) {
         altClippingMode: Int,
         showOriginal: Boolean,
         splitPosition: Float? = null,
-        isSplitHorizontal: Boolean = false
+        isSplitHorizontal: Boolean = false,
+        isCropActive: Boolean = false
     ) {
         queueEvent {
-            renderer.updateRecipe(recipe, altClippingMode, showOriginal, splitPosition, isSplitHorizontal)
+            renderer.updateRecipe(recipe, altClippingMode, showOriginal, splitPosition, isSplitHorizontal, isCropActive)
             requestRender()
         }
     }
@@ -129,6 +130,7 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var showOriginal = false
     private var splitPosition: Float? = null
     private var isSplitHorizontal = false
+    private var isCropActive = false
     private var film3dLut = com.cleanlr.engine.stage.Film3dLut.NONE
     private var film3dLutIntensity = 1.0f
     private var surfaceWidth = 0
@@ -172,7 +174,7 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
         val lutData = SplineInterpolator.generateLut256(currentRecipe.curves)
         pipeline?.updateToneCurve(lutData)
-        pipeline?.render(currentRecipe, altClippingMode, showOriginal, splitPosition, isSplitHorizontal)
+        pipeline?.render(currentRecipe, altClippingMode, showOriginal, splitPosition, isSplitHorizontal, isCropActive)
 
         // Live GPU 256-bin histogram extraction (~1ms)
         pipeline?.extractHistogram()?.let { histo ->
@@ -193,13 +195,15 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
         clippingMode: Int,
         original: Boolean,
         splitPos: Float? = null,
-        splitHorizontal: Boolean = false
+        splitHorizontal: Boolean = false,
+        cropActive: Boolean = false
     ) {
         currentRecipe = recipe
         altClippingMode = clippingMode
         showOriginal = original
         splitPosition = splitPos
         isSplitHorizontal = splitHorizontal
+        isCropActive = cropActive
     }
 
     fun setZoomFilter(isNearest: Boolean) {
@@ -278,7 +282,14 @@ fun LoupeCanvas(
     onPrevPhoto: (() -> Unit)? = null,
     isCropActive: Boolean = false,
     isExpandEnabled: Boolean = false,
+    isGuidedUprightActive: Boolean = false,
+    isRemoveBrushActive: Boolean = false,
+    removeBrushPoints: List<com.cleanlr.model.BrushStrokePoint> = emptyList(),
+    isGenAiProcessing: Boolean = false,
+    onRemoveBrushPoint: ((Float, Float) -> Unit)? = null,
     onCropRectChanged: ((Float, Float, Float, Float) -> Unit)? = null,
+    onGuidedLineChanged: ((String, Float, Float, Float, Float) -> Unit)? = null,
+    onTriggerExpandPreview: (() -> Unit)? = null,
     isCurveActive: Boolean = false,
     curvePoints: List<CurvePoint> = emptyList(),
     curveChannelColor: Color = Color.White,
@@ -362,15 +373,25 @@ fun LoupeCanvas(
     // Brush cursor touch point
     var brushTouchPos by remember { mutableStateOf<Offset?>(null) }
 
-    // Update GLView when recipe, split view, comparison, or 3D LUT changes
-    LaunchedEffect(recipe, altClippingMode, isComparingOriginal, isSplitView, splitPosition, isSplitHorizontal, film3dLut, film3dLutIntensity) {
+    // Reset pinch-zoom when entering Crop/Geometry mode so overlay & photo stay 1:1 aligned
+    LaunchedEffect(isCropActive) {
+        if (isCropActive) {
+            zoomStage = 0
+            targetScale = 1.0f
+            targetOffset = Offset.Zero
+        }
+    }
+
+    // Update GLView when recipe, split view, comparison, crop mode, or 3D LUT changes
+    LaunchedEffect(recipe, altClippingMode, isComparingOriginal, isSplitView, splitPosition, isSplitHorizontal, isCropActive, film3dLut, film3dLutIntensity) {
         glView?.setFilm3dLut(film3dLut, film3dLutIntensity)
         glView?.updateRecipe(
             recipe = recipe,
             altClippingMode = altClippingMode,
             showOriginal = isComparingOriginal,
             splitPosition = if (isSplitView) splitPosition else null,
-            isSplitHorizontal = isSplitHorizontal
+            isSplitHorizontal = isSplitHorizontal,
+            isCropActive = isCropActive
         )
     }
 
@@ -462,6 +483,9 @@ fun LoupeCanvas(
                             }
                         )
                     }
+                } else if (isCropActive || isRemoveBrushActive) {
+                    // Let CropOverlayBrackets / GuidedUprightOverlay / RemoveBrushOverlay own pointer gestures
+                    Modifier
                 } else {
                     Modifier.pointerInput(Unit) {
                         detectCanvasTouchGestures(
@@ -553,18 +577,17 @@ fun LoupeCanvas(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer(
-                    scaleX = animatedScale * (if (recipe.crop.flipHorizontal) -1f else 1f),
-                    scaleY = animatedScale * (if (recipe.crop.flipVertical) -1f else 1f),
-                    rotationZ = recipe.crop.rotationDegrees + recipe.crop.straightenAngle,
-                    translationX = animatedOffset.x,
-                    translationY = animatedOffset.y
+                    scaleX = if (isCropActive) 1f else animatedScale,
+                    scaleY = if (isCropActive) 1f else animatedScale,
+                    translationX = if (isCropActive) 0f else animatedOffset.x,
+                    translationY = if (isCropActive) 0f else animatedOffset.y
                 )
         )
 
         // ════════════════════════════════════════════════════
         // TIP 100: RULE OF THIRDS 3x3 GRID OVERLAY
         // ════════════════════════════════════════════════════
-        if (showGrid) {
+        if (showGrid && !isCropActive) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val w = size.width
                 val h = size.height
@@ -582,14 +605,30 @@ fun LoupeCanvas(
         }
 
         // ════════════════════════════════════════════════════
-        // AUTHENTIC CROP OVERLAY BRACKETS & TABS (Screenshot 083306)
+        // AUTHENTIC CROP & EXPAND OVERLAY BRACKETS OR GUIDED UPRIGHT
         // ════════════════════════════════════════════════════
-        if (isCropActive) {
-            CropOverlayBrackets(
-                crop = recipe.crop,
-                onCropRectChanged = { l, t, r, b -> onCropRectChanged?.invoke(l, t, r, b) },
-                isExpandEnabled = isExpandEnabled
-            )
+        if (isCropActive && !isComparingOriginal) {
+            val bmpW = bitmap?.width ?: 1200
+            val bmpH = bitmap?.height ?: 800
+            if (isGuidedUprightActive) {
+                GuidedUprightOverlay(
+                    crop = recipe.crop,
+                    imageWidth = bmpW,
+                    imageHeight = bmpH,
+                    onGuidedLineChanged = { id, x1, y1, x2, y2 ->
+                        onGuidedLineChanged?.invoke(id, x1, y1, x2, y2)
+                    }
+                )
+            } else {
+                CropOverlayBrackets(
+                    crop = recipe.crop,
+                    imageWidth = bmpW,
+                    imageHeight = bmpH,
+                    onCropRectChanged = { l, t, r, b -> onCropRectChanged?.invoke(l, t, r, b) },
+                    isExpandEnabled = isExpandEnabled,
+                    onTriggerExpandPreview = onTriggerExpandPreview
+                )
+            }
         }
 
         // ════════════════════════════════════════════════════
@@ -606,9 +645,9 @@ fun LoupeCanvas(
         }
 
         // ════════════════════════════════════════════════════
-        // TIP 119: ASPECT RATIO GUIDE OVERLAYS
+        // TIP 119: ASPECT RATIO GUIDE OVERLAYS (only outside active Crop tool)
         // ════════════════════════════════════════════════════
-        if (aspectRatioGuide != null) {
+        if (aspectRatioGuide != null && !isCropActive) {
             val ratio = when (aspectRatioGuide) {
                 "4:5" -> 4f / 5f
                 "9:16" -> 9f / 16f
@@ -1075,48 +1114,115 @@ fun LoupeCanvas(
                 modifier = Modifier.fillMaxSize()
             )
         }
+
+        // ════════════════════════════════════════════════════
+        // INTERACTIVE REMOVE / GENERATIVE FILL BRUSH OVERLAY
+        // ════════════════════════════════════════════════════
+        if (isRemoveBrushActive && !isCropActive && !isComparingOriginal) {
+            val bmpW = bitmap?.width ?: 1200
+            val bmpH = bitmap?.height ?: 800
+            RemoveBrushCanvasOverlay(
+                crop = recipe.crop,
+                imageWidth = bmpW,
+                imageHeight = bmpH,
+                brushSize = brushSize,
+                points = removeBrushPoints,
+                onPointAdded = { nx, ny -> onRemoveBrushPoint?.invoke(nx, ny) }
+            )
+        }
+
+        // SOTA FLUX.1 Fill + Poisson Blending Processing HUD
+        if (isGenAiProcessing) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.45f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    color = Color(0xEE18181B),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, SpectrumBlue),
+                    shadowElevation = 12.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            color = SpectrumBlue,
+                            strokeWidth = 2.5.dp,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Column {
+                            Text(
+                                text = "FLUX.1 Fill • Synthesizing Patch",
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "Crop+Mask ROI → GPU → Poisson Blend",
+                                color = Color(0xFFA0A0A8),
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
 /**
- * Authentic Crop Overlay Brackets and Rule-of-Thirds Grid (Matching Lightroom Screenshot 083306)
+ * Authentic Interactive Crop & Expand Overlay Brackets (Pixel-aligned to Stage 9 DisplayRect).
+ * Fixes mid-drag cancellation by keeping pointerInput stable with rememberUpdatedState(crop).
  */
-private enum class CropHandle {
-    TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT,
-    TOP, BOTTOM, LEFT, RIGHT,
-    INSIDE, NONE
-}
-
 @Composable
 private fun CropOverlayBrackets(
     crop: com.cleanlr.model.CropAdjustments,
+    imageWidth: Int,
+    imageHeight: Int,
     onCropRectChanged: (Float, Float, Float, Float) -> Unit,
     isExpandEnabled: Boolean = false,
+    onTriggerExpandPreview: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    var activeHandle by remember { mutableStateOf(CropHandle.NONE) }
+    val view = LocalView.current
+    val currentCrop by rememberUpdatedState(crop)
+    val currentOnCropChanged by rememberUpdatedState(onCropRectChanged)
+    var activeHandle by remember { mutableStateOf(com.cleanlr.engine.CropGeometryEngine.DragHandle.NONE) }
     var isDragging by remember { mutableStateOf(false) }
+
+    val expandRegion = remember(crop.left, crop.top, crop.right, crop.bottom, crop.rotationDegrees, imageWidth, imageHeight, isExpandEnabled) {
+        if (isExpandEnabled) {
+            com.cleanlr.engine.GenerativeExpandEngine.computeExpandRegion(crop, imageWidth, imageHeight)
+        } else null
+    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(crop) {
+            .pointerInput(imageWidth, imageHeight) {
                 detectDragGestures(
                     onDragStart = { offset ->
-                        val w = size.width.toFloat()
-                        val h = size.height.toFloat()
-                        val padX = 20.dp.toPx()
-                        val padY = 20.dp.toPx()
-                        val availW = (w - padX * 2f).coerceAtLeast(1f)
-                        val availH = (h - padY * 2f).coerceAtLeast(1f)
+                        val c = currentCrop
+                        val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
+                            viewportWidth = size.width.toFloat(),
+                            viewportHeight = size.height.toFloat(),
+                            imageWidth = imageWidth,
+                            imageHeight = imageHeight,
+                            crop = c,
+                            isCropActive = true
+                        )
+                        val cLeft = disp.left + c.left * disp.width
+                        val cTop = disp.top + c.top * disp.height
+                        val cRight = disp.left + c.right * disp.width
+                        val cBottom = disp.top + c.bottom * disp.height
 
-                        val cLeft = padX + crop.left * availW
-                        val cTop = padY + crop.top * availH
-                        val cRight = padX + crop.right * availW
-                        val cBottom = padY + crop.bottom * availH
-
-                        val cornerRadius = 36.dp.toPx()
-                        val edgeThreshold = 24.dp.toPx()
+                        val cornerRadius = 42.dp.toPx()
+                        val edgeThreshold = 28.dp.toPx()
 
                         fun distSq(p1: Offset, x2: Float, y2: Float): Float {
                             val dx = p1.x - x2
@@ -1126,91 +1232,60 @@ private fun CropOverlayBrackets(
 
                         val crSq = cornerRadius * cornerRadius
                         activeHandle = when {
-                            distSq(offset, cLeft, cTop) < crSq -> CropHandle.TOP_LEFT
-                            distSq(offset, cRight, cTop) < crSq -> CropHandle.TOP_RIGHT
-                            distSq(offset, cLeft, cBottom) < crSq -> CropHandle.BOTTOM_LEFT
-                            distSq(offset, cRight, cBottom) < crSq -> CropHandle.BOTTOM_RIGHT
-                            kotlin.math.abs(offset.y - cTop) < edgeThreshold && offset.x in (cLeft - 10f)..(cRight + 10f) -> CropHandle.TOP
-                            kotlin.math.abs(offset.y - cBottom) < edgeThreshold && offset.x in (cLeft - 10f)..(cRight + 10f) -> CropHandle.BOTTOM
-                            kotlin.math.abs(offset.x - cLeft) < edgeThreshold && offset.y in (cTop - 10f)..(cBottom + 10f) -> CropHandle.LEFT
-                            kotlin.math.abs(offset.x - cRight) < edgeThreshold && offset.y in (cTop - 10f)..(cBottom + 10f) -> CropHandle.RIGHT
-                            offset.x in cLeft..cRight && offset.y in cTop..cBottom -> CropHandle.INSIDE
-                            else -> CropHandle.NONE
+                            distSq(offset, cLeft, cTop) < crSq -> com.cleanlr.engine.CropGeometryEngine.DragHandle.TOP_LEFT
+                            distSq(offset, cRight, cTop) < crSq -> com.cleanlr.engine.CropGeometryEngine.DragHandle.TOP_RIGHT
+                            distSq(offset, cLeft, cBottom) < crSq -> com.cleanlr.engine.CropGeometryEngine.DragHandle.BOTTOM_LEFT
+                            distSq(offset, cRight, cBottom) < crSq -> com.cleanlr.engine.CropGeometryEngine.DragHandle.BOTTOM_RIGHT
+                            abs(offset.y - cTop) < edgeThreshold && offset.x in (cLeft - 14f)..(cRight + 14f) -> com.cleanlr.engine.CropGeometryEngine.DragHandle.TOP
+                            abs(offset.y - cBottom) < edgeThreshold && offset.x in (cLeft - 14f)..(cRight + 14f) -> com.cleanlr.engine.CropGeometryEngine.DragHandle.BOTTOM
+                            abs(offset.x - cLeft) < edgeThreshold && offset.y in (cTop - 14f)..(cBottom + 14f) -> com.cleanlr.engine.CropGeometryEngine.DragHandle.LEFT
+                            abs(offset.x - cRight) < edgeThreshold && offset.y in (cTop - 14f)..(cBottom + 14f) -> com.cleanlr.engine.CropGeometryEngine.DragHandle.RIGHT
+                            offset.x in cLeft..cRight && offset.y in cTop..cBottom -> com.cleanlr.engine.CropGeometryEngine.DragHandle.INSIDE
+                            else -> com.cleanlr.engine.CropGeometryEngine.DragHandle.NONE
                         }
 
-                        if (activeHandle != CropHandle.NONE) {
+                        if (activeHandle != com.cleanlr.engine.CropGeometryEngine.DragHandle.NONE) {
                             isDragging = true
+                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                         }
                     },
                     onDrag = { change, dragAmount ->
-                        if (activeHandle != CropHandle.NONE) {
+                        if (activeHandle != com.cleanlr.engine.CropGeometryEngine.DragHandle.NONE) {
                             change.consume()
-                            val w = size.width.toFloat()
-                            val h = size.height.toFloat()
-                            val padX = 20.dp.toPx()
-                            val padY = 20.dp.toPx()
-                            val availW = (w - padX * 2f).coerceAtLeast(1f)
-                            val availH = (h - padY * 2f).coerceAtLeast(1f)
-
+                            val c = currentCrop
+                            val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
+                                viewportWidth = size.width.toFloat(),
+                                viewportHeight = size.height.toFloat(),
+                                imageWidth = imageWidth,
+                                imageHeight = imageHeight,
+                                crop = c,
+                                isCropActive = true
+                            )
+                            val availW = disp.width.coerceAtLeast(1f)
+                            val availH = disp.height.coerceAtLeast(1f)
                             val normDx = dragAmount.x / availW
                             val normDy = dragAmount.y / availH
 
-                            var l = crop.left
-                            var t = crop.top
-                            var r = crop.right
-                            var b = crop.bottom
-
-                            when (activeHandle) {
-                                CropHandle.TOP_LEFT -> {
-                                    l = (l + normDx).coerceIn(0f, r - 0.05f)
-                                    t = (t + normDy).coerceIn(0f, b - 0.05f)
-                                }
-                                CropHandle.TOP_RIGHT -> {
-                                    r = (r + normDx).coerceIn(l + 0.05f, 1f)
-                                    t = (t + normDy).coerceIn(0f, b - 0.05f)
-                                }
-                                CropHandle.BOTTOM_LEFT -> {
-                                    l = (l + normDx).coerceIn(0f, r - 0.05f)
-                                    b = (b + normDy).coerceIn(t + 0.05f, 1f)
-                                }
-                                CropHandle.BOTTOM_RIGHT -> {
-                                    r = (r + normDx).coerceIn(l + 0.05f, 1f)
-                                    b = (b + normDy).coerceIn(t + 0.05f, 1f)
-                                }
-                                CropHandle.TOP -> {
-                                    t = (t + normDy).coerceIn(0f, b - 0.05f)
-                                }
-                                CropHandle.BOTTOM -> {
-                                    b = (b + normDy).coerceIn(t + 0.05f, 1f)
-                                }
-                                CropHandle.LEFT -> {
-                                    l = (l + normDx).coerceIn(0f, r - 0.05f)
-                                }
-                                CropHandle.RIGHT -> {
-                                    r = (r + normDx).coerceIn(l + 0.05f, 1f)
-                                }
-                                CropHandle.INSIDE -> {
-                                    val curW = r - l
-                                    val curH = b - t
-                                    val nextL = (l + normDx).coerceIn(0f, 1f - curW)
-                                    val nextT = (t + normDy).coerceIn(0f, 1f - curH)
-                                    l = nextL
-                                    t = nextT
-                                    r = nextL + curW
-                                    b = nextT + curH
-                                }
-                                CropHandle.NONE -> {}
-                            }
-                            onCropRectChanged(l, t, r, b)
+                            val (effW, effH) = com.cleanlr.engine.CropGeometryEngine.effectiveImageDimensions(
+                                imageWidth, imageHeight, c.rotationDegrees
+                            )
+                            val next = com.cleanlr.engine.CropGeometryEngine.applyHandleDrag(
+                                crop = c,
+                                handle = activeHandle,
+                                normDx = normDx,
+                                normDy = normDy,
+                                effectiveImageAspect = effW / effH
+                            )
+                            currentOnCropChanged(next.left, next.top, next.right, next.bottom)
                         }
                     },
                     onDragEnd = {
                         isDragging = false
-                        activeHandle = CropHandle.NONE
+                        activeHandle = com.cleanlr.engine.CropGeometryEngine.DragHandle.NONE
                     },
                     onDragCancel = {
                         isDragging = false
-                        activeHandle = CropHandle.NONE
+                        activeHandle = com.cleanlr.engine.CropGeometryEngine.DragHandle.NONE
                     }
                 )
             }
@@ -1218,37 +1293,51 @@ private fun CropOverlayBrackets(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
+            val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
+                viewportWidth = w,
+                viewportHeight = h,
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+                crop = crop,
+                isCropActive = true
+            )
 
-            val padX = 20.dp.toPx()
-            val padY = 20.dp.toPx()
-            val availW = w - padX * 2f
-            val availH = h - padY * 2f
-
-            val cropLeft = padX + crop.left * availW
-            val cropTop = padY + crop.top * availH
-            val cropRight = padX + crop.right * availW
-            val cropBottom = padY + crop.bottom * availH
+            val cropLeft = (disp.left + crop.left * disp.width).coerceIn(4f, w - 4f)
+            val cropTop = (disp.top + crop.top * disp.height).coerceIn(4f, h - 4f)
+            val cropRight = (disp.left + crop.right * disp.width).coerceIn(cropLeft + 12f, w - 4f)
+            val cropBottom = (disp.top + crop.bottom * disp.height).coerceIn(cropTop + 12f, h - 4f)
             val cropW = cropRight - cropLeft
             val cropH = cropBottom - cropTop
 
-            // Dim letterbox outside crop area (60% scrim)
-            val scrimColor = Color.Black.copy(alpha = if (isExpandEnabled) 0.35f else 0.60f)
+            // Dim letterbox outside crop area (60% scrim in Crop, subtle 40% in Expand)
+            val scrimColor = Color.Black.copy(alpha = if (isExpandEnabled) 0.42f else 0.62f)
             if (cropLeft > 0f) drawRect(scrimColor, Offset(0f, 0f), Size(cropLeft, h))
             if (cropRight < w) drawRect(scrimColor, Offset(cropRight, 0f), Size(w - cropRight, h))
             if (cropTop > 0f) drawRect(scrimColor, Offset(cropLeft, 0f), Size(cropW, cropTop))
             if (cropBottom < h) drawRect(scrimColor, Offset(cropLeft, cropBottom), Size(cropW, h - cropBottom))
 
-            // Thin outer boundary line
+            // In Expand mode, draw subtle dashed outline around the original photo bounds
+            if (isExpandEnabled) {
+                val dashEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f)
+                drawRect(
+                    color = Color(0xFF1686FF).copy(alpha = 0.65f),
+                    topLeft = Offset(disp.left, disp.top),
+                    size = Size(disp.width, disp.height),
+                    style = Stroke(width = 1.dp.toPx(), pathEffect = dashEffect)
+                )
+            }
+
+            // Thin outer crop boundary line
             drawRect(
-                if (isExpandEnabled) Color(0xFF1686FF).copy(alpha = 0.85f) else Color.White.copy(alpha = 0.45f),
+                if (isExpandEnabled) Color(0xFF38A9FF).copy(alpha = 0.9f) else Color.White.copy(alpha = 0.55f),
                 Offset(cropLeft, cropTop),
                 Size(cropW, cropH),
                 style = Stroke(1.dp.toPx())
             )
 
-            // Dynamic 3x3 Rule-of-Thirds Grid (visible while dragging)
-            if (isDragging) {
-                val gridColor = Color.White.copy(alpha = 0.65f)
+            // Dynamic 3x3 Rule-of-Thirds Grid (visible while dragging or rotating)
+            if (isDragging || abs(crop.straightenAngle) > 0.05f || abs(crop.geometryRotate) > 0.05f) {
+                val gridColor = Color.White.copy(alpha = if (isDragging) 0.68f else 0.35f)
                 val gridStroke = 0.85.dp.toPx()
 
                 drawLine(gridColor, Offset(cropLeft + cropW / 3f, cropTop), Offset(cropLeft + cropW / 3f, cropBottom), gridStroke)
@@ -1257,8 +1346,8 @@ private fun CropOverlayBrackets(
                 drawLine(gridColor, Offset(cropLeft, cropTop + 2 * cropH / 3f), Offset(cropRight, cropTop + 2 * cropH / 3f), gridStroke)
             }
 
-            // 4 Corner Brackets (24dp length, 3.5dp stroke, Color.White)
-            val bracketLen = 24.dp.toPx()
+            // 4 Corner Brackets (22dp length, 3.5dp stroke, solid White)
+            val bracketLen = minOf(22.dp.toPx(), cropW * 0.35f, cropH * 0.35f)
             val bracketStroke = 3.5.dp.toPx()
             val bracketColor = Color.White
 
@@ -1279,41 +1368,313 @@ private fun CropOverlayBrackets(
             drawLine(bracketColor, Offset(cropRight, cropBottom - bracketLen), Offset(cropRight, cropBottom), bracketStroke)
 
             // 4 Center Edge Tabs (16dp length, 3.5dp stroke)
-            val tabLen = 16.dp.toPx()
+            val tabLen = minOf(16.dp.toPx(), cropW * 0.25f, cropH * 0.25f)
             val midX = cropLeft + cropW / 2f
             val midY = cropTop + cropH / 2f
 
-            // Top center ─
             drawLine(bracketColor, Offset(midX - tabLen / 2f, cropTop), Offset(midX + tabLen / 2f, cropTop), bracketStroke)
-            // Bottom center ─
             drawLine(bracketColor, Offset(midX - tabLen / 2f, cropBottom), Offset(midX + tabLen / 2f, cropBottom), bracketStroke)
-            // Left center │
             drawLine(bracketColor, Offset(cropLeft, midY - tabLen / 2f), Offset(cropLeft, midY + tabLen / 2f), bracketStroke)
-            // Right center │
             drawLine(bracketColor, Offset(cropRight, midY - tabLen / 2f), Offset(cropRight, midY + tabLen / 2f), bracketStroke)
         }
 
-        if (isExpandEnabled) {
+        // Expand mode floating action / dimension status pill (ready for AI Expand hook)
+        if (isExpandEnabled && expandRegion != null) {
             Surface(
-                color = Color(0xDD1E1E1E),
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, Color(0xFF1686FF)),
+                color = Color(0xE61A1A1D),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, if (expandRegion.hasExpansion) Color(0xFF1686FF) else Color(0xFF48484D)),
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 28.dp)
+                    .padding(top = 12.dp)
+                    .clickable {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        onTriggerExpandPreview?.invoke()
+                    }
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    val label = if (expandRegion.hasExpansion) {
+                        "Expand ${expandRegion.outputWidth}×${expandRegion.outputHeight} (+${expandRegion.expansionPercent}%)"
+                    } else {
+                        "Expand • Drag handles outward"
+                    }
                     Text(
-                        text = "✨ Generative Expand",
+                        text = label,
                         color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
+                    if (expandRegion.hasExpansion) {
+                        Surface(
+                            color = Color(0xFF1686FF),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                text = "Ready",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Interactive Guided Upright Overlay (Matching Lightroom Screenshot 200743).
+ * Allows dragging endpoints of up to 4 perspective reference lines directly on the photo.
+ */
+@Composable
+private fun GuidedUprightOverlay(
+    crop: com.cleanlr.model.CropAdjustments,
+    imageWidth: Int,
+    imageHeight: Int,
+    onGuidedLineChanged: (String, Float, Float, Float, Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val view = LocalView.current
+    val currentCrop by rememberUpdatedState(crop)
+    val currentOnLineChanged by rememberUpdatedState(onGuidedLineChanged)
+
+    // Pair(lineId, endpointIndex: 1 or 2)
+    var draggingEndpoint by remember { mutableStateOf<Pair<String, Int>?>(null) }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .pointerInput(imageWidth, imageHeight) {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        val c = currentCrop
+                        val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
+                            viewportWidth = size.width.toFloat(),
+                            viewportHeight = size.height.toFloat(),
+                            imageWidth = imageWidth,
+                            imageHeight = imageHeight,
+                            crop = c,
+                            isCropActive = true
+                        )
+                        val hitRadiusSq = (38.dp.toPx()).let { it * it }
+                        var best: Pair<String, Int>? = null
+                        var bestDist = hitRadiusSq
+
+                        for (line in c.guidedLines) {
+                            val p1x = disp.left + line.x1 * disp.width
+                            val p1y = disp.top + line.y1 * disp.height
+                            val d1 = (offset.x - p1x) * (offset.x - p1x) + (offset.y - p1y) * (offset.y - p1y)
+                            if (d1 < bestDist) {
+                                bestDist = d1
+                                best = line.id to 1
+                            }
+                            val p2x = disp.left + line.x2 * disp.width
+                            val p2y = disp.top + line.y2 * disp.height
+                            val d2 = (offset.x - p2x) * (offset.x - p2x) + (offset.y - p2y) * (offset.y - p2y)
+                            if (d2 < bestDist) {
+                                bestDist = d2
+                                best = line.id to 2
+                            }
+                        }
+                        draggingEndpoint = best
+                        if (best != null) {
+                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        }
+                    },
+                    onDrag = { change, _ ->
+                        val active = draggingEndpoint ?: return@detectDragGestures
+                        change.consume()
+                        val c = currentCrop
+                        val line = c.guidedLines.firstOrNull { it.id == active.first } ?: return@detectDragGestures
+                        val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
+                            viewportWidth = size.width.toFloat(),
+                            viewportHeight = size.height.toFloat(),
+                            imageWidth = imageWidth,
+                            imageHeight = imageHeight,
+                            crop = c,
+                            isCropActive = true
+                        )
+                        val nx = ((change.position.x - disp.left) / disp.width.coerceAtLeast(1f)).coerceIn(0.02f, 0.98f)
+                        val ny = ((change.position.y - disp.top) / disp.height.coerceAtLeast(1f)).coerceIn(0.02f, 0.98f)
+                        if (active.second == 1) {
+                            currentOnLineChanged(line.id, nx, ny, line.x2, line.y2)
+                        } else {
+                            currentOnLineChanged(line.id, line.x1, line.y1, nx, ny)
+                        }
+                    },
+                    onDragEnd = { draggingEndpoint = null },
+                    onDragCancel = { draggingEndpoint = null }
+                )
+            }
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
+                viewportWidth = size.width,
+                viewportHeight = size.height,
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+                crop = crop,
+                isCropActive = true
+            )
+
+            // Subtle alignment reference grid while dragging a guide line
+            if (draggingEndpoint != null) {
+                val gridColor = Color.White.copy(alpha = 0.28f)
+                val stroke = 0.75.dp.toPx()
+                for (i in 1..5) {
+                    val f = i / 6f
+                    drawLine(gridColor, Offset(disp.left + disp.width * f, disp.top), Offset(disp.left + disp.width * f, disp.bottom), stroke)
+                    drawLine(gridColor, Offset(disp.left, disp.top + disp.height * f), Offset(disp.right, disp.top + disp.height * f), stroke)
+                }
+            }
+
+            crop.guidedLines.forEach { line ->
+                val p1 = Offset(disp.left + line.x1 * disp.width, disp.top + line.y1 * disp.height)
+                val p2 = Offset(disp.left + line.x2 * disp.width, disp.top + line.y2 * disp.height)
+                val isLineActive = draggingEndpoint?.first == line.id
+
+                // Shadow under line for contrast
+                drawLine(Color.Black.copy(alpha = 0.65f), p1, p2, strokeWidth = 4.dp.toPx())
+                drawLine(if (isLineActive) Color(0xFF38A9FF) else Color.White, p1, p2, strokeWidth = 2.dp.toPx())
+
+                // Circular endpoint handles with crosshairs
+                listOf(p1 to 1, p2 to 2).forEach { (pt, epIdx) ->
+                    val isEpActive = draggingEndpoint == (line.id to epIdx)
+                    val radius = if (isEpActive) 13.dp.toPx() else 10.dp.toPx()
+                    drawCircle(Color.Black.copy(alpha = 0.55f), radius = radius + 2.dp.toPx(), center = pt)
+                    drawCircle(if (isEpActive) Color(0xFF1686FF) else Color.White, radius = radius, center = pt, style = Stroke(2.dp.toPx()))
+                    drawCircle(Color.White, radius = 3.dp.toPx(), center = pt)
+                }
+            }
+        }
+
+        Surface(
+            color = Color(0xD91A1A1D),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color(0xFF3A3A3E)),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 12.dp)
+        ) {
+            Text(
+                text = "Guided Upright • ${crop.guidedLines.size}/4 Guides (Drag endpoints)",
+                color = Color.White,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+            )
+        }
+    }
+}
+
+/**
+ * Interactive Remove / FLUX.1 Fill Brush Overlay (Pixel-aligned to Stage 9 DisplayRect).
+ * Paints translucent ruby-white mask strokes directly over objects to erase.
+ */
+@Composable
+private fun RemoveBrushCanvasOverlay(
+    crop: com.cleanlr.model.CropAdjustments,
+    imageWidth: Int,
+    imageHeight: Int,
+    brushSize: Float,
+    points: List<com.cleanlr.model.BrushStrokePoint>,
+    onPointAdded: (Float, Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val currentCrop by rememberUpdatedState(crop)
+    val currentOnPointAdded by rememberUpdatedState(onPointAdded)
+    var activeCursor by remember { mutableStateOf<Offset?>(null) }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .pointerInput(imageWidth, imageHeight) {
+                detectTapGestures { offset ->
+                    val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
+                        viewportWidth = size.width.toFloat(),
+                        viewportHeight = size.height.toFloat(),
+                        imageWidth = imageWidth,
+                        imageHeight = imageHeight,
+                        crop = currentCrop,
+                        isCropActive = false
+                    )
+                    if (disp.width > 1f && disp.height > 1f) {
+                        val nx = ((offset.x - disp.left) / disp.width).coerceIn(0f, 1f)
+                        val ny = ((offset.y - disp.top) / disp.height).coerceIn(0f, 1f)
+                        currentOnPointAdded(nx, ny)
+                    }
+                }
+            }
+            .pointerInput(imageWidth, imageHeight) {
+                detectDragGestures(
+                    onDragStart = { start ->
+                        activeCursor = start
+                        val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
+                            viewportWidth = size.width.toFloat(),
+                            viewportHeight = size.height.toFloat(),
+                            imageWidth = imageWidth,
+                            imageHeight = imageHeight,
+                            crop = currentCrop,
+                            isCropActive = false
+                        )
+                        if (disp.width > 1f && disp.height > 1f) {
+                            val nx = ((start.x - disp.left) / disp.width).coerceIn(0f, 1f)
+                            val ny = ((start.y - disp.top) / disp.height).coerceIn(0f, 1f)
+                            currentOnPointAdded(nx, ny)
+                        }
+                    },
+                    onDrag = { change, _ ->
+                        change.consume()
+                        val pos = change.position
+                        activeCursor = pos
+                        val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
+                            viewportWidth = size.width.toFloat(),
+                            viewportHeight = size.height.toFloat(),
+                            imageWidth = imageWidth,
+                            imageHeight = imageHeight,
+                            crop = currentCrop,
+                            isCropActive = false
+                        )
+                        if (disp.width > 1f && disp.height > 1f) {
+                            val nx = ((pos.x - disp.left) / disp.width).coerceIn(0f, 1f)
+                            val ny = ((pos.y - disp.top) / disp.height).coerceIn(0f, 1f)
+                            currentOnPointAdded(nx, ny)
+                        }
+                    },
+                    onDragEnd = { activeCursor = null },
+                    onDragCancel = { activeCursor = null }
+                )
+            }
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
+                viewportWidth = size.width,
+                viewportHeight = size.height,
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+                crop = crop,
+                isCropActive = false
+            )
+            val minDispDim = min(disp.width, disp.height).coerceAtLeast(1f)
+            val maskFill = Color(0x88FF3B6B)
+            val maskOutline = Color(0xCCFFFFFF)
+
+            points.forEach { pt ->
+                val px = disp.left + pt.x * disp.width
+                val py = disp.top + pt.y * disp.height
+                val rad = ((pt.radius.coerceIn(2f, 120f) / 400f) * minDispDim).coerceAtLeast(8f)
+                drawCircle(color = maskFill, radius = rad, center = Offset(px, py))
+            }
+
+            activeCursor?.let { cur ->
+                val rad = ((brushSize.coerceIn(2f, 120f) / 400f) * minDispDim).coerceAtLeast(10f)
+                drawCircle(color = maskOutline, radius = rad, center = cur, style = Stroke(1.8.dp.toPx()))
             }
         }
     }

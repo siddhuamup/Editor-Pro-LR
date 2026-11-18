@@ -1,191 +1,261 @@
-# Independent Quality & Adversarial Review Report: Milestone 1 (APK SVG Mining)
+# Milestone 1: Screenshot Panel Sorting & Retention Audit Review & Adversarial Attestation Report
 
-**Reviewer**: `reviewer_m1_1` (teamwork_reviewer / critic)  
-**Parent**: `ee54e32c-82f7-47db-a4c1-749165b59911`  
-**Working Directory**: `c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\reviewer_m1_1\`  
-**Milestone**: M1 (Complete APK SVG Mining & Verification)  
-**Date**: 2026-11-08T09:25:00Z  
-
----
-
-## Review Summary
-
-**VERDICT**: **REQUEST_CHANGES**
-
-| Dimension | Assessment | Status | Notes |
-|:---|:---|:---:|:---|
-| **Asset Extraction Count** | 1,267 / 1,267 assets | PASS | All 1,267 `<vector>` drawables discovered and extracted from `Lightroom.apk` |
-| **Directory Metrics** | 1,267 files, all `.svg`, non-empty | PASS | Min size: 181 B, Max size: 42.2 KB, Avg size: 1.18 KB |
-| **XML Well-Formedness** | 1,267 / 1,267 valid XML DOM | PASS | Parses cleanly with `xml.etree.ElementTree` |
-| **ViewBox & Dimensions** | 1,267 / 1,267 valid coordinates | PASS | Correct `viewBox="0 0 w h"` and numeric `width`/`height` |
-| **Path Geometry & Syntax** | 1,267 / 1,267 non-empty path `d` | PASS | Valid SVG path command syntax, clip paths correctly defined |
-| **SVG Paint / Styling Compliance** | **62 / 1,267 files INVALID** | **FAIL** | 62 SVGs contain invalid W3C paint attributes (raw integer IDs and `.xml` paths) |
-| **Verification Test Coverage** | Test harness blind spot | **FAIL** | `verify_mined_svgs.py` failed to test paint attribute validity, generating false 100% pass |
-| **Integrity & Claim Verification** | Upstream claim contradicted | **FAIL** | Worker handoff §3 claimed dynamic tints default to `#ffffff`; 62 files emitted raw unparsed tokens |
+**Reviewer**: `reviewer_m1_1` (Teamwork Reviewer & Adversarial Critic)  
+**Date**: 2026-11-17T19:12:00Z  
+**Milestone**: Milestone 1 (Screenshot Panel Sorting & 100% Retention Audit)  
+**Target Directory**: `CleanLightroom\design-reference\`  
+**Working Directory**: `.agents/teamwork/reviewer_m1_1/`  
+**Parent Agent**: `cccad627-2c2d-4414-a5e3-3ca885a5664d`  
+**Verdict**: **APPROVE**  
+**Integrity Status**: **CLEAN (0 Integrity Violations Detected)**  
 
 ---
 
-## Findings
+## 1. Observation
 
-### [Critical] Finding 1: 62 SVG Files Contain Invalid W3C Paint Values (`fill` / `stroke`)
+### 1.1 Direct Test Execution Observations
 
-- **What**: 62 SVG files (4.89% of all mined SVGs) contain invalid W3C SVG/CSS paint values in `fill` and/or `stroke` attributes. Instead of valid SVG colors (`#RRGGBB`, `#RGB`, `none`, `currentColor`, `url(#...)`), these files contain raw Android integer resource IDs (e.g., `2130970235`, `17170445`, `2130970194`) and raw resource file paths (e.g., `res/color/adobe_spectrum_dropdown_error_icon.xml`, `res/bDm.xml`).
-- **Where**:
-  - `mine_apk_svgs.py`, lines 107–111 in `parse_arsc()`:
-    ```python
-    elif 28 <= v_type <= 31: # color
-        val_str = f'#{v_data:08X}'
-    else:
-        val_str = str(v_data) # <--- v_type == 1 (references) converted to plain decimal integer strings
-    ```
-  - `mine_apk_svgs.py`, lines 220–248 in `parse_color()`:
-    ```python
-    if c_str.startswith('?') or c_str.startswith('@'):
-        return '#ffffff', round(1.0 * alpha_mult, 3)
-    ...
-    return c_str, round(1.0 * alpha_mult, 3) # <--- Decimal strings and 'res/...' paths fall through unhandled!
-    ```
-  - 62 output files in `mined Svg/`:
-    - `spectrum_checkbox_default_checked_focused.svg`: `fill="2130970194"`, `fill="2130970235"`
-    - `badge_unlocked_full.svg`: `fill="res/bDm.xml"` (renders as giant solid black rectangle covering the `#080808` icon)
-    - `adobe_spectrum_alert_dropdown.svg`: `fill="res/color/adobe_spectrum_dropdown_error_icon.xml"`
-    - `adobe_spectrum_default_slider_thumb_default.svg`: `fill="17170445"` (`17170445` is `@android:color/transparent`) and `stroke="2130970234"`
-    - Full list of 62 affected files:
-      `adobe_spectrum_alert_dropdown.svg`, `adobe_spectrum_chevron_down_quiet.svg`, `adobe_spectrum_default_slider_thumb_default.svg`, `adobe_spectrum_default_slider_thumb_disabled.svg`, `adobe_spectrum_default_slider_thumb_down.svg`, `adobe_spectrum_default_slider_thumb_hover.svg`, `adobe_spectrum_default_slider_thumb_key_focus.svg`, `badge_unlocked_full.svg`, `badge_unlocked_small.svg`, `ic_crossmedium.svg`, `ic_launcher_foreground.svg`, `ic_m3_chip_check.svg`, `ic_m3_chip_checked_circle.svg`, `ic_spectrum_dropdownbutton_chevron.svg`, `infopanel_gesture_onboarding_background.svg`, `infopanel_gesture_onboarding_divider.svg`, `premium_features_button_loud.svg`, `spectrum_checkbox_default_checked_focused.svg`, `spectrum_checkbox_default_indeterminate_focused.svg`, `spectrum_checkbox_default_unchecked_focused.svg`, `spectrum_checkbox_emphasized_checked_focused.svg`, `spectrum_checkbox_emphasized_indeterminate_focused.svg`, `spectrum_checkbox_emphasized_unchecked_focused.svg`, `spectrum_clearbutton_quiet.svg`, `spectrum_color_loupe_crosshair.svg`, `spectrum_helpcontent_arrow_down.svg`, `spectrum_helpcontent_arrow_left.svg`, `spectrum_helpcontent_arrow_right.svg`, `spectrum_helpcontent_arrow_up.svg`, `spectrum_radio_default_checked_focused.svg`, `spectrum_radio_default_unchecked_focused.svg`, `spectrum_radio_emphasized_checked_focused.svg`, `spectrum_radio_emphasized_unchecked_focused.svg`, `spectrum_switch_default_thumb_default.svg`, `spectrum_switch_default_thumb_disabled.svg`, `spectrum_switch_default_thumb_down.svg`, `spectrum_switch_default_thumb_hover.svg`, `spectrum_switch_default_thumb_key_focus.svg`, `spectrum_switch_default_track_default.svg`, `spectrum_switch_default_track_disabled.svg`, `spectrum_switch_default_track_down.svg`, `spectrum_switch_default_track_hover.svg`, `spectrum_switch_default_track_key_focus.svg`, `spectrum_switch_emphasized_thumb_default.svg`, `spectrum_switch_emphasized_thumb_disabled.svg`, `spectrum_switch_emphasized_thumb_down.svg`, `spectrum_switch_emphasized_thumb_hover.svg`, `spectrum_switch_emphasized_thumb_key_focus.svg`, `spectrum_switch_emphasized_track_default.svg`, `spectrum_switch_emphasized_track_disabled.svg`, `spectrum_switch_emphasized_track_down.svg`, `spectrum_switch_emphasized_track_hover.svg`, `spectrum_switch_emphasized_track_key_focus.svg`, `ume_bottomsheet_chevron_icon.svg`, `ume_coachmark_tail_down.svg`, `ume_coachmark_tail_left.svg`, `ume_coachmark_tail_right.svg`, `ume_coachmark_tail_up.svg`, `ume_filter_item_background.svg`, `ume_search_item_background.svg`, `ume_tab_bottom_border.svg`.
-- **Why this is a problem**: In standard W3C SVG 1.1 / 2.0 and CSS Painting specifications, `fill` and `stroke` must resolve to valid `<paint>` types (`none`, `<color>`, `currentColor`, `url(...)`). Web browsers, Figma, Illustrator, and SVG renderers treat strings like `2130970235` or file paths like `res/bDm.xml` as invalid CSS values. They fall back to the default fill (`black` / `#000000`), turning transparent or light-colored elements into opaque black boxes, rendering icons illegible, and violating acceptance criteria R2 ("Convert all extracted vector icons into valid standard .svg files").
-- **Suggested Fix**:
-  1. In `mine_apk_svgs.py::parse_arsc`:
-     For `v_type == 1`, store the value as a reference `f"@0x{v_data:08x}"` or `f"?0x{v_data:08x}"` instead of converting to raw string `str(v_data)`.
-  2. In `mine_apk_svgs.py::parse_color`:
-     - If `c_str == '17170445'` (`0x0106000d` = `android:color/transparent`), return `'none', 0.0`.
-     - If `c_str.isdigit()` (unresolved integer resource ID) or starts with `('?', '@')`: return `'#ffffff', round(1.0 * alpha_mult, 3)`.
-     - If `c_str.endswith('.xml')` or `c_str.startswith('res/')` (ColorStateList XML or gradient reference): return `'#ffffff', round(1.0 * alpha_mult, 3)` (or `'none', 0.0` if `alpha_mult == 0`).
-  3. Re-run `python mine_apk_svgs.py` to regenerate `mined Svg/`.
+1. **Primary Audit Harness Execution (`verify_inventory.py`)**:
+   - Command: `python CleanLightroom/design-reference/verify_inventory.py`
+   - Exit Code: `0`
+   - Verbatim Output:
+     ```
+     ========================================================================================
+      LIGHTROOM MOBILE DESIGN REFERENCE — AUTOMATED INVENTORY & INTEGRITY AUDIT
+     ========================================================================================
+      Target Directory : C:\Users\Siddhu\Desktop\apps testing\CleanLightroom\design-reference
+      Manifest File    : PANEL_MANIFEST.json (102 records, 20 panels)
+      Audit Timestamp  : 2026-11-17T19:03:08Z
+     ----------------------------------------------------------------------------------------
+      CANONICAL PANEL BREAKDOWN:
+     ----------------------------------------------------------------------------------------
+       #  Panel Name                Expected  Actual  Portrait  Landscape  Status
+     ----------------------------------------------------------------------------------------
+       1  Actions                          4       4         1          3  PASS
+       2  Camera                           5       5         5          0  PASS
+       3  Color                            4       4         1          3  PASS
+       4  Color_Grading                    5       5         3          2  PASS
+       5  Color_Mix                        3       3         2          1  PASS
+       6  Community                        1       1         1          0  PASS
+       7  Crop                            13      13         2         11  PASS
+       8  Detail                           5       5         1          4  PASS
+       9  Editor_and_Export                9       9         3          6  PASS
+      10  Effects                          7       7         3          4  PASS
+      11  Gallery                          3       3         3          0  PASS
+      12  Lens_Blur                        3       3         1          2  PASS
+      13  Light                            4       4         2          2  PASS
+      14  Masking                         11      11         2          9  PASS
+      15  Optics                           1       1         1          0  PASS
+      16  Presets                          7       7         3          4  PASS
+      17  Profiles                         3       3         1          2  PASS
+      18  Remove                           3       3         1          2  PASS
+      19  Settings_and_Account             6       6         6          0  PASS
+      20  Tone_Curve                       5       5         5          0  PASS
+     ----------------------------------------------------------------------------------------
+          TOTAL                          102     102        47         55  PASS
+     ========================================================================================
+      7 RETENTION & INTEGRITY INVARIANTS:
+     ----------------------------------------------------------------------------------------
+       [PASS] Invariant 1: Baseline Count Invariant (N = 102 files in manifest, 20 panels)
+       [PASS] Invariant 2: Current Disk Count Invariant (N = 102 files across 20 canonical folders)
+       [PASS] Invariant 3: Bijective Hash Set Equality (102 unique digests, 0 missing, 0 duplicates)
+       [PASS] Invariant 4: Byte-Level Integrity Invariant (102/102 bit-for-bit size & SHA-256 match)
+       [PASS] Invariant 5: Decodable Image Structure Invariant (102/102 PIL Image.verify() clean)
+       [PASS] Invariant 6: Valid Dimension Invariant (47 portrait 1220x2712, 55 landscape 2712x1220)
+       [PASS] Invariant 7: Canonical Taxonomy Invariant (0 stray files in root, Svg Icons ignored)
+     ========================================================================================
+      AUDIT PASSED: 100% File Retention & Cryptographic Integrity Confirmed (Exit 0)
+     ========================================================================================
+     ```
+
+2. **In-Directory Invocation**:
+   - Command: `cd CleanLightroom/design-reference; python verify_inventory.py`
+   - Exit Code: `0` (Identical 100% pass across all 7 invariants).
+
+3. **Machine-Readable JSON Output**:
+   - Command: `python CleanLightroom/design-reference/verify_inventory.py --json`
+   - Exit Code: `0`
+   - Output parsed: `audit_passed: true`, `total_expected: 102`, `total_actual: 102`, `portrait_count: 47`, `landscape_count: 55`, all invariants 1-7 passed: `true` with `errors: []`.
+
+4. **Migration Engine Idempotency Check (`migrate_screenshots.py`)**:
+   - Command: `python CleanLightroom/design-reference/migrate_screenshots.py`
+   - Exit Code: `0`
+   - Verbatim Output:
+     ```
+     ============================================================================
+      LIGHTROOM MOBILE SCREENSHOT MIGRATION ENGINE (MILESTONE 1)
+     ============================================================================
+     [Phase 1 OK] Manifest verified: 102 files across 20 canonical panels.
+     [Phase 2 OK] Verified / created all 20 canonical panel folders.
+     [Phase 3 OK] File operations completed successfully:
+       - Newly moved: 0
+       - Verified in-place: 102
+       - Cleaned redundant sources: 0
+       - Verified payload: 76,379,057 bytes (~72.84 MB)
+     [Phase 4 OK] Legacy directory 'horizontal screen UI(same as verticle)' confirmed retired/absent.
+     [Phase 4 OK] Workspace clean: 0 stray PNGs in root, Svg Icons intact.
+     ============================================================================
+      MIGRATION EXECUTION & AUDIT: 100% SUCCESS
+       - 102/102 files verified across 20 canonical panels
+       - 0 missing, 0 duplicates, 0 corrupted, 0 renames
+     ============================================================================
+     ```
+
+5. **Secondary Test Runner Execution**:
+   - Command: `python verify_design_reference_sort.py`
+   - Exit Code: `0`
+   - Verbatim Output:
+     ```
+     AUDIT PASSED: 102/102 screenshots verified across 20 panel folders.
+       - 0 leftover unsorted PNGs in root or source horizontal folder
+       - 102/102 exact byte-size and SHA-256 matches (0 loss, 0 corruption, 0 duplicates)
+       - Svg Icons directory preserved untouched
+     ```
+
+6. **Pre-flight Workspace Validation**:
+   - Command: `python .agents/teamwork/explorer_m1_3/test_workspace_validation.py`
+   - Exit Code: `0` (`ALL PRE-FLIGHT AND WORKSPACE VALIDATION CHECKS PASSED!`).
+
+7. **Workspace Isolation & Immutability**:
+   - Legacy folder check: `Test-Path 'CleanLightroom/design-reference/horizontal screen UI(same as verticle)'` returned `False`.
+   - Root stray file check: `Get-ChildItem 'CleanLightroom/design-reference' -Filter '*.png'` returned `0`.
+   - Vector repository immutability: `git status -- "CleanLightroom/design-reference/Svg Icons"` returned `nothing to commit, working tree clean`.
+   - Total SVG files: 331 files (all ending in `.svg`), total payload 339,597 bytes.
 
 ---
 
-### [Major] Finding 2: Verification Test Harness Blind Spot in `verify_mined_svgs.py`
+### 1.2 Independent Verification Observations (Zero Reliance on Upstream Tools)
 
-- **What**: The automated test harness `verify_mined_svgs.py` reported a 100% pass rate (1,267 / 1,267 passed) across all 5 gates with exit code 0, despite 62 output files containing invalid W3C SVG presentation attributes.
-- **Where**: `verify_mined_svgs.py`, lines 59–71 (`verify_single_svg()` Gate 4):
-  ```python
-  # Gate 4: Graphical visual elements presence and non-empty path geometry
-  visual_elements = [el for el in root.iter() if el.tag.split("}")[-1] in GRAPHICAL_TAGS]
-  if not visual_elements:
-      errors.append("Gate 4 FAIL: No graphical elements (<path>, <g>, etc.) found")
-  else:
-      for el in visual_elements:
-          if el.tag.split("}")[-1] == "path":
-              d = el.attrib.get("d", "").strip()
-              if not d:
-                  errors.append("Gate 4 FAIL: <path> element has empty 'd' attribute")
-                  break
-  ```
-- **Why this is a problem**: The test harness only checks that the XML parses syntactically and that `d` is non-empty. It completely ignores presentation attributes (`fill`, `stroke`, `style`). In `TEST_INFRA.md` (lines 16 & 31), Feature 7 is explicitly defined as "Transparency & Colors: Correct alpha/fill rendering". The current verification suite creates a false attestation of SVG validity.
-- **Suggested Fix**:
-  Add a strict paint validation check into `verify_mined_svgs.py` under Gate 4:
-  ```python
-  import re
-  VALID_COLOR_REGEX = re.compile(r'^(#[0-9a-fA-F]{3,8}|none|currentColor|url\(#[a-zA-Z0-9_\-]+\))$')
-  for el in root.iter():
-      for attr in ('fill', 'stroke'):
-          val = el.attrib.get(attr)
-          if val is not None and not VALID_COLOR_REGEX.match(val):
-              errors.append(f"Gate 4 FAIL: Invalid SVG {attr} paint attribute '{val}'")
-              break
-  ```
-  Ensure `verify_mined_svgs.py` fails with exit code 1 if any invalid paint value is found.
+An independent Python verification was executed directly against the filesystem:
+- Total manifest records: `102`
+- Total disk files matched: `102`
+- Total unique filenames: `102` (0 duplicates)
+- Total unique SHA-256 digests: `102` (0 content duplicates)
+- Total verified payload: `76,379,057 bytes` (exact match)
+- Portrait captures: `47` (`1220x2712`)
+- Landscape captures: `55` (`2712x1220`)
+- Deep raster inspection: All 102 files successfully passed full pixel loading via `PIL.Image.open().load()` and header validation via `PIL.Image.verify()`. Zero corrupted images.
 
 ---
 
-### [Major] Finding 3: Inaccurate Upstream Handoff Claim
+### 1.3 Adversarial Stress-Test Observations
 
-- **What**: In `worker_mining_1/handoff.md` Section 3 (Caveats), the worker claimed:
-  > "Runtime Dynamic Theme Tinting: In the Android app, 20 vector drawables declare dynamic theme tints (e.g. ?attr/colorControlNormal or @color/...). In standalone W3C SVG files without an Android host context, these default cleanly to #FFFFFF (the authentic white icon color in Adobe Lightroom's darkroom interface)."
-- **Where**: `c:\Users\Siddhu\Desktop\apps testing\.agents\teamwork\worker_mining_1\handoff.md`, line 145.
-- **Why this is a problem**: Independent verification proved this claim is false. 62 vector drawables (not 20) had dynamic references or external resource IDs, and they were **not** converted cleanly to `#FFFFFF`. They were emitted directly as raw integer IDs (`fill="2130970235"`) and raw XML paths (`fill="res/bDm.xml"`).
+To test that `verify_inventory.py` is not a facade or self-certifying dummy runner, five adversarial fault injection tests were performed:
+
+1. **Adversarial Fault 1: Stray PNG in canonical panel directory**:
+   - Action: Injected temporary file `CleanLightroom\design-reference\Crop\adversarial_leak.png`.
+   - Result: `verify_inventory.py` returned exit code `1` and failed Invariant 2, Invariant 3, and Invariant 4 with: `AUDIT FAILED: 3 error(s) detected across invariants! (Exit 1)`.
+   - Cleanup: Successfully unlinked.
+
+2. **Adversarial Fault 2: Stray PNG in root directory**:
+   - Action: Injected temporary file `CleanLightroom\design-reference\adversarial_root_leak.png`.
+   - Result: `verify_inventory.py` returned exit code `1` and caught Invariant 7 violation: `Unclassified files in root directory: ['adversarial_root_leak.png']`.
+   - Cleanup: Successfully unlinked.
+
+3. **Adversarial Fault 3: Non-canonical directory in root**:
+   - Action: Created directory `CleanLightroom\design-reference\adversarial_unknown_dir`.
+   - Result: `verify_inventory.py` returned exit code `1` and caught Invariant 7 violation: `Non-canonical directories in root: ['adversarial_unknown_dir']`.
+   - Cleanup: Successfully unlinked.
+
+4. **Adversarial Fault 4: Tampered SHA-256 in manifest**:
+   - Action: Created external temp manifest where first entry SHA-256 was replaced with all zeros.
+   - Result: `verify_inventory.py` returned exit code `1` and flagged:
+     - `Invariant 3 [FAIL]`: `Missing file from disk: ['Screenshot_20261019-082951_Lightroom.png'] (Hash: 00000000...)`
+     - `Invariant 3 [FAIL]`: `Unindexed extraneous file on disk: ['Screenshot_20261019-082951_Lightroom.png'] (Hash: e58bfebec120...)`
+     - `Invariant 4 [FAIL]`: `SHA-256 mismatch 'Screenshot_20261019-082951_Lightroom.png'`
+   - Cleanup: Successfully unlinked.
+
+5. **Adversarial Fault 5: Tampered dimensions in manifest**:
+   - Action: Created external temp manifest with width set to `9999`.
+   - Result: `verify_inventory.py` returned exit code `1` and flagged:
+     - `Invariant 6 [FAIL]`: `Dimension mismatch 'Screenshot_20261019-082951_Lightroom.png': image is (1220, 2712), manifest specified (9999, 2712)`.
+   - Cleanup: Successfully unlinked.
 
 ---
 
-## 5-Component Handoff Protocol
+## 2. Logic Chain
 
-### 1. Observation
-1. **Source Discovery**:
-   - `C:\Users\Siddhu\Downloads\Lightroom.apk` verified at 170,231,128 bytes.
-   - 1,267 `<vector>` drawables discovered inside the APK.
-2. **Output Files**:
-   - Exactly 1,267 files exist in `mined Svg/`.
-   - All 1,267 files have `.svg` extension.
-   - All 1,267 files are non-empty (File size min: 181 bytes, max: 42,210 bytes, average: 1,187.9 bytes).
-3. **Execution of `verify_mined_svgs.py`**:
-   - Command: `python verify_mined_svgs.py --dir "mined Svg"`
-   - Result: Exited with code 0, reported 1,267/1,267 passed across Gates 1–5.
-4. **Adversarial Stress-Testing of Output Assets**:
-   - Ran independent Python audit checking:
-     - ViewBox format and parsing: 0 issues across all 1,267 files.
-     - Width and height numeric validity: 0 issues across all 1,267 files.
-     - ClipPath definitions and ID referencing: 0 broken clip references.
-     - Path `d` command syntax: 0 malformed path strings.
-     - **Paint attribute compliance (`fill`, `stroke`)**: **62 files contain invalid attributes**.
-       - Invalid fills: 72 instances across 62 files.
-       - Invalid strokes: 27 instances across 12 files.
-       - Distinct invalid values observed: `2130970235` (28x), `2130970194` (7x), `17170445` (4x), `2131102645` (4x), `2130970234` (4x), `res/color/adobe_spectrum_dropdown_error_icon.xml` (2x), `res/color/adobe_spectrum_dropdown_icon_color.xml` (2x), `res/bDm.xml` (1x), `res/U5B.xml` (1x), `res/Fdo.xml` (1x), `res/z1w.xml` (1x), `res/Lm1.xml` (1x), `res/zwd.xml` (1x), `res/VdN.xml` (1x), `res/i4u.xml` (1x), `res/Vln.xml` (1x), `res/LlZ.xml` (1x), `res/AaJ.xml` (1x), `res/VIJ.xml` (1x), `res/WRk.xml` (1x).
+1. **Step 1: Integrity Evaluation of Source Code**:
+   - Observation: Code inspection of `migrate_screenshots.py` (lines 1-259) and `verify_inventory.py` (lines 1-450) shows standard library and Pillow usage, streaming 64KB hashing, direct directory walks, explicit exception raising, and dynamic set difference evaluations.
+   - Deduction: There are zero hardcoded passes, zero dummy facades, and zero task bypass shortcuts. The implementation executes real logic.
 
-### 2. Logic Chain
-1. The project requirement R2 (`ORIGINAL_REQUEST.md`) states:
-   "Convert all extracted vector icons into valid standard `.svg` files and save them in a new folder named `mined Svg`."
-2. The W3C Recommendation for SVG specifies that presentation attributes `fill` and `stroke` accept only `<paint>` values (`none`, `<color>`, `currentColor`, `url(#...)`).
-3. Observation 4 proved that 62 SVG files in `mined Svg/` contain attributes such as `fill="2130970235"` and `fill="res/bDm.xml"`, which are not valid `<paint>` values.
-4. Browsers and SVG tools fail to parse these values, falling back to solid black fill, which creates severe rendering defects (e.g. solid black box in `badge_unlocked_full.svg`).
-5. Observation 3 proved that `verify_mined_svgs.py` failed to detect these invalid attributes because Gate 4 only verified `len(d) > 0`.
-6. Therefore, Milestone 1 cannot be approved in its current state until `mine_apk_svgs.py` handles these attributes properly and `verify_mined_svgs.py` validates paint attributes.
+2. **Step 2: Verification of Migration Idempotency & Zero Loss**:
+   - Observation: Executing `migrate_screenshots.py` multiple times consecutively yields exit code 0, 0 files moved, 102 files verified in place, 0 missing, 0 duplicates, and exactly 76,379,057 bytes verified.
+   - Deduction: The migration engine is non-destructive, safe to rerun, and has successfully transferred and verified all target assets.
 
-### 3. Caveats
-- No other structural defects were found. ViewBox coordinates, intrinsic widths/heights, group transforms, and path geometries are high quality and cleanly extracted.
-- The defect is concentrated in the color/paint attribute resolution path (`parse_arsc` reference type handling and `parse_color` fallback behavior).
+3. **Step 3: Verification of 100% Screenshot Retention Across 20 Canonical Panels**:
+   - Observation: Both `verify_inventory.py` and independent Python validation show that all 102 files exist on disk across exactly 20 panel folders, matching `PANEL_MANIFEST.json` counts with zero mismatches.
+   - Deduction: Invariants 1, 2, 3, and 4 are fully satisfied. File retention is 100%.
 
-### 4. Conclusion
-- **Verdict**: **REQUEST_CHANGES**.
-- `worker_mining_1` must:
-  1. Update `mine_apk_svgs.py` to properly map all integer resource references and `.xml` resource paths in `fill` / `stroke` to valid SVG colors (`#ffffff`, `none`).
-  2. Update `verify_mined_svgs.py` to add strict paint attribute validation in Gate 4.
-  3. Re-run mining and verification to confirm 100% of the 1,267 SVGs pass all gates including paint validation.
+4. **Step 4: Image Decodability & Quality Assurance**:
+   - Observation: Full raster image decoding with `PIL.Image.open().load()` and header verification with `PIL.Image.verify()` completed with 0 errors across all 102 files. Dimensions are strictly `1220x2712` (47 portrait) or `2712x1220` (55 landscape).
+   - Deduction: Invariants 5 and 6 are satisfied. No images suffered data loss or bitstream corruption during sorting.
 
-### 5. Verification Method
-To independently reproduce and verify this review finding:
+5. **Step 5: Co-location of Horizontal and Vertical UI Screenshots**:
+   - Observation: 14 panel folders contain both horizontal and vertical UI screenshots (`Actions`, `Color`, `Color_Grading`, `Color_Mix`, `Crop`, `Detail`, `Editor_and_Export`, `Effects`, `Lens_Blur`, `Light`, `Masking`, `Presets`, `Profiles`, `Remove`). Furthermore, the 11 portrait screenshots originally located in the legacy horizontal folder were correctly recognized and routed functionally to `Camera` (5), `Community` (1), and `Settings_and_Account` (5).
+   - Deduction: Requirement R2 and Acceptance Criteria regarding horizontal categorization alongside vertical screenshots in matching panels are 100% met.
 
-1. **Run the Independent Paint Syntax Audit Script**:
-   ```powershell
-   python -c "
-   from pathlib import Path
-   import xml.etree.ElementTree as ET
-   import re
+6. **Step 6: Workspace Quarantine & Retirement**:
+   - Observation: `horizontal screen UI(same as verticle)` is absent (`Test-Path` = False). Zero stray `.png` files remain in `design-reference` root. `Svg Icons/` has 331 `.svg` files with clean git status.
+   - Deduction: Legacy subfolder cleanup is complete, root directory is clean, and vector asset repository is preserved untouched.
 
-   svg_dir = Path('mined Svg')
-   color_re = re.compile(r'^(#[0-9a-fA-F]{3,8}|none|currentColor|url\(#[a-zA-Z0-9_\-]+\))$')
-   bad_files = []
+---
 
-   for p in svg_dir.glob('*.svg'):
-       tree = ET.parse(p)
-       for el in tree.iter():
-           for attr in ('fill', 'stroke'):
-               val = el.attrib.get(attr)
-               if val is not None and not color_re.match(val):
-                   bad_files.append((p.name, attr, val))
-                   break
+## 3. Caveats
 
-   print(f'Total files with invalid paint attributes: {len(set(f[0] for f in bad_files))}')
-   for fname, attr, val in bad_files[:10]:
-       print(f'  [FAIL] {fname}: {attr}=\"{val}\"')
-   "
-   ```
-   **Observed Result**:
-   `Total files with invalid paint attributes: 62`
-   Includes `spectrum_checkbox_default_checked_focused.svg: fill="2130970194"`, `badge_unlocked_full.svg: fill="res/bDm.xml"`.
+- **No Caveats**: All 102 files, 20 panel folders, manifest records, and vector repository files were directly inspected and verified on disk using cryptographic hashing (SHA-256) and image decoding (Pillow). Adversarial fault injection confirmed that test gates reject invalid inputs.
 
-2. **Inspect Direct File Content**:
-   ```powershell
-   Get-Content "mined Svg\spectrum_checkbox_default_checked_focused.svg"
-   Get-Content "mined Svg\badge_unlocked_full.svg"
-   ```
-   Notice `fill="2130970194"` and `fill="res/bDm.xml"`.
+---
+
+## 4. Conclusion
+
+The Milestone 1 work product delivered by `worker_m1_1` meets 100% of the requirements set forth in `ORIGINAL_REQUEST.md`, `PROJECT.md`, `TEST_INFRA.md`, and the review dispatch:
+- 102/102 reference screenshots sorted into 20 distinct canonical panel directories.
+- Horizontal screenshots categorized alongside vertical UI screenshots in matching panels.
+- 0 duplicate files, 0 missing files, 0 corrupted files.
+- `horizontal screen UI(same as verticle)` is safely retired.
+- `Svg Icons/` is untouched and pristine.
+- `migrate_screenshots.py` is verified idempotent.
+- `verify_inventory.py` passes all 7 invariants and was adversarially validated against tampered inputs.
+- 0 integrity violations detected.
+
+**Final Verdict**: **APPROVE**
+
+---
+
+## 5. Verification Method
+
+To independently reproduce this verification:
+
+```powershell
+# 1. Primary Invariant Audit (Must exit 0)
+python CleanLightroom/design-reference/verify_inventory.py
+
+# 2. In-Directory Execution Check
+cd CleanLightroom/design-reference
+python verify_inventory.py
+cd ../..
+
+# 3. Machine-Readable JSON Audit Output
+python CleanLightroom/design-reference/verify_inventory.py --json
+
+# 4. Idempotency Check on Migration Engine
+python CleanLightroom/design-reference/migrate_screenshots.py
+
+# 5. Secondary Test Runner Check
+python verify_design_reference_sort.py
+
+# 6. Legacy Directory Retirement Check
+powershell -Command "Test-Path 'CleanLightroom/design-reference/horizontal screen UI(same as verticle)'"
+
+# 7. Svg Icons Directory Cleanliness Check
+git status -- "CleanLightroom/design-reference/Svg Icons"
+```
+
+### Invalidation Conditions
+- Any exit code other than `0` from `verify_inventory.py`.
+- Any count deviation from 102 files across 20 panels.
+- Any hash mismatch or byte size discrepancy against `PANEL_MANIFEST.json`.
+- Any PIL decoding or raster load failure.
+- Any re-emergence of `horizontal screen UI(same as verticle)` or stray PNG files in root.
+- Any modification to `Svg Icons/`.

@@ -88,6 +88,10 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val documentStore = LocalDocumentStore(application.applicationContext)
     private val autoSaver = DebouncedAutoSaver(documentStore, viewModelScope, 300L)
 
+    init {
+        com.cleanlr.preset.MinedPresetLibrary.init(application.applicationContext)
+    }
+
     val presetGroups = listOf("All") + PresetManager.getGroups() + listOf("User Presets")
     private val _selectedPresetGroup = MutableStateFlow("All")
     val selectedPresetGroup: StateFlow<String> = _selectedPresetGroup.asStateFlow()
@@ -264,6 +268,26 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val _brushFeather = MutableStateFlow(50.0f)
     val brushFeather: StateFlow<Float> = _brushFeather.asStateFlow()
 
+    // SOTA FLUX.1 Fill + Poisson Blending Generative Remove & Expand States (Zero APK Bloat)
+    private val _genAiConfig = MutableStateFlow(
+        com.cleanlr.engine.GenerativeAiConfigStore.load(application.applicationContext)
+    )
+    val genAiConfig: StateFlow<com.cleanlr.engine.GenerativeAiConfig> = _genAiConfig.asStateFlow()
+
+    private val _isGenAiProcessing = MutableStateFlow(false)
+    val isGenAiProcessing: StateFlow<Boolean> = _isGenAiProcessing.asStateFlow()
+
+    private val _showGenAiSettingsDialog = MutableStateFlow(false)
+    val showGenAiSettingsDialog: StateFlow<Boolean> = _showGenAiSettingsDialog.asStateFlow()
+
+    private val _removeBrushPoints = MutableStateFlow<List<BrushStrokePoint>>(emptyList())
+    val removeBrushPoints: StateFlow<List<BrushStrokePoint>> = _removeBrushPoints.asStateFlow()
+
+    private val _useGenerativeAiRemove = MutableStateFlow(true)
+    val useGenerativeAiRemove: StateFlow<Boolean> = _useGenerativeAiRemove.asStateFlow()
+
+    private val bitmapUndoStack = ArrayDeque<Bitmap>()
+
     // Clipboard for Edit Settings (Ctrl+C / Ctrl+V)
     private val _clipboardRecipe = MutableStateFlow<EditRecipe?>(null)
     val clipboardRecipe: StateFlow<EditRecipe?> = _clipboardRecipe.asStateFlow()
@@ -272,6 +296,12 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     val canRedo = historyManager.canRedo
 
     init {
+        // Register FLUX.1 Fill provider if already configured in SharedPreferences
+        val savedCfg = _genAiConfig.value
+        if (savedCfg.isReady) {
+            com.cleanlr.engine.GenerativeExpandEngine.activeProvider =
+                com.cleanlr.engine.FluxFillExpandProvider(savedCfg)
+        }
         // Generate high quality landscape sample image so editor works immediately
         loadSampleImage()
     }
@@ -812,6 +842,13 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     private var cropSnapshotBeforeEdit: CropAdjustments = CropAdjustments()
 
+    private val _cropSubPage = MutableStateFlow("Aspect")
+    val cropSubPage: StateFlow<String> = _cropSubPage.asStateFlow()
+
+    fun setCropSubPage(page: String) {
+        _cropSubPage.value = page
+    }
+
     override fun toggleCropActive() {
         val willBeActive = !_isCropActive.value
         if (willBeActive) {
@@ -833,56 +870,138 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         historyManager.commitState(_recipe.value, "Crop and Expand")
     }
 
+    private fun currentEffectiveImageAspect(): Float {
+        val bmp = _bitmap.value
+        val w = bmp?.width ?: 1200
+        val h = bmp?.height ?: 800
+        val (effW, effH) = com.cleanlr.engine.CropGeometryEngine.effectiveImageDimensions(
+            w, h, _recipe.value.crop.rotationDegrees
+        )
+        return (effW / effH).coerceAtLeast(0.05f)
+    }
+
     fun setCropRect(left: Float, top: Float, right: Float, bottom: Float) {
-        updateRecipe {
-            it.copy(crop = it.crop.copy(
-                left = left.coerceIn(0f, 0.9f),
-                top = top.coerceIn(0f, 0.9f),
-                right = right.coerceIn(left + 0.05f, 1f),
-                bottom = bottom.coerceIn(top + 0.05f, 1f)
-            ))
+        updateRecipe { current ->
+            val minB = if (current.crop.isExpandEnabled) com.cleanlr.engine.CropGeometryEngine.EXPAND_MIN_BOUND else 0f
+            val maxB = if (current.crop.isExpandEnabled) com.cleanlr.engine.CropGeometryEngine.EXPAND_MAX_BOUND else 1f
+            val minSpan = com.cleanlr.engine.CropGeometryEngine.MIN_CROP_SPAN
+            val cl = left.coerceIn(minB, maxB - minSpan)
+            val ct = top.coerceIn(minB, maxB - minSpan)
+            val cr = right.coerceIn(cl + minSpan, maxB)
+            val cb = bottom.coerceIn(ct + minSpan, maxB)
+            current.copy(crop = current.crop.copy(left = cl, top = ct, right = cr, bottom = cb))
         }
     }
 
     fun autoStraighten() {
-        updateRecipe("Auto Straighten") {
-            val current = it.crop.straightenAngle
-            val target = if (kotlin.math.abs(current) < 0.1f) -1.85f else 0.0f
-            it.copy(crop = it.crop.copy(straightenAngle = target))
+        val bmp = _bitmap.value
+        val currentAngle = _recipe.value.crop.straightenAngle
+        if (kotlin.math.abs(currentAngle) >= 0.1f) {
+            updateRecipe("Reset Straighten") {
+                it.copy(crop = it.crop.copy(straightenAngle = 0.0f))
+            }
+            return
+        }
+        if (bmp == null) return
+        viewModelScope.launch(Dispatchers.Default) {
+            val detected = com.cleanlr.engine.CropGeometryEngine.analyzeStraightenAngle(bmp)
+            withContext(Dispatchers.Main) {
+                if (kotlin.math.abs(detected) < 0.05f) {
+                    _exportStatus.value = "Horizon already level (0.00°)"
+                } else {
+                    updateRecipe("Auto Straighten") {
+                        it.copy(crop = it.crop.copy(straightenAngle = detected))
+                    }
+                    _exportStatus.value = String.format(java.util.Locale.US, "Auto Straightened: %+.2f°", detected)
+                }
+            }
+        }
+    }
+
+    fun toggleAspectLock() {
+        updateRecipe("Toggle Aspect Lock") { current ->
+            current.copy(crop = current.crop.copy(aspectLocked = !current.crop.aspectLocked))
+        }
+    }
+
+    fun swapAspectRatioOrientation() {
+        val crop = _recipe.value.crop
+        val effAspect = currentEffectiveImageAspect()
+        val currentRatioStr = crop.aspectRatio
+        val currentNumeric = com.cleanlr.engine.CropGeometryEngine.parseAspectRatio(currentRatioStr, effAspect)
+        if (currentNumeric != null && kotlin.math.abs(currentNumeric - 1f) > 0.01f) {
+            val swappedLabel = if (currentRatioStr.equals("Original", ignoreCase = true)) {
+                "Swapped"
+            } else {
+                com.cleanlr.engine.CropGeometryEngine.swapAspectLabel(currentRatioStr)
+            }
+            val swappedNumeric = 1f / currentNumeric
+            val rect = com.cleanlr.engine.CropGeometryEngine.computeAspectCropRect(
+                targetAspect = swappedNumeric,
+                effectiveImageAspect = effAspect,
+                isExpandEnabled = crop.isExpandEnabled
+            )
+            _aspectRatioGuide.value = swappedLabel
+            updateRecipe("Swap Aspect Orientation") { current ->
+                current.copy(
+                    crop = current.crop.copy(
+                        aspectRatio = swappedLabel,
+                        aspectLocked = true,
+                        left = rect.left,
+                        top = rect.top,
+                        right = rect.right,
+                        bottom = rect.bottom
+                    )
+                )
+            }
+        } else {
+            // Swap current free box's pixel aspect ratio
+            val curW = (crop.right - crop.left).coerceAtLeast(0.08f)
+            val curH = (crop.bottom - crop.top).coerceAtLeast(0.08f)
+            val curPixAspect = (curW / curH) * effAspect
+            val rect = com.cleanlr.engine.CropGeometryEngine.computeAspectCropRect(
+                targetAspect = 1f / curPixAspect,
+                effectiveImageAspect = effAspect,
+                isExpandEnabled = crop.isExpandEnabled
+            )
+            updateRecipe("Swap Crop Orientation") { current ->
+                current.copy(crop = current.crop.copy(left = rect.left, top = rect.top, right = rect.right, bottom = rect.bottom))
+            }
         }
     }
 
     fun applyAspectRatio(ratioStr: String?) {
+        val effAspect = currentEffectiveImageAspect()
         _aspectRatioGuide.value = ratioStr
         updateRecipe("Aspect Ratio: " + (ratioStr ?: "Free")) { current ->
-            val newCrop = when (ratioStr) {
-                null, "Free" -> current.crop.copy(aspectRatio = "Free")
-                "Original" -> current.crop.copy(aspectRatio = "Original", left = 0f, top = 0f, right = 1f, bottom = 1f)
-                "1:1", "1 x 1" -> {
-                    val pad = 0.15f
-                    current.crop.copy(aspectRatio = "1:1", left = pad, top = 0f, right = 1f - pad, bottom = 1f)
-                }
-                "4:5", "4 x 5" -> {
-                    val pad = 0.18f
-                    current.crop.copy(aspectRatio = "4:5", left = pad, top = 0f, right = 1f - pad, bottom = 1f)
-                }
-                "9:16", "9 x 16" -> {
-                    val pad = 0.24f
-                    current.crop.copy(aspectRatio = "9:16", left = pad, top = 0f, right = 1f - pad, bottom = 1f)
-                }
-                "16:9", "16 x 9" -> {
-                    val pad = 0.22f
-                    current.crop.copy(aspectRatio = "16:9", left = 0f, top = pad, right = 1f, bottom = 1f - pad)
-                }
-                "3:2", "3 x 2" -> {
-                    val pad = 0.08f
-                    current.crop.copy(aspectRatio = "3:2", left = 0f, top = pad, right = 1f, bottom = 1f - pad)
-                }
-                "4:3", "4 x 3" -> {
-                    val pad = 0.12f
-                    current.crop.copy(aspectRatio = "4:3", left = 0f, top = pad, right = 1f, bottom = 1f - pad)
-                }
-                else -> current.crop.copy(aspectRatio = ratioStr)
+            val targetAspect = com.cleanlr.engine.CropGeometryEngine.parseAspectRatio(ratioStr, effAspect)
+            val newCrop = if (ratioStr == null || ratioStr.equals("Free", ignoreCase = true)) {
+                current.crop.copy(aspectRatio = "Free", aspectLocked = false)
+            } else if (ratioStr.equals("Original", ignoreCase = true)) {
+                current.crop.copy(
+                    aspectRatio = "Original",
+                    aspectLocked = true,
+                    left = 0f,
+                    top = 0f,
+                    right = 1f,
+                    bottom = 1f
+                )
+            } else if (targetAspect != null) {
+                val rect = com.cleanlr.engine.CropGeometryEngine.computeAspectCropRect(
+                    targetAspect = targetAspect,
+                    effectiveImageAspect = effAspect,
+                    isExpandEnabled = current.crop.isExpandEnabled
+                )
+                current.crop.copy(
+                    aspectRatio = ratioStr,
+                    aspectLocked = true,
+                    left = rect.left,
+                    top = rect.top,
+                    right = rect.right,
+                    bottom = rect.bottom
+                )
+            } else {
+                current.crop.copy(aspectRatio = ratioStr)
             }
             current.copy(crop = newCrop)
         }
@@ -914,20 +1033,251 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     }
 
     fun setCropAspectRatio(aspectRatio: String) {
-        updateRecipe("Aspect Ratio $aspectRatio") {
-            it.copy(crop = it.crop.copy(aspectRatio = aspectRatio))
-        }
+        applyAspectRatio(aspectRatio)
     }
 
     fun resetCrop() {
+        _aspectRatioGuide.value = null
         updateRecipe("Reset Crop") {
             it.copy(crop = CropAdjustments())
         }
     }
 
+    fun resetGeometryOnly() {
+        updateRecipe("Reset Geometry") {
+            it.copy(
+                crop = it.crop.copy(
+                    uprightMode = "Off",
+                    constrainCrop = false,
+                    distortion = 0f,
+                    verticalPerspective = 0f,
+                    horizontalPerspective = 0f,
+                    geometryRotate = 0f,
+                    geometryAspect = 0f,
+                    geometryScale = 100f,
+                    geometryXOffset = 0f,
+                    geometryYOffset = 0f,
+                    guidedLines = emptyList()
+                )
+            )
+        }
+    }
+
     fun setExpandEnabled(enabled: Boolean) {
-        updateRecipe(if (enabled) "Enable Expand" else "Disable Expand") {
-            it.copy(crop = it.crop.copy(isExpandEnabled = enabled))
+        updateRecipe(if (enabled) "Enable Expand" else "Disable Expand") { current ->
+            val c = current.crop
+            val updatedCrop = if (!enabled) {
+                // Clamp crop boundaries cleanly back inside [0..1] when disabling Expand
+                val l = c.left.coerceIn(0f, 0.92f)
+                val t = c.top.coerceIn(0f, 0.92f)
+                val r = c.right.coerceIn(l + 0.08f, 1f)
+                val b = c.bottom.coerceIn(t + 0.08f, 1f)
+                c.copy(isExpandEnabled = false, left = l, top = t, right = r, bottom = b)
+            } else {
+                c.copy(isExpandEnabled = true)
+            }
+            current.copy(crop = updatedCrop)
+        }
+    }
+
+    fun triggerGenerativeExpandPreview() {
+        val bmp = _bitmap.value ?: return
+        val region = com.cleanlr.engine.GenerativeExpandEngine.computeExpandRegion(
+            _recipe.value.crop, bmp.width, bmp.height
+        )
+        if (!region.hasExpansion) {
+            _exportStatus.value = "Drag crop handles outward onto checkerboard to expand"
+            return
+        }
+        val cfg = _genAiConfig.value
+        if (!cfg.isReady) {
+            _exportStatus.value = "Expand ${region.outputWidth}×${region.outputHeight} (+${region.expansionPercent}%) — Configure FLUX.1 Fill server"
+            _showGenAiSettingsDialog.value = true
+            return
+        }
+        val provider = com.cleanlr.engine.FluxFillExpandProvider(cfg)
+        com.cleanlr.engine.GenerativeExpandEngine.activeProvider = provider
+        _isGenAiProcessing.value = true
+        _exportStatus.value = "FLUX.1 Fill generating expansion (${region.outputWidth}×${region.outputHeight})..."
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val (padded, mask) = com.cleanlr.engine.GenerativeExpandEngine.buildOutpaintInputs(bmp, region)
+            val result = provider.generateExpansion(padded, mask, region)
+            withContext(Dispatchers.Main) {
+                _isGenAiProcessing.value = false
+                result.onSuccess { expandedBmp ->
+                    pushBitmapUndoSnapshot(bmp)
+                    _bitmap.value = expandedBmp
+                    updateRecipe("Apply Generative Expand") {
+                        it.copy(crop = it.crop.copy(left = 0f, top = 0f, right = 1f, bottom = 1f, isExpandEnabled = false))
+                    }
+                    _exportStatus.value = if (cfg.usePoissonBlending) {
+                        "FLUX.1 Expand applied with Poisson Blending!"
+                    } else {
+                        "FLUX.1 Expand applied!"
+                    }
+                }.onFailure { err ->
+                    _exportStatus.value = "Expand failed: ${err.message}"
+                }
+            }
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // SOTA FLUX.1 FILL + POISSON BLENDING (GENERATIVE REMOVE & SERVER CONFIG)
+    // ═════════════════════════════════════════════════════════════════════════
+
+    fun openGenAiSettingsDialog() {
+        _showGenAiSettingsDialog.value = true
+    }
+
+    fun dismissGenAiSettingsDialog() {
+        _showGenAiSettingsDialog.value = false
+    }
+
+    fun saveGenAiConfig(config: com.cleanlr.engine.GenerativeAiConfig) {
+        _genAiConfig.value = config
+        com.cleanlr.engine.GenerativeAiConfigStore.save(getApplication<Application>(), config)
+        com.cleanlr.engine.GenerativeExpandEngine.activeProvider =
+            if (config.isReady) com.cleanlr.engine.FluxFillExpandProvider(config)
+            else com.cleanlr.engine.GenerativeExpandEngine.UnconfiguredExpandProvider()
+        _showGenAiSettingsDialog.value = false
+        _exportStatus.value = "Saved AI Engine: ${config.backend.displayName}"
+    }
+
+    fun setUseGenerativeAiRemove(enabled: Boolean) {
+        _useGenerativeAiRemove.value = enabled
+    }
+
+    fun addRemoveBrushPoint(normX: Float, normY: Float) {
+        val pt = BrushStrokePoint(
+            x = normX.coerceIn(0f, 1f),
+            y = normY.coerceIn(0f, 1f),
+            radius = _brushSize.value.coerceIn(4f, 100f)
+        )
+        _removeBrushPoints.value = _removeBrushPoints.value + pt
+    }
+
+    fun clearRemoveBrushPoints() {
+        _removeBrushPoints.value = emptyList()
+    }
+
+    private fun pushBitmapUndoSnapshot(bmp: Bitmap) {
+        if (bitmapUndoStack.size >= 5) bitmapUndoStack.removeFirst()
+        bitmapUndoStack.addLast(bmp)
+    }
+
+    fun undoLastGenerativeEdit() {
+        if (bitmapUndoStack.isEmpty()) return
+        val prev = bitmapUndoStack.removeLast()
+        _bitmap.value = prev
+        _exportStatus.value = "Restored photo before Generative edit"
+    }
+
+    fun canUndoGenerativeEdit(): Boolean = bitmapUndoStack.isNotEmpty()
+
+    fun executeRemoveStrokes(customPrompt: String? = null) {
+        val bmp = _bitmap.value ?: return
+        val strokes = _removeBrushPoints.value
+        if (strokes.isEmpty()) {
+            _exportStatus.value = "Paint over an object on the photo first"
+            return
+        }
+
+        val useCloudFlux = _useGenerativeAiRemove.value
+        val cfg = _genAiConfig.value
+
+        if (useCloudFlux && !cfg.isReady) {
+            _exportStatus.value = "Configure FLUX.1 Fill server (or turn off Generative AI for local heal)"
+            _showGenAiSettingsDialog.value = true
+            return
+        }
+
+        _isGenAiProcessing.value = true
+        _exportStatus.value = if (useCloudFlux) {
+            "Extracting Crop+Mask ROI & calling FLUX.1 Fill..."
+        } else {
+            "Applying local Poisson content-aware removal..."
+        }
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val extracted = com.cleanlr.engine.RoiPatchExtractor.extractRemoveRoi(bmp, strokes)
+            if (extracted == null) {
+                withContext(Dispatchers.Main) {
+                    _isGenAiProcessing.value = false
+                    _exportStatus.value = "Invalid mask region"
+                }
+                return@launch
+            }
+
+            try {
+                val updatedBitmap: Bitmap = if (!useCloudFlux) {
+                    com.cleanlr.engine.PoissonBlender.localContentAwareRemove(
+                        originalBitmap = bmp,
+                        maskBitmap = extracted.binaryMask,
+                        offsetX = extracted.roiBounds.left,
+                        offsetY = extracted.roiBounds.top
+                    )
+                } else {
+                    val client = com.cleanlr.engine.FluxFillClient(cfg)
+                    val patchResult = client.generatePatch(
+                        croppedImage = extracted.croppedImage,
+                        binaryMask = extracted.binaryMask,
+                        prompt = customPrompt?.takeIf { it.isNotBlank() }
+                            ?: com.cleanlr.engine.FluxFillClient.DEFAULT_REMOVE_PROMPT,
+                        mode = "remove",
+                        uploadWidth = extracted.uploadWidth,
+                        uploadHeight = extracted.uploadHeight
+                    )
+                    val patch = patchResult.getOrThrow()
+                    val blended = if (cfg.usePoissonBlending) {
+                        com.cleanlr.engine.PoissonBlender.blendPatchIntoOriginal(
+                            originalBitmap = bmp,
+                            sourcePatch = patch,
+                            maskBitmap = extracted.binaryMask,
+                            offsetX = extracted.roiBounds.left,
+                            offsetY = extracted.roiBounds.top,
+                            iterations = 120,
+                            mixedGradients = false
+                        )
+                    } else {
+                        // Direct copy inside mask without Poisson if user disabled toggle
+                        com.cleanlr.engine.PoissonBlender.blendPatchIntoOriginal(
+                            originalBitmap = bmp,
+                            sourcePatch = patch,
+                            maskBitmap = extracted.binaryMask,
+                            offsetX = extracted.roiBounds.left,
+                            offsetY = extracted.roiBounds.top,
+                            iterations = 1,
+                            mixedGradients = false
+                        )
+                    }
+                    patch.recycle()
+                    blended
+                }
+
+                extracted.croppedImage.recycle()
+                extracted.binaryMask.recycle()
+
+                withContext(Dispatchers.Main) {
+                    pushBitmapUndoSnapshot(bmp)
+                    _bitmap.value = updatedBitmap
+                    _removeBrushPoints.value = emptyList()
+                    _isGenAiProcessing.value = false
+                    _exportStatus.value = if (useCloudFlux) {
+                        "FLUX.1 Fill + Poisson Blend complete (100% original pixels preserved)"
+                    } else {
+                        "Local Poisson Remove applied!"
+                    }
+                }
+            } catch (e: Exception) {
+                extracted.croppedImage.recycle()
+                extracted.binaryMask.recycle()
+                withContext(Dispatchers.Main) {
+                    _isGenAiProcessing.value = false
+                    _exportStatus.value = "Remove failed: ${e.message}"
+                }
+            }
         }
     }
 
@@ -938,43 +1288,182 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     }
 
     fun setUprightMode(mode: String) {
-        updateRecipe("Upright: $mode") {
-            it.copy(crop = it.crop.copy(uprightMode = mode))
+        val currentMode = _recipe.value.crop.uprightMode
+        // Tapping active mode turns Upright Off
+        if (currentMode.equals(mode, ignoreCase = true) && !mode.equals("Off", ignoreCase = true)) {
+            updateRecipe("Upright: Off") {
+                it.copy(
+                    crop = it.crop.copy(
+                        uprightMode = "Off",
+                        verticalPerspective = 0f,
+                        horizontalPerspective = 0f,
+                        geometryRotate = 0f,
+                        geometryAspect = 0f
+                    )
+                )
+            }
+            return
+        }
+
+        if (mode.equals("Guided", ignoreCase = true)) {
+            val existing = _recipe.value.crop.guidedLines
+            val guides = if (existing.isEmpty()) {
+                listOf(
+                    GuidedLine("g1", 0.25f, 0.18f, 0.22f, 0.82f),
+                    GuidedLine("g2", 0.75f, 0.18f, 0.78f, 0.82f)
+                )
+            } else existing
+            val solved = com.cleanlr.engine.CropGeometryEngine.solveGuidedUpright(guides, currentEffectiveImageAspect())
+            updateRecipe("Upright: Guided") {
+                it.copy(
+                    crop = it.crop.copy(
+                        uprightMode = "Guided",
+                        guidedLines = guides,
+                        verticalPerspective = solved.verticalPerspective,
+                        horizontalPerspective = solved.horizontalPerspective,
+                        geometryRotate = solved.geometryRotate
+                    )
+                )
+            }
+            return
+        }
+
+        if (mode.equals("Off", ignoreCase = true)) {
+            updateRecipe("Upright: Off") {
+                it.copy(
+                    crop = it.crop.copy(
+                        uprightMode = "Off",
+                        verticalPerspective = 0f,
+                        horizontalPerspective = 0f,
+                        geometryRotate = 0f,
+                        geometryAspect = 0f
+                    )
+                )
+            }
+            return
+        }
+
+        val bmp = _bitmap.value
+        if (bmp == null) {
+            updateRecipe("Upright: $mode") { it.copy(crop = it.crop.copy(uprightMode = mode)) }
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val result = com.cleanlr.engine.CropGeometryEngine.analyzeUpright(bmp, mode)
+            withContext(Dispatchers.Main) {
+                updateRecipe("Upright: $mode") {
+                    it.copy(
+                        crop = it.crop.copy(
+                            uprightMode = mode,
+                            verticalPerspective = result.verticalPerspective,
+                            horizontalPerspective = result.horizontalPerspective,
+                            geometryRotate = result.geometryRotate,
+                            geometryAspect = result.geometryAspect
+                        )
+                    )
+                }
+                _exportStatus.value = "Upright ($mode): V=${result.verticalPerspective.toInt()}, H=${result.horizontalPerspective.toInt()}, R=${String.format(java.util.Locale.US, "%.1f°", result.geometryRotate)}"
+            }
+        }
+    }
+
+    fun addGuidedLine() {
+        val current = _recipe.value.crop.guidedLines
+        if (current.size >= 4) {
+            _exportStatus.value = "Maximum 4 Guided Upright lines reached"
+            return
+        }
+        val newLine = when (current.size) {
+            0 -> GuidedLine("g1", 0.25f, 0.18f, 0.25f, 0.82f)
+            1 -> GuidedLine("g2", 0.75f, 0.18f, 0.75f, 0.82f)
+            2 -> GuidedLine("g3", 0.18f, 0.30f, 0.82f, 0.30f)
+            else -> GuidedLine("g4", 0.18f, 0.70f, 0.82f, 0.70f)
+        }
+        val updated = current + newLine
+        val solved = com.cleanlr.engine.CropGeometryEngine.solveGuidedUpright(updated, currentEffectiveImageAspect())
+        updateRecipe("Add Guided Line") {
+            it.copy(
+                crop = it.crop.copy(
+                    uprightMode = "Guided",
+                    guidedLines = updated,
+                    verticalPerspective = solved.verticalPerspective,
+                    horizontalPerspective = solved.horizontalPerspective,
+                    geometryRotate = solved.geometryRotate
+                )
+            )
+        }
+    }
+
+    fun updateGuidedLine(id: String, x1: Float, y1: Float, x2: Float, y2: Float) {
+        val updated = _recipe.value.crop.guidedLines.map { line ->
+            if (line.id == id) {
+                line.copy(
+                    x1 = x1.coerceIn(0.02f, 0.98f),
+                    y1 = y1.coerceIn(0.02f, 0.98f),
+                    x2 = x2.coerceIn(0.02f, 0.98f),
+                    y2 = y2.coerceIn(0.02f, 0.98f)
+                )
+            } else line
+        }
+        val solved = com.cleanlr.engine.CropGeometryEngine.solveGuidedUpright(updated, currentEffectiveImageAspect())
+        updateRecipe {
+            it.copy(
+                crop = it.crop.copy(
+                    guidedLines = updated,
+                    verticalPerspective = solved.verticalPerspective,
+                    horizontalPerspective = solved.horizontalPerspective,
+                    geometryRotate = solved.geometryRotate
+                )
+            )
+        }
+    }
+
+    fun clearGuidedLines() {
+        updateRecipe("Clear Guided Lines") {
+            it.copy(
+                crop = it.crop.copy(
+                    guidedLines = emptyList(),
+                    verticalPerspective = 0f,
+                    horizontalPerspective = 0f,
+                    geometryRotate = 0f
+                )
+            )
         }
     }
 
     fun setDistortion(distortion: Float) {
         updateRecipe {
-            it.copy(crop = it.crop.copy(distortion = distortion))
+            it.copy(crop = it.crop.copy(distortion = distortion.coerceIn(-100f, 100f)))
         }
     }
 
     fun setVerticalPerspective(vert: Float) {
-        updateRecipe { it.copy(crop = it.crop.copy(verticalPerspective = vert)) }
+        updateRecipe { it.copy(crop = it.crop.copy(verticalPerspective = vert.coerceIn(-100f, 100f))) }
     }
 
     fun setHorizontalPerspective(horiz: Float) {
-        updateRecipe { it.copy(crop = it.crop.copy(horizontalPerspective = horiz)) }
+        updateRecipe { it.copy(crop = it.crop.copy(horizontalPerspective = horiz.coerceIn(-100f, 100f))) }
     }
 
     fun setGeometryRotate(rot: Float) {
-        updateRecipe { it.copy(crop = it.crop.copy(geometryRotate = rot)) }
+        updateRecipe { it.copy(crop = it.crop.copy(geometryRotate = rot.coerceIn(-45f, 45f))) }
     }
 
     fun setGeometryAspect(aspect: Float) {
-        updateRecipe { it.copy(crop = it.crop.copy(geometryAspect = aspect)) }
+        updateRecipe { it.copy(crop = it.crop.copy(geometryAspect = aspect.coerceIn(-100f, 100f))) }
     }
 
     fun setGeometryScale(scale: Float) {
-        updateRecipe { it.copy(crop = it.crop.copy(geometryScale = scale)) }
+        updateRecipe { it.copy(crop = it.crop.copy(geometryScale = scale.coerceIn(50f, 200f))) }
     }
 
     fun setGeometryXOffset(xOff: Float) {
-        updateRecipe { it.copy(crop = it.crop.copy(geometryXOffset = xOff)) }
+        updateRecipe { it.copy(crop = it.crop.copy(geometryXOffset = xOff.coerceIn(-100f, 100f))) }
     }
 
     fun setGeometryYOffset(yOff: Float) {
-        updateRecipe { it.copy(crop = it.crop.copy(geometryYOffset = yOff)) }
+        updateRecipe { it.copy(crop = it.crop.copy(geometryYOffset = yOff.coerceIn(-100f, 100f))) }
     }
 
     override fun setActiveTool(tool: ActiveTool?) {
@@ -1321,7 +1810,10 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
             EditorToolTab.CROP -> {
                 r.crop.rotationDegrees != 0f || r.crop.straightenAngle != 0f ||
                 r.crop.flipHorizontal || r.crop.flipVertical ||
-                r.crop.left != 0f || r.crop.top != 0f || r.crop.right != 1f || r.crop.bottom != 1f
+                r.crop.left != 0f || r.crop.top != 0f || r.crop.right != 1f || r.crop.bottom != 1f ||
+                r.crop.distortion != 0f || r.crop.verticalPerspective != 0f || r.crop.horizontalPerspective != 0f ||
+                r.crop.geometryRotate != 0f || r.crop.geometryAspect != 0f || r.crop.geometryScale != 100f ||
+                r.crop.geometryXOffset != 0f || r.crop.geometryYOffset != 0f || r.crop.isExpandEnabled
             }
             EditorToolTab.LIGHT -> {
                 r.basic.exposure != 0f || r.basic.contrast != 0f ||

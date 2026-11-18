@@ -1,0 +1,117 @@
+{
+  "passed": true,
+  "checks": {
+    "root_cleanliness": true,
+    "legacy_retirement": true,
+    "canonical_panels_structure": true,
+    "disk_count_102": true,
+    "unique_hashes_102": true,
+    "zero_filename_collisions": true,
+    "all_images_8bit_rgba": true,
+    "explorer_baseline_parsed": true,
+    "bijective_explorer_baseline": true,
+    "manifest_header_valid": true,
+    "bijective_manifest_match": true,
+    "edge_case_11_portrait_in_horizontal": true,
+    "boundary_panels_valid": true,
+    "svg_icons_protected": true
+  },
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "total_files_on_disk": 102,
+    "total_payload_bytes": 76379057,
+    "unique_sha256_count": 102,
+    "edge_case_11_details": {
+      "Screenshot_20261024-201235_Lightroom.png": {
+        "panel": "Community",
+        "dims": "1220x2712",
+        "orientation": "portrait",
+        "sha256": "4be45f156a43194423cf4954bbe6415d9e8fa8814e6863441148d12cc06eed30"
+      },
+      "Screenshot_20261024-201248_Lightroom.png": {
+        "panel": "Settings_and_Account",
+        "dims": "1220x2712",
+        "orientation": "portrait",
+        "sha256": "4a2f5f3cae541376cb600fcc7eb047f5d77d53c2ea9fcf9b74a846cf15aa6577"
+      },
+      "Screenshot_20261024-201254_Lightroom.png": {
+        "panel": "Settings_and_Account",
+        "dims": "1220x2712",
+        "orientation": "portrait",
+        "sha256": "2e00d27ca1439fd661e7f9129daa614b59a013e2c94208c63d7aeafea1dceeac"
+      },
+      "Screenshot_20261024-201303_Lightroom.png": {
+        "panel": "Settings_and_Account",
+        "dims": "1220x2712",
+        "orientation": "portrait",
+        "sha256": "66c72e9b6e528d6899f3f08758b126ef6b6525411771d221745b1f17e1626243"
+      },
+      "Screenshot_20261024-201307_Lightroom.png": {
+        "panel": "Settings_and_Account",
+        "dims": "1220x2712",
+        "orientation": "portrait",
+        "sha256": "3ed8bcfc04b9c82c2d1a06ea39be03a43bba0a63ecf20fa72fe7e6c35fb03b7f"
+      },
+      "Screenshot_20261024-201313_Lightroom.png": {
+        "panel": "Settings_and_Account",
+        "dims": "1220x2712",
+        "orientation": "portrait",
+        "sha256": "e9b64d91bd59800a48b4896bd9f1093a22a9805cc5dc7d9aeae86e68046b8ea3"
+      },
+      "Screenshot_20261024-201413_Lightroom.png": {
+        "panel": "Camera",
+        "dims": "1220x2712",
+        "orientation": "portrait",
+        "sha256": "fbe22447c3f609d2d774ac06b3e7d7bdd6e2f34ce929cde2d5e562d3aade2760"
+      },
+      "Screenshot_20261024-201419_Lightroom.png": {
+        "panel": "Camera",
+        "dims": "1220x2712",
+        "orientation": "portrait",
+        "sha256": "a5869677b6dd997cdfb8f307a0acc638bec63955066724f6664914dcc03ea05f"
+      },
+      "Screenshot_20261024-201426_Lightroom.png": {
+        "panel": "Camera",
+        "dims": "1220x2712",
+        "orientation": "portrait",
+        "sha256": "b93252f44a560de99780aa1e04ff27b399d2352ebdd2f25d7631b35fc475949f"
+      },
+      "Screenshot_20261024-201435_Lightroom.png": {
+        "panel": "Camera",
+        "dims": "1220x2712",
+        "orientation": "portrait",
+        "sha256": "25aee939d5a3ddd420cbfa42691acee15d2d9dfb8c95f03098fc106c3a1d193b"
+      },
+      "Screenshot_20261024-201449_Lightroom.png": {
+        "panel": "Camera",
+        "dims": "1220x2712",
+        "orientation": "portrait",
+        "sha256": "70c3a82d016e8b2480d1637a3c5ad3c61b3f3cae775a468f57569eccadea0649"
+      }
+    }
+  },
+  "panel_distribution": {
+    "Actions": 4,
+    "Camera": 5,
+    "Color": 4,
+    "Color_Grading": 5,
+    "Color_Mix": 3,
+    "Community": 1,
+    "Crop": 13,
+    "Detail": 5,
+    "Editor_and_Export": 9,
+    "Effects": 7,
+    "Gallery": 3,
+    "Lens_Blur": 3,
+    "Light": 4,
+    "Masking": 11,
+    "Optics": 1,
+    "Presets": 7,
+    "Profiles": 3,
+    "Remove": 3,
+    "Settings_and_Account": 6,
+    "Tone_Curve": 5
+  },
+  "total_files": 102
+}
