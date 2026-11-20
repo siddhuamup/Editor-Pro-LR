@@ -15,6 +15,7 @@ uniform float uSharpenAmount;     // 0.0 to 1.5 (mapped from 0 to 150)
 uniform float uSharpenRadius;     // typically 1.0 (pixels)
 uniform float uSharpenDetail;     // 0.0 to 1.0 (Tip 324)
 uniform float uSharpenMasking;    // 0.0 to 1.0 (edge masking threshold)
+uniform int uAltClippingMode;     // 3 = Sharpen Masking B&W edge overlay preview
 
 // Noise Reduction parameters (Tip 294)
 uniform float uLuminanceNoise;    // 0.0 to 1.0
@@ -113,6 +114,12 @@ void main() {
         if (uSharpenMasking > 0.001) {
             float threshold = uSharpenMasking * 0.05;
             edgeMask = smoothstep(threshold * 0.5, threshold * 1.5, edgeStrength);
+        }
+
+        // Lightroom Alt-Masking Overlay: High-contrast black & white edge visualization
+        if (uAltClippingMode == 3) {
+            fragColor = vec4(vec3(edgeMask), 1.0);
+            return;
         }
 
         // Tip 324: Detail slider enhances high-frequency micro textures

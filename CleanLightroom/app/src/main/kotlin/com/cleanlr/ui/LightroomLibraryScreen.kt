@@ -62,6 +62,7 @@ private enum class LightroomWorkspace(val label: String) {
 @Composable
 fun LightroomLibraryScreen(
     onPhotoSelected: (Uri) -> Unit,
+    onOpenCamera: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -177,33 +178,38 @@ fun LightroomLibraryScreen(
                     .padding(insets)
                     .background(Color.Black)
             ) {
-                // Top Bar with Hamburger, Premium, Search, Bell, Cloud, Overflow
+                // Top Bar with Hamburger, Search, Bell, Cloud, Overflow (Exact Lightroom v11.8.15: Screenshot 082951)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .height(56.dp)
-                        .background(Color(0xFF1D1D1D))
-                        .padding(horizontal = 8.dp),
+                        .height(54.dp)
+                        .background(Color(0xFF1A1A1A))
+                        .padding(horizontal = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { coroutineScope.launch { drawerState.open() } }) {
-                        Icon(Icons.Default.Menu, contentDescription = "Navigation drawer", tint = Color.White)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_lr_hamburger_menu),
+                            contentDescription = "Navigation drawer",
+                            tint = Color(0xFFE3E3E3),
+                            modifier = Modifier.size(22.dp)
+                        )
                     }
                     Spacer(Modifier.weight(1f))
                     if (workspace == LightroomWorkspace.LIGHTROOM) {
                         IconButton(onClick = { searchOpen = !searchOpen }) {
-                            Icon(painter = painterResource(R.drawable.ic_lr_search_bar), contentDescription = "Search", tint = Color.White, modifier = Modifier.size(22.dp))
+                            Icon(painter = painterResource(R.drawable.ic_lr_search_bar), contentDescription = "Search", tint = Color(0xFFE3E3E3), modifier = Modifier.size(22.dp))
                         }
                         IconButton(onClick = { }) {
-                            Icon(painter = painterResource(R.drawable.ic_lr_notifications_bell), contentDescription = "Notifications", tint = Color.White, modifier = Modifier.size(22.dp))
+                            Icon(painter = painterResource(R.drawable.ic_lr_notifications_bell), contentDescription = "Notifications", tint = Color(0xFFE3E3E3), modifier = Modifier.size(22.dp))
                         }
                         IconButton(onClick = { }) {
-                            Icon(painter = painterResource(R.drawable.ic_lr_cloud_uploading), contentDescription = "Cloud sync", tint = Color.White, modifier = Modifier.size(22.dp))
+                            Icon(painter = painterResource(R.drawable.ic_lr_cloud_uploading), contentDescription = "Cloud sync", tint = Color(0xFFE3E3E3), modifier = Modifier.size(22.dp))
                         }
                     }
                     IconButton(onClick = { showViewOptionsSheet = true }) {
-                        Icon(painter = painterResource(R.drawable.ic_lr_more_vert), contentDescription = "View options and more", tint = Color.White, modifier = Modifier.size(20.dp))
+                        Icon(painter = painterResource(R.drawable.ic_lr_more_vert), contentDescription = "View options and more", tint = Color(0xFFE3E3E3), modifier = Modifier.size(22.dp))
                     }
                 }
 
@@ -247,17 +253,21 @@ fun LightroomLibraryScreen(
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.SemiBold
                                     )
+                                    Spacer(Modifier.width(6.dp))
                                     Icon(
-                                        Icons.Default.ArrowDropDown,
+                                        painter = painterResource(R.drawable.ic_lr_chevron_down),
                                         contentDescription = "Choose collection",
-                                        tint = Color.White
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
-                                Text(
-                                    text = "${visiblePhotos.size} photos",
-                                    color = Color(0xFF9B9B9B),
-                                    fontSize = 12.sp
-                                )
+                                if (workspace != LightroomWorkspace.GALLERY) {
+                                    Text(
+                                        text = "${visiblePhotos.size} photos",
+                                        color = Color(0xFF9B9B9B),
+                                        fontSize = 12.sp
+                                    )
+                                }
                             }
                             DropdownMenu(
                                 expanded = showCollectionMenu,
@@ -287,7 +297,7 @@ fun LightroomLibraryScreen(
                         // Filter Button
                         Box {
                             IconButton(onClick = { showFilterMenu = true }) {
-                                Icon(painter = painterResource(R.drawable.ic_lr_filter_funnel), contentDescription = "Filter photos", tint = Color.White, modifier = Modifier.size(20.dp))
+                                Icon(painter = painterResource(R.drawable.ic_lr_filter_funnel), contentDescription = "Filter photos", tint = Color(0xFFE3E3E3), modifier = Modifier.size(22.dp))
                             }
                             DropdownMenu(
                                 expanded = showFilterMenu,
@@ -306,7 +316,7 @@ fun LightroomLibraryScreen(
                         // Sort Button (Shown only in Gallery workspace: Screenshot 082951 vs 083018)
                         if (workspace == LightroomWorkspace.GALLERY) {
                             IconButton(onClick = { }) {
-                                Icon(painter = painterResource(R.drawable.ic_lr_sort_order), contentDescription = "Sort photos", tint = Color.White, modifier = Modifier.size(20.dp))
+                                Icon(painter = painterResource(R.drawable.ic_lr_sort_order), contentDescription = "Sort photos", tint = Color(0xFFE3E3E3), modifier = Modifier.size(22.dp))
                             }
                         }
                     }
@@ -343,43 +353,39 @@ fun LightroomLibraryScreen(
                                     horizontalArrangement = Arrangement.spacedBy(3.dp),
                                     verticalArrangement = Arrangement.spacedBy(3.dp)
                                 ) {
-                                    // Date Section Header if segmented (Screenshot 1: "October 17, 2026", "18 ▾")
+                                    // Date Section Header if segmented (Exact Screenshot 082951: "October 17, 2026" left, "18  v" far right)
                                     if (isGridSegmented && visiblePhotos.isNotEmpty()) {
                                         item(span = { GridItemSpan(columnCount) }) {
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .padding(horizontal = 6.dp, vertical = 8.dp),
+                                                    .padding(horizontal = 8.dp, vertical = 10.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 val dateLabel = SimpleDateFormat("MMMM d, yyyy", Locale.US).format(Date())
                                                 Text(
                                                     text = dateLabel,
-                                                    color = Color.White,
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.Medium
+                                                    color = Color(0xFFE3E3E3),
+                                                    fontSize = 15.sp,
+                                                    fontWeight = FontWeight.Normal
                                                 )
-                                                Spacer(Modifier.width(8.dp))
-                                                Surface(
-                                                    color = Color(0xFF2C2C2C),
-                                                    shape = RoundedCornerShape(12.dp)
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                                 ) {
-                                                    Row(
-                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        Text(
-                                                            text = "${visiblePhotos.size}",
-                                                            color = Color(0xFFAAAAAA),
-                                                            fontSize = 11.sp
-                                                        )
-                                                        Icon(
-                                                            Icons.Default.ArrowDropDown,
-                                                            contentDescription = null,
-                                                            tint = Color(0xFFAAAAAA),
-                                                            modifier = Modifier.size(16.dp)
-                                                        )
-                                                    }
+                                                    Text(
+                                                        text = "${visiblePhotos.size}",
+                                                        color = Color(0xFFE3E3E3),
+                                                        fontSize = 15.sp,
+                                                        fontWeight = FontWeight.Normal
+                                                    )
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.ic_lr_chevron_down),
+                                                        contentDescription = null,
+                                                        tint = Color(0xFFE3E3E3),
+                                                        modifier = Modifier.size(15.dp)
+                                                    )
                                                 }
                                             }
                                         }
@@ -430,7 +436,7 @@ fun LightroomLibraryScreen(
                                             .background(Color(0xFF6AA9F2))
                                     )
                                     IconButton(
-                                        onClick = { importLauncher.launch("image/*") },
+                                        onClick = { onOpenCamera() },
                                         modifier = Modifier.padding(end = 4.dp)
                                     ) {
                                         Icon(painter = painterResource(R.drawable.ic_lr_camera_pro), contentDescription = "Camera", tint = Color.White, modifier = Modifier.size(22.dp))

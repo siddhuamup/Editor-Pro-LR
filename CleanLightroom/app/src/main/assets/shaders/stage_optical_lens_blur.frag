@@ -30,6 +30,7 @@ uniform int uBokehShape;               // 0=Circle, 1=Bubble, 2=5-blade, 3=7-bla
 uniform float uNoiseSigma;             // Measured high-frequency subject sensor grain sigma
 uniform float uImageAspect;            // width / height
 uniform vec2 uDepthTexSize;            // Pixel dimensions of uDepthMapTex for artifact-free RG16 bilinear decode
+uniform int uVisualizeDepth;           // 1 = visualize depth false-color map overlay
 
 const float PI = 3.14159265359;
 const float GOLDEN_ANGLE = 2.39996323;
@@ -136,13 +137,24 @@ void main() {
     vec2 uv = vTexCoord;
     vec3 origLinear = texture(uOriginalTex, uv).rgb;
 
+    // Align Android top-down Bitmaps (mapUv.y=0 top) with GL FBO (uv.y=1 top)
+    vec2 mapUv = vec2(uv.x, 1.0 - uv.y);
+
+    // Adobe Lightroom Visualize Depth False Color Mode
+    if (uVisualizeDepth == 1) {
+        float z = sampleDepth16(mapUv);
+        float inFocus = 1.0 - smoothstep(0.0, 0.045, abs(z - uFocalDepthS));
+        vec3 depthGradient = mix(vec3(0.95, 0.35, 0.08), vec3(0.08, 0.42, 0.95), clamp(z, 0.0, 1.0));
+        vec3 visColor = mix(depthGradient, vec3(0.05, 0.95, 0.35), inFocus * 0.88);
+        fragColor = vec4(visColor, 1.0);
+        return;
+    }
+
     if (uBlurAmount <= 0.002) {
         fragColor = vec4(origLinear, 1.0);
         return;
     }
 
-    // Align Android top-down Bitmaps (mapUv.y=0 top) with GL FBO (uv.y=1 top)
-    vec2 mapUv = vec2(uv.x, 1.0 - uv.y);
     float alpha = sampleAlpha(mapUv);
     float depthZ = sampleDepth16(mapUv);
     float centerCoC = computeCoC(depthZ);

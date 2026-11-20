@@ -127,6 +127,20 @@ class LoupeGLView(context: Context) : GLSurfaceView(context) {
             requestRender()
         }
     }
+
+    fun setVisualizeDepth(active: Boolean) {
+        queueEvent {
+            renderer.setVisualizeDepth(active)
+            requestRender()
+        }
+    }
+
+    fun setActiveMaskBitmap(bitmap: Bitmap?) {
+        queueEvent {
+            renderer.setActiveMaskBitmap(bitmap)
+            requestRender()
+        }
+    }
 }
 
 class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
@@ -171,6 +185,19 @@ class LoupeRenderer(private val context: Context) : GLSurfaceView.Renderer {
             if (pack != null) p.uploadOpticalBlurPack(pack) else p.clearOpticalBlurPack()
         } else {
             pendingOpticalPack = pack
+        }
+    }
+
+    fun setVisualizeDepth(active: Boolean) {
+        pipeline?.isLensBlurVisualizeDepth = active
+    }
+
+    fun setActiveMaskBitmap(bitmap: Bitmap?) {
+        val p = pipeline ?: return
+        if (bitmap != null) {
+            p.uploadMaskBitmap(bitmap)
+        } else {
+            p.clearMaskTexture()
         }
     }
 
@@ -307,17 +334,21 @@ fun LoupeCanvas(
     isGuidedUprightActive: Boolean = false,
     isRemoveBrushActive: Boolean = false,
     removeBrushPoints: List<com.cleanlr.model.BrushStrokePoint> = emptyList(),
+    removeStrokeBreakIndices: Set<Int> = emptySet(),
     removeToolMode: com.cleanlr.engine.RemoveToolMode = com.cleanlr.engine.RemoveToolMode.REMOVE,
     isRefineEraseMode: Boolean = false,
     healCloneSourceNorm: Pair<Float, Float>? = null,
     onHealCloneSourceChanged: ((Float, Float) -> Unit)? = null,
     isGenAiProcessing: Boolean = false,
     opticalBlurPack: com.cleanlr.ai.AiVisionPipeline.OpticalBlurPack? = null,
-    onRemoveBrushPoint: ((Float, Float) -> Unit)? = null,
+    isLensBlurVisualizeDepth: Boolean = false,
+    activeMaskBitmap: Bitmap? = null,
+    onRemoveBrushPoint: ((Float, Float, Boolean) -> Unit)? = null,
     onCropRectChanged: ((Float, Float, Float, Float) -> Unit)? = null,
     onGuidedLineChanged: ((String, Float, Float, Float, Float) -> Unit)? = null,
     onTriggerExpandPreview: (() -> Unit)? = null,
     isCurveActive: Boolean = false,
+    isParametricCurveMode: Boolean = false,
     curvePoints: List<CurvePoint> = emptyList(),
     curveChannelColor: Color = Color.White,
     onCurvePointChanged: ((List<CurvePoint>) -> Unit)? = null,
@@ -434,6 +465,14 @@ fun LoupeCanvas(
     // Upload 5-Stage Optical Lens Blur textures (Clean-Plate + BiRefNet Alpha + 16-bit Depth)
     LaunchedEffect(opticalBlurPack, glView) {
         glView?.setOpticalBlurPack(opticalBlurPack)
+    }
+
+    LaunchedEffect(isLensBlurVisualizeDepth, glView) {
+        glView?.setVisualizeDepth(isLensBlurVisualizeDepth)
+    }
+
+    LaunchedEffect(activeMaskBitmap, glView) {
+        glView?.setActiveMaskBitmap(activeMaskBitmap)
     }
 
     Box(
@@ -670,6 +709,7 @@ fun LoupeCanvas(
             ToneCurveCanvasOverlay(
                 curvePoints = curvePoints,
                 curveChannelColor = curveChannelColor,
+                isParametricMode = isParametricCurveMode,
                 onCurvePointChanged = { onCurvePointChanged?.invoke(it) },
                 onTouchStart = { onCurveTouchStart?.invoke() },
                 onTouchEnd = { onCurveTouchEnd?.invoke(it) }
@@ -1159,51 +1199,48 @@ fun LoupeCanvas(
                 imageHeight = bmpH,
                 brushSize = brushSize,
                 points = removeBrushPoints,
+                strokeBreakIndices = removeStrokeBreakIndices,
                 removeToolMode = removeToolMode,
                 isRefineEraseMode = isRefineEraseMode,
                 healCloneSourceNorm = healCloneSourceNorm,
-                onPointAdded = { nx, ny -> onRemoveBrushPoint?.invoke(nx, ny) },
+                onPointAdded = { nx, ny, isNew -> onRemoveBrushPoint?.invoke(nx, ny, isNew) },
                 onSourcePinDragged = { nx, ny -> onHealCloneSourceChanged?.invoke(nx, ny) }
             )
         }
 
-        // SOTA FLUX.1 Fill + Poisson Blending Processing HUD
+        // Clean Adobe Lightroom Generative AI processing banner (no developer/model jargon)
         if (isGenAiProcessing) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.45f)),
-                contentAlignment = Alignment.Center
+                    .background(Color.Black.copy(alpha = 0.35f)),
+                contentAlignment = Alignment.BottomCenter
             ) {
                 Surface(
-                    color = Color(0xEE18181B),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, SpectrumBlue),
-                    shadowElevation = 12.dp
+                    color = Color(0xFF1473E6),
+                    shape = RoundedCornerShape(12.dp),
+                    shadowElevation = 8.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 20.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         CircularProgressIndicator(
-                            color = SpectrumBlue,
+                            color = Color.White,
+                            trackColor = Color(0x44FFFFFF),
                             strokeWidth = 2.5.dp,
                             modifier = Modifier.size(22.dp)
                         )
-                        Column {
-                            Text(
-                                text = "FLUX.1 Fill • Synthesizing Patch",
-                                color = Color.White,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = "Crop+Mask ROI → GPU → Poisson Blend",
-                                color = Color(0xFFA0A0A8),
-                                fontSize = 11.sp
-                            )
-                        }
+                        Text(
+                            text = "Removing with Generative AI...",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
             }
@@ -1620,10 +1657,11 @@ private fun RemoveBrushCanvasOverlay(
     imageHeight: Int,
     brushSize: Float,
     points: List<com.cleanlr.model.BrushStrokePoint>,
+    strokeBreakIndices: Set<Int> = emptySet(),
     removeToolMode: com.cleanlr.engine.RemoveToolMode = com.cleanlr.engine.RemoveToolMode.REMOVE,
     isRefineEraseMode: Boolean = false,
     healCloneSourceNorm: Pair<Float, Float>? = null,
-    onPointAdded: (Float, Float) -> Unit,
+    onPointAdded: (Float, Float, Boolean) -> Unit,
     onSourcePinDragged: ((Float, Float) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -1651,7 +1689,7 @@ private fun RemoveBrushCanvasOverlay(
                     if (disp.width > 1f && disp.height > 1f) {
                         val nx = ((offset.x - disp.left) / disp.width).coerceIn(0f, 1f)
                         val ny = ((offset.y - disp.top) / disp.height).coerceIn(0f, 1f)
-                        currentOnPointAdded(nx, ny)
+                        currentOnPointAdded(nx, ny, true)
                     }
                 }
             }
@@ -1666,7 +1704,6 @@ private fun RemoveBrushCanvasOverlay(
                             crop = currentCrop,
                             isCropActive = false
                         )
-                        // Check if user grabbed the Heal/Clone Source Ring pin
                         val src = currentSourceNorm
                         if (currentMode != com.cleanlr.engine.RemoveToolMode.REMOVE && src != null && disp.width > 1f && disp.height > 1f) {
                             val sx = disp.left + src.first * disp.width
@@ -1682,7 +1719,7 @@ private fun RemoveBrushCanvasOverlay(
                         if (disp.width > 1f && disp.height > 1f) {
                             val nx = ((start.x - disp.left) / disp.width).coerceIn(0f, 1f)
                             val ny = ((start.y - disp.top) / disp.height).coerceIn(0f, 1f)
-                            currentOnPointAdded(nx, ny)
+                            currentOnPointAdded(nx, ny, true)
                         }
                     },
                     onDrag = { change, _ ->
@@ -1703,7 +1740,7 @@ private fun RemoveBrushCanvasOverlay(
                                 currentOnSourcePinDragged?.invoke(nx, ny)
                             } else {
                                 activeCursor = pos
-                                currentOnPointAdded(nx, ny)
+                                currentOnPointAdded(nx, ny, false)
                             }
                         }
                     },
@@ -1718,6 +1755,81 @@ private fun RemoveBrushCanvasOverlay(
                 )
             }
     ) {
+        // Offscreen composited stroke ribbon layer: uniform translucent ribbon with ZERO overlapping dot beads!
+        val strokeBaseColor = when (removeToolMode) {
+            com.cleanlr.engine.RemoveToolMode.REMOVE -> Color(0xFFF5F5FA)
+            com.cleanlr.engine.RemoveToolMode.HEAL -> Color(0xFFFF3868)
+            com.cleanlr.engine.RemoveToolMode.CLONE -> Color(0xFF38A9FF)
+        }
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
+                    alpha = 0.54f
+                }
+        ) {
+            if (points.isEmpty()) return@Canvas
+            val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
+                viewportWidth = size.width,
+                viewportHeight = size.height,
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+                crop = crop,
+                isCropActive = false
+            )
+            val minDispDim = min(disp.width, disp.height).coerceAtLeast(1f)
+
+            // Split points into continuous stroke chains and render smooth quadratic Bezier Paths
+            var segStart = 0
+            while (segStart < points.size) {
+                var segEnd = segStart + 1
+                while (segEnd < points.size) {
+                    if (segEnd in strokeBreakIndices) break
+                    val prev = points[segEnd - 1]
+                    val cur = points[segEnd]
+                    // Also auto-break if user erased middle points in Refine mode
+                    if (kotlin.math.hypot(cur.x - prev.x, cur.y - prev.y) > 0.14f) break
+                    segEnd++
+                }
+
+                val firstPt = points[segStart]
+                val rad = ((firstPt.radius.coerceIn(2f, 120f) / 400f) * minDispDim).coerceAtLeast(8f)
+                if (segEnd - segStart == 1) {
+                    val px = disp.left + firstPt.x * disp.width
+                    val py = disp.top + firstPt.y * disp.height
+                    drawCircle(color = strokeBaseColor, radius = rad, center = Offset(px, py))
+                } else {
+                    val path = androidx.compose.ui.graphics.Path()
+                    var prevX = disp.left + firstPt.x * disp.width
+                    var prevY = disp.top + firstPt.y * disp.height
+                    path.moveTo(prevX, prevY)
+                    for (i in (segStart + 1) until segEnd) {
+                        val curPt = points[i]
+                        val cx = disp.left + curPt.x * disp.width
+                        val cy = disp.top + curPt.y * disp.height
+                        val midX = (prevX + cx) * 0.5f
+                        val midY = (prevY + cy) * 0.5f
+                        path.quadraticTo(prevX, prevY, midX, midY)
+                        prevX = cx
+                        prevY = cy
+                    }
+                    path.lineTo(prevX, prevY)
+                    drawPath(
+                        path = path,
+                        color = strokeBaseColor,
+                        style = Stroke(
+                            width = rad * 2f,
+                            cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                            join = androidx.compose.ui.graphics.StrokeJoin.Round
+                        )
+                    )
+                }
+                segStart = segEnd
+            }
+        }
+
+        // Foreground HUD layer: Heal/Clone Draggable Source Ring + Live Brush Cursor Ring
         Canvas(modifier = Modifier.fillMaxSize()) {
             val disp = com.cleanlr.engine.CropGeometryEngine.computeImageDisplayRect(
                 viewportWidth = size.width,
@@ -1728,21 +1840,8 @@ private fun RemoveBrushCanvasOverlay(
                 isCropActive = false
             )
             val minDispDim = min(disp.width, disp.height).coerceAtLeast(1f)
-            val maskFill = when (removeToolMode) {
-                com.cleanlr.engine.RemoveToolMode.REMOVE -> Color(0x88F0F0F5)
-                com.cleanlr.engine.RemoveToolMode.HEAL -> Color(0x78FF4A78)
-                com.cleanlr.engine.RemoveToolMode.CLONE -> Color(0x7838A9FF)
-            }
             val maskOutline = if (isRefineEraseMode) Color(0xFF38A9FF) else Color(0xE6FFFFFF)
 
-            points.forEach { pt ->
-                val px = disp.left + pt.x * disp.width
-                val py = disp.top + pt.y * disp.height
-                val rad = ((pt.radius.coerceIn(2f, 120f) / 400f) * minDispDim).coerceAtLeast(8f)
-                drawCircle(color = maskFill, radius = rad, center = Offset(px, py))
-            }
-
-            // Authentic Lightroom Heal / Clone Source Ring + Connector Arrow
             if (removeToolMode != com.cleanlr.engine.RemoveToolMode.REMOVE && healCloneSourceNorm != null && points.isNotEmpty()) {
                 val avgX = points.map { it.x }.average().toFloat()
                 val avgY = points.map { it.y }.average().toFloat()
@@ -1753,14 +1852,12 @@ private fun RemoveBrushCanvasOverlay(
                 )
                 val pinRad = ((brushSize.coerceIn(4f, 100f) / 400f) * minDispDim).coerceIn(14f, 52f)
 
-                // Connecting line from source -> target
                 drawLine(
                     color = Color.White.copy(alpha = 0.85f),
                     start = sourceCenter,
                     end = targetCenter,
                     strokeWidth = 1.6.dp.toPx()
                 )
-                // Draggable Source Ring (dashed white outline + inner crosshair dot)
                 drawCircle(
                     color = Color.Black.copy(alpha = 0.35f),
                     radius = pinRad + 1.dp.toPx(),
@@ -1782,6 +1879,7 @@ private fun RemoveBrushCanvasOverlay(
 
             activeCursor?.let { cur ->
                 val rad = ((brushSize.coerceIn(2f, 120f) / 400f) * minDispDim).coerceAtLeast(10f)
+                drawCircle(color = Color.Black.copy(alpha = 0.35f), radius = rad + 1.dp.toPx(), center = cur, style = Stroke(3.dp.toPx()))
                 drawCircle(color = maskOutline, radius = rad, center = cur, style = Stroke(1.8.dp.toPx()))
             }
         }
@@ -1792,6 +1890,7 @@ private fun RemoveBrushCanvasOverlay(
 private fun ToneCurveCanvasOverlay(
     curvePoints: List<CurvePoint>,
     curveChannelColor: Color,
+    isParametricMode: Boolean = false,
     onCurvePointChanged: (List<CurvePoint>) -> Unit,
     onTouchStart: () -> Unit,
     onTouchEnd: (String) -> Unit,
@@ -1801,107 +1900,120 @@ private fun ToneCurveCanvasOverlay(
     var selectedIndex by remember { mutableStateOf(-1) }
     var isDragging by remember { mutableStateOf(false) }
 
-    Box(
+    // Parametric 3 split-point handles matching Screenshot 083452 (0.25, 0.50, 0.75)
+    var splitLow by remember { mutableFloatStateOf(0.25f) }
+    var splitMid by remember { mutableFloatStateOf(0.50f) }
+    var splitHigh by remember { mutableFloatStateOf(0.75f) }
+    var activeSplitKnob by remember { mutableStateOf(-1) }
+    var activeParamZone by remember { mutableStateOf(-1) }
+    var zoneOffsets by remember { mutableStateOf(floatArrayOf(0f, 0f, 0f, 0f)) }
+
+    val currentCurvePoints by rememberUpdatedState(curvePoints)
+    val currentOnCurvePointChanged by rememberUpdatedState(onCurvePointChanged)
+    val currentOnTouchStart by rememberUpdatedState(onTouchStart)
+    val currentOnTouchEnd by rememberUpdatedState(onTouchEnd)
+
+    Column(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        val boxSizeDp = 300.dp
         Box(
             modifier = Modifier
-                .size(boxSizeDp)
-                .pointerInput(curvePoints) {
-                    detectTapGestures(
-                        onTap = { offset ->
-                            val w = size.width
-                            val h = size.height
-                            val normX = (offset.x / w * 255f).coerceIn(0f, 255f)
-                            val normY = ((1f - offset.y / h) * 255f).coerceIn(0f, 255f)
-
-                            val existingIdx = curvePoints.indexOfFirst { pt ->
-                                val ptPxX = (pt.x / 255f) * w
-                                val ptPxY = (1f - pt.y / 255f) * h
-                                kotlin.math.hypot((offset.x - ptPxX).toDouble(), (offset.y - ptPxY).toDouble()) < 36.0
-                            }
-
-                            if (existingIdx != -1) {
-                                selectedIndex = existingIdx
-                            } else if (curvePoints.size < 16) {
-                                val tooClose = curvePoints.any { abs(it.x - normX) < 4.0f }
-                                if (!tooClose) {
-                                    onTouchStart()
-                                    val newPoints = (curvePoints + CurvePoint(normX, normY)).sortedBy { it.x }
-                                    onCurvePointChanged(newPoints)
-                                    selectedIndex = newPoints.indexOfFirst { it.x == normX }
-                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                    onTouchEnd("Add Curve Point")
-                                }
-                            }
-                        },
-                        onDoubleTap = { offset ->
-                            val w = size.width
-                            val h = size.height
-                            val deleteIdx = curvePoints.indexOfFirst { pt ->
-                                val ptPxX = (pt.x / 255f) * w
-                                val ptPxY = (1f - pt.y / 255f) * h
-                                kotlin.math.hypot((offset.x - ptPxX).toDouble(), (offset.y - ptPxY).toDouble()) < 36.0
-                            }
-                            if (deleteIdx > 0 && deleteIdx < curvePoints.lastIndex) {
-                                onTouchStart()
-                                val updated = curvePoints.toMutableList().apply { removeAt(deleteIdx) }
-                                onCurvePointChanged(updated)
-                                selectedIndex = -1
-                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                                onTouchEnd("Delete Curve Point")
-                            }
-                        }
-                    )
-                }
-                .pointerInput(curvePoints) {
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .aspectRatio(1f)
+                .pointerInput(isParametricMode) {
                     detectDragGestures(
                         onDragStart = { offset ->
                             val w = size.width
                             val h = size.height
-                            selectedIndex = curvePoints.indexOfFirst { pt ->
-                                val ptPxX = (pt.x / 255f) * w
-                                val ptPxY = (1f - pt.y / 255f) * h
-                                kotlin.math.hypot((offset.x - ptPxX).toDouble(), (offset.y - ptPxY).toDouble()) < 44.0
-                            }
-                            if (selectedIndex != -1) {
+                            val pts = currentCurvePoints
+                            if (isParametricMode) {
+                                val nx = (offset.x / w).coerceIn(0f, 1f)
+                                activeParamZone = when {
+                                    nx < splitLow -> 0
+                                    nx < splitMid -> 1
+                                    nx < splitHigh -> 2
+                                    else -> 3
+                                }
                                 isDragging = true
-                                onTouchStart()
+                                currentOnTouchStart()
+                            } else {
+                                val existingIdx = pts.indexOfFirst { pt ->
+                                    val ptPxX = (pt.x / 255f) * w
+                                    val ptPxY = (1f - pt.y / 255f) * h
+                                    kotlin.math.hypot((offset.x - ptPxX).toDouble(), (offset.y - ptPxY).toDouble()) < 44.0
+                                }
+                                if (existingIdx != -1) {
+                                    selectedIndex = existingIdx
+                                    isDragging = true
+                                    currentOnTouchStart()
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                } else if (pts.size < 16) {
+                                    val normX = (offset.x / w * 255f).coerceIn(0f, 255f)
+                                    val lut = SplineInterpolator.evaluateSpline(pts)
+                                    val lutY = lut[normX.toInt().coerceIn(0, 255)]
+                                    val newPoints = (pts + CurvePoint(normX, lutY)).sortedBy { it.x }
+                                    currentOnTouchStart()
+                                    currentOnCurvePointChanged(newPoints)
+                                    selectedIndex = newPoints.indexOfFirst { it.x == normX }
+                                    isDragging = true
+                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                }
                             }
                         },
                         onDragEnd = {
                             isDragging = false
-                            onTouchEnd("Curve Drag")
+                            activeParamZone = -1
+                            currentOnTouchEnd(if (isParametricMode) "Parametric Curve" else "Curve Point")
                         },
                         onDragCancel = {
                             isDragging = false
-                            onTouchEnd("Cancel")
+                            activeParamZone = -1
+                            currentOnTouchEnd("Cancel")
                         },
-                        onDrag = { change, _ ->
+                        onDrag = { change, dragAmount ->
                             change.consume()
-                            if (selectedIndex != -1 && selectedIndex in curvePoints.indices) {
-                                val w = size.width
-                                val h = size.height
+                            val w = size.width
+                            val h = size.height
+                            val pts = currentCurvePoints
+                            if (isParametricMode && activeParamZone in 0..3) {
+                                val updatedZones = zoneOffsets.copyOf()
+                                updatedZones[activeParamZone] = (updatedZones[activeParamZone] - dragAmount.y / h * 90f).coerceIn(-60f, 60f)
+                                zoneOffsets = updatedZones
+                                val c0 = (splitLow * 0.5f) * 255f
+                                val c1 = ((splitLow + splitMid) * 0.5f) * 255f
+                                val c2 = ((splitMid + splitHigh) * 0.5f) * 255f
+                                val c3 = ((splitHigh + 1f) * 0.5f) * 255f
+                                val resPts = listOf(
+                                    CurvePoint(0f, 0f),
+                                    CurvePoint(c0, (c0 + updatedZones[0]).coerceIn(0f, 255f)),
+                                    CurvePoint(c1, (c1 + updatedZones[1]).coerceIn(0f, 255f)),
+                                    CurvePoint(c2, (c2 + updatedZones[2]).coerceIn(0f, 255f)),
+                                    CurvePoint(c3, (c3 + updatedZones[3]).coerceIn(0f, 255f)),
+                                    CurvePoint(255f, 255f)
+                                )
+                                currentOnCurvePointChanged(resPts)
+                            } else if (selectedIndex != -1 && selectedIndex in pts.indices) {
                                 var newX = (change.position.x / w * 255f).coerceIn(0f, 255f)
                                 var newY = ((1f - change.position.y / h) * 255f).coerceIn(0f, 255f)
 
                                 if (selectedIndex == 0) {
-                                    val maxBoundX = maxOf(0f, if (curvePoints.size > 1) curvePoints[1].x - 1.0f else 128f)
+                                    val maxBoundX = maxOf(0f, if (pts.size > 1) pts[1].x - 1.0f else 128f)
                                     newX = newX.coerceIn(0f, maxBoundX)
-                                } else if (selectedIndex == curvePoints.lastIndex) {
-                                    val minBoundX = minOf(255f, if (curvePoints.size > 1) curvePoints[curvePoints.size - 2].x + 1.0f else 128f)
+                                } else if (selectedIndex == pts.lastIndex) {
+                                    val minBoundX = minOf(255f, if (pts.size > 1) pts[pts.size - 2].x + 1.0f else 128f)
                                     newX = newX.coerceIn(minBoundX, 255f)
                                 } else {
-                                    val minBoundX = curvePoints[selectedIndex - 1].x + 1.0f
-                                    val maxBoundX = maxOf(minBoundX, curvePoints[selectedIndex + 1].x - 1.0f)
+                                    val minBoundX = pts[selectedIndex - 1].x + 1.0f
+                                    val maxBoundX = maxOf(minBoundX, pts[selectedIndex + 1].x - 1.0f)
                                     newX = newX.coerceIn(minBoundX, maxBoundX)
                                 }
 
-                                val updated = curvePoints.toMutableList()
+                                val updated = pts.toMutableList()
                                 updated[selectedIndex] = CurvePoint(newX, newY)
-                                onCurvePointChanged(updated)
+                                currentOnCurvePointChanged(updated)
                             }
                         }
                     )
@@ -1911,9 +2023,9 @@ private fun ToneCurveCanvasOverlay(
                 val w = size.width
                 val h = size.height
 
-                // 4x4 Grid (5 vertical, 5 horizontal lines) matching Screenshot_20261019-083443
-                val gridColor = Color.White.copy(alpha = 0.22f)
-                val gridStroke = 1.dp.toPx()
+                // 4x4 Grid (5 vertical, 5 horizontal lines) matching Screenshot 083439 & 083452
+                val gridColor = Color.White.copy(alpha = 0.24f)
+                val gridStroke = 0.85.dp.toPx()
                 for (i in 0..4) {
                     val x = (i / 4f) * w
                     val y = (i / 4f) * h
@@ -1921,7 +2033,18 @@ private fun ToneCurveCanvasOverlay(
                     drawLine(gridColor, Offset(0f, y), Offset(w, y), strokeWidth = gridStroke)
                 }
 
-                // Spline curve
+                // Active parametric region subtle highlight while dragging
+                if (isParametricMode && activeParamZone in 0..3) {
+                    val x0 = when (activeParamZone) { 0 -> 0f; 1 -> splitLow; 2 -> splitMid; else -> splitHigh } * w
+                    val x1 = when (activeParamZone) { 0 -> splitLow; 1 -> splitMid; 2 -> splitHigh; else -> 1f } * w
+                    drawRect(
+                        color = Color.White.copy(alpha = 0.08f),
+                        topLeft = Offset(x0, 0f),
+                        size = Size(x1 - x0, h)
+                    )
+                }
+
+                // Spline curve with subtle dark outer outline for crisp contrast on bright/dark photos
                 if (curvePoints.isNotEmpty()) {
                     val lut = SplineInterpolator.evaluateSpline(curvePoints)
                     val curvePath = androidx.compose.ui.graphics.Path().apply {
@@ -1934,33 +2057,99 @@ private fun ToneCurveCanvasOverlay(
                     }
                     drawPath(
                         path = curvePath,
-                        color = curveChannelColor,
-                        style = Stroke(width = 2.4.dp.toPx())
+                        color = Color.Black.copy(alpha = 0.65f),
+                        style = Stroke(width = 3.4.dp.toPx())
+                    )
+                    drawPath(
+                        path = curvePath,
+                        color = if (isParametricMode) Color.White else curveChannelColor,
+                        style = Stroke(width = 1.8.dp.toPx())
                     )
 
-                    // Control Point Knots
-                    curvePoints.forEachIndexed { idx, pt ->
-                        val px = (pt.x / 255f) * w
-                        val py = h - (pt.y / 255f) * h
-                        val isSelected = idx == selectedIndex
+                    // Point mode anchor knots (hidden in Parametric mode: exact match to Screenshot 083452!)
+                    if (!isParametricMode) {
+                        curvePoints.forEachIndexed { idx, pt ->
+                            val px = (pt.x / 255f) * w
+                            val py = h - (pt.y / 255f) * h
+                            val isSelected = idx == selectedIndex
 
-                        drawCircle(
-                            color = Color.Black.copy(alpha = 0.5f),
-                            radius = 9.dp.toPx(),
-                            center = Offset(px, py)
-                        )
-                        drawCircle(
-                            color = if (isSelected) curveChannelColor else Color.White,
-                            radius = 7.dp.toPx(),
-                            center = Offset(px, py)
-                        )
-                        if (isSelected) {
                             drawCircle(
-                                color = Color.White,
-                                radius = 2.5.dp.toPx(),
+                                color = Color.Black.copy(alpha = 0.55f),
+                                radius = 7.2.dp.toPx(),
                                 center = Offset(px, py)
                             )
+                            drawCircle(
+                                color = if (isSelected) curveChannelColor else Color(0xFFDCDCDC),
+                                radius = 6.dp.toPx(),
+                                center = Offset(px, py)
+                            )
+                            if (isSelected) {
+                                drawCircle(
+                                    color = Color.White,
+                                    radius = 2.dp.toPx(),
+                                    center = Offset(px, py)
+                                )
+                            }
                         }
+                    }
+                }
+            }
+        }
+
+        // Authentic Parametric 3-Handle Split-Point Slider Bar below grid (Exact Match to Screenshot 083452!)
+        if (isParametricMode) {
+            Spacer(Modifier.height(22.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .height(28.dp)
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { offset ->
+                                val nx = (offset.x / size.width.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f)
+                                val d0 = abs(nx - splitLow)
+                                val d1 = abs(nx - splitMid)
+                                val d2 = abs(nx - splitHigh)
+                                activeSplitKnob = when {
+                                    d0 <= d1 && d0 <= d2 -> 0
+                                    d1 <= d0 && d1 <= d2 -> 1
+                                    else -> 2
+                                }
+                            },
+                            onDragEnd = { activeSplitKnob = -1 },
+                            onDragCancel = { activeSplitKnob = -1 },
+                            onDrag = { change, _ ->
+                                change.consume()
+                                val nx = (change.position.x / size.width.toFloat().coerceAtLeast(1f)).coerceIn(0.05f, 0.95f)
+                                when (activeSplitKnob) {
+                                    0 -> splitLow = nx.coerceIn(0.10f, splitMid - 0.10f)
+                                    1 -> splitMid = nx.coerceIn(splitLow + 0.10f, splitHigh - 0.10f)
+                                    2 -> splitHigh = nx.coerceIn(splitMid + 0.10f, 0.90f)
+                                }
+                            }
+                        )
+                    }
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val cy = size.height / 2f
+                    val trackH = 2.dp.toPx()
+                    drawRoundRect(
+                        brush = androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFF424244), Color(0xFF8A8A8E), Color(0xFFDCDCE0))),
+                        topLeft = Offset(0f, cy - trackH / 2f),
+                        size = Size(size.width, trackH),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(trackH / 2f)
+                    )
+                    val knobs = listOf(
+                        splitLow to Color(0xFF222224),
+                        splitMid to Color(0xFF5A5A5E),
+                        splitHigh to Color(0xFF8E8E92)
+                    )
+                    val r = 8.5.dp.toPx()
+                    knobs.forEach { (pos, fill) ->
+                        val kx = pos * size.width
+                        drawCircle(color = fill, radius = r, center = Offset(kx, cy))
+                        drawCircle(color = Color.White, radius = r, center = Offset(kx, cy), style = Stroke(width = 1.8.dp.toPx()))
                     }
                 }
             }

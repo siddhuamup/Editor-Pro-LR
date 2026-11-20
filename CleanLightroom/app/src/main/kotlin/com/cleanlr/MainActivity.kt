@@ -17,12 +17,14 @@ import com.cleanlr.ui.LightroomLibraryScreen
 import com.cleanlr.ui.editor.EditorScreen
 import com.cleanlr.ui.editor.EditorViewModel
 import com.cleanlr.ui.shortcuts.KeyboardShortcutsHandler
+import com.cleanlr.ui.camera.CameraScreen
 import com.cleanlr.ui.theme.CleanLightroomTheme
 
 class MainActivity : ComponentActivity() {
 
     private val viewModel: EditorViewModel by viewModels()
     private var isEditorVisible by mutableStateOf(true)
+    private var isCameraVisible by mutableStateOf(false)
     private lateinit var shortcutsHandler: KeyboardShortcutsHandler
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,11 +40,25 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CleanLightroomTheme {
-                BackHandler(enabled = isEditorVisible) {
-                    isEditorVisible = false
+                BackHandler(enabled = isCameraVisible || isEditorVisible) {
+                    if (isCameraVisible) {
+                        isCameraVisible = false
+                    } else if (isEditorVisible) {
+                        isEditorVisible = false
+                    }
                 }
 
-                if (isEditorVisible) {
+                if (isCameraVisible) {
+                    CameraScreen(
+                        onClose = { isCameraVisible = false },
+                        onPhotoCaptured = { uri ->
+                            viewModel.setCleanScreenMode(false)
+                            viewModel.loadFromUri(uri)
+                            isCameraVisible = false
+                            isEditorVisible = true
+                        }
+                    )
+                } else if (isEditorVisible) {
                     EditorScreen(
                         viewModel = viewModel,
                         onBack = { isEditorVisible = false }
@@ -53,7 +69,8 @@ class MainActivity : ComponentActivity() {
                             viewModel.setCleanScreenMode(false)
                             viewModel.loadFromUri(uri)
                             isEditorVisible = true
-                        }
+                        },
+                        onOpenCamera = { isCameraVisible = true }
                     )
                 }
             }

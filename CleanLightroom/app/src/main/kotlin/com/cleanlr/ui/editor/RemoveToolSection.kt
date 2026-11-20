@@ -45,6 +45,7 @@ fun EditorRemoveSection(viewModel: EditorViewModel) {
     val isRefineMode by viewModel.isRefineEraseMode.collectAsState()
     val brushPoints by viewModel.removeBrushPoints.collectAsState()
     val isProcessing by viewModel.isGenAiProcessing.collectAsState()
+    var showGenAiInfoDialog by remember { mutableStateOf(false) }
 
     RemoveToolPanel(
         activeMode = activeMode,
@@ -65,8 +66,35 @@ fun EditorRemoveSection(viewModel: EditorViewModel) {
         isProcessing = isProcessing,
         onApplyRemove = { viewModel.executeRemoveStrokes() },
         onClearStrokes = { viewModel.clearRemoveBrushPoints() },
-        onOpenAiInfo = { viewModel.openModelManagerSheet() }
+        onOpenAiInfo = { showGenAiInfoDialog = true }
     )
+
+    if (showGenAiInfoDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showGenAiInfoDialog = false },
+            containerColor = Color(0xFF1F1F22),
+            title = {
+                Text(
+                    text = "Generative AI",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            },
+            text = {
+                Text(
+                    text = "Generative AI removes objects and seamlessly reconstructs background details, textures, and lighting directly on your device.",
+                    color = Color(0xFFB8B8BE),
+                    fontSize = 13.5.sp
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { showGenAiInfoDialog = false }) {
+                    Text("Got it", color = Color(0xFF2680EB))
+                }
+            }
+        )
+    }
 }
 
 /**
@@ -112,7 +140,7 @@ fun RemoveToolPanel(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF18181A))
+            .background(Color(0xFF1A1A1A))
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -250,7 +278,7 @@ fun RemoveToolPanel(
                         onDetectObjectsChange(!detectObjects)
                     }
                 ) {
-                    LightroomCompactToggle(
+                    com.cleanlr.ui.components.SpectrumToggleSwitch(
                         checked = detectObjects,
                         onCheckedChange = onDetectObjectsChange
                     )
@@ -306,7 +334,7 @@ fun RemoveToolPanel(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    LightroomCompactToggle(
+                    com.cleanlr.ui.components.SpectrumToggleSwitch(
                         checked = useGenerativeAi,
                         onCheckedChange = onUseGenerativeAiChange
                     )
@@ -365,14 +393,14 @@ fun RemoveToolPanel(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_lr_mask_brush),
+                            painter = painterResource(R.drawable.ic_lr_refine_brush),
                             contentDescription = "Refine",
                             tint = when {
                                 isRefineMode && refineEnabled -> Color(0xFF38A9FF)
                                 refineEnabled -> Color(0xFFE6E6E8)
                                 else -> Color(0xFF5C5C62)
                             },
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = if (isRefineMode && refineEnabled) "Erasing" else "Refine",
@@ -570,7 +598,6 @@ fun EditorEffectsSection(
                 label = "Dehaze",
                 value = recipe.effects.dehaze,
                 minVal = -100f, maxVal = 100f, defaultValue = 0f, isBipolar = true,
-                trackBrush = dehazeTrackBrush,
                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                 onValueChange = {
                     viewModel.updateRecipe { r ->

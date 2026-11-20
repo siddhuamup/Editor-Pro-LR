@@ -34,17 +34,17 @@ class SpectrumThemeTokenTest {
         assertEquals("#000000", loupe_background.toHexRgb())
         assertEquals("#000000", SpectrumCanvas.toHexRgb())
 
-        // 2. Surface (Panels): spectrum_surface_dark = #1D1D1D (Adobe Spectrum Darkroom)
-        assertEquals("#1D1D1D", spectrum_surface_dark.toHexRgb())
-        assertEquals("#1D1D1D", SpectrumSurface.toHexRgb())
+        // 2. Surface (Panels): spectrum_darkest_gray75 = #1A1A1A (Lightroom v11.8.15)
+        assertEquals("#1A1A1A", spectrum_surface_dark.toHexRgb())
+        assertEquals("#1A1A1A", SpectrumSurface.toHexRgb())
 
-        // 3. Surface Elevated: spectrum_surface_elevated = #2A2A2A
-        assertEquals("#2A2A2A", spectrum_surface_elevated.toHexRgb())
-        assertEquals("#2A2A2A", SpectrumElevated.toHexRgb())
+        // 3. Surface Elevated: spectrum_darkest_gray2 = #2C2C2C (Lightroom v11.8.15)
+        assertEquals("#2C2C2C", spectrum_surface_elevated.toHexRgb())
+        assertEquals("#2C2C2C", SpectrumElevated.toHexRgb())
 
-        // 4. Border / Divider: loupe_bottombar_border = #383838
-        assertEquals("#383838", loupe_bottombar_border.toHexRgb())
-        assertEquals("#383838", SpectrumBorder.toHexRgb())
+        // 4. Border / Divider: spectrum_darkest_gray3 = #393939 (Lightroom v11.8.15)
+        assertEquals("#393939", loupe_bottombar_border.toHexRgb())
+        assertEquals("#393939", SpectrumBorder.toHexRgb())
 
         // 5. Accent Primary: spectrum_400_blue = #1473E6
         assertEquals("#1473E6", spectrum_400_blue.toHexRgb())

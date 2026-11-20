@@ -128,6 +128,7 @@ fun EditorScreen(
     val isComparingOriginal by viewModel.isComparingOriginal.collectAsState()
     val activeTab by viewModel.activeTab.collectAsState()
     val exportStatus by viewModel.exportStatus.collectAsState()
+    val transientToast by viewModel.transientToast.collectAsState()
     val isTatActive by viewModel.isTatActive.collectAsState()
     val tatMode by viewModel.tatMode.collectAsState()
     val activeTatTargetName by viewModel.activeTatTargetName.collectAsState()
@@ -142,6 +143,7 @@ fun EditorScreen(
     val selectedPresetGroup by viewModel.selectedPresetGroup.collectAsState()
     val isMaskOverlayVisible by viewModel.isMaskOverlayVisible.collectAsState()
     val activeMaskLayerIndex by viewModel.activeMaskLayerIndex.collectAsState()
+    val activeMaskBitmap by viewModel.activeMaskBitmap.collectAsState()
 
     // Darkroom Ergonomics & Surface Hierarchy States (Tips 1–35)
     val canvasBackground by viewModel.canvasBackground.collectAsState()
@@ -154,6 +156,7 @@ fun EditorScreen(
     val isGenAiProcessing by viewModel.isGenAiProcessing.collectAsState()
     val showGenAiSettingsDialog by viewModel.showGenAiSettingsDialog.collectAsState()
     val removeBrushPoints by viewModel.removeBrushPoints.collectAsState()
+    val removeStrokeBreakIndices by viewModel.removeStrokeBreakIndices.collectAsState()
     val removeToolMode by viewModel.removeToolMode.collectAsState()
     val isRefineEraseMode by viewModel.isRefineEraseMode.collectAsState()
     val healCloneSourceNorm by viewModel.healCloneSourceNorm.collectAsState()
@@ -184,17 +187,38 @@ fun EditorScreen(
     var showHistoryMenu by remember { mutableStateOf(false) }
     var showViewOptionsMenu by remember { mutableStateOf(false) }
     var showEditorOverflowMenu by remember { mutableStateOf(false) }
+    var showCopySettingsDialog by remember { mutableStateOf(false) }
     var showShareSheet by remember { mutableStateOf(false) }
     var showExportConfigSheet by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var selectedMobileTool by rememberSaveable { mutableStateOf<String?>("Edit") }
     var showCreateMaskSheet by remember { mutableStateOf(false) }
     var selectedMaskCategory by remember { mutableStateOf(LocalAdjustmentCategory.LIGHT) }
-    var isLensBlurDepthDetecting by remember { mutableStateOf(true) }
+    val isLensBlurDepthDetecting by viewModel.isLensBlurDetecting.collectAsState()
+    var isLensBlurFocusRangeMode by remember { mutableStateOf(false) }
+    var isLensBlurVisualizeDepth by remember { mutableStateOf(false) }
+    var isParametricCurveMode by remember { mutableStateOf(false) }
+
+    var activeQuickAction by remember { mutableStateOf<String?>(null) }
+    var quickActionStyle by remember { mutableStateOf("None") }
+    var quickActionExposure by remember { mutableFloatStateOf(0f) }
+    var quickActionSaturation by remember { mutableFloatStateOf(0f) }
+
+    // Build depth map when blur amount > 0 or visualize depth is active (no premature analysis at blur 0)
+    LaunchedEffect(activeTab, recipe.blur.amount, isLensBlurVisualizeDepth) {
+        if (activeTab == EditorToolTab.BLUR) {
+            if ((recipe.blur.amount > 0f || isLensBlurVisualizeDepth) && opticalBlurPack == null && !isLensBlurDepthDetecting) {
+                viewModel.buildOpticalCleanPlateAndDepth()
+            }
+        } else {
+            viewModel.cancelLensBlurDepthDetection()
+            isLensBlurFocusRangeMode = false
+        }
+    }
 
     var isHdrModeActive by remember { mutableStateOf(false) }
     var hdrLimitEv by remember { mutableFloatStateOf(1.0f) }
-    var lensBlurAmount by remember { mutableFloatStateOf(21f) }
+    var lensBlurAmount by remember { mutableFloatStateOf(0f) }
     var selectedBokehShape by remember { mutableStateOf("Circle") }
     var removeChromaticAberration by remember { mutableStateOf(false) }
     var enableLensCorrections by remember { mutableStateOf(false) }
@@ -397,31 +421,85 @@ fun EditorScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color.Transparent)
+                            .background(Color.Black)
                             .statusBarsPadding()
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp)
-                                .padding(horizontal = 16.dp),
+                                .padding(horizontal = 12.dp),
                             horizontalArrangement = Arrangement.End,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = { }, modifier = Modifier.size(36.dp)) {
+                            if (canUndo || canRedo) {
+                                Box {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .pointerInput(canUndo, canRedo) {
+                                                detectTapGestures(
+                                                    onTap = {
+                                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                                        if (canUndo) viewModel.undo()
+                                                    },
+                                                    onLongPress = {
+                                                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                                        showHistoryMenu = true
+                                                    }
+                                                )
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_lr_undo),
+                                            contentDescription = "Undo / Redo",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(23.dp)
+                                        )
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_lr_corner_triangle),
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(end = 5.dp, bottom = 6.dp)
+                                                .size(6.dp)
+                                        )
+                                    }
+                                    AuthenticUndoRedoPopup(
+                                        expanded = showHistoryMenu,
+                                        onDismiss = { showHistoryMenu = false },
+                                        canUndo = canUndo,
+                                        canRedo = canRedo,
+                                        resetLabel = "Reset Lens Blur",
+                                        onUndo = { viewModel.undo() },
+                                        onRedo = { viewModel.redo() },
+                                        onReset = { viewModel.updateRecipe("Reset Lens Blur") { it.copy(blur = it.blur.copy(amount = 0f, focalRangeStart = 0.25f, focalRangeEnd = 0.75f, bokehShape = "Circle")) } },
+                                        onOpenVersions = { viewModel.setActiveTab(EditorToolTab.VERSIONS) }
+                                    )
+                                }
+                            }
+                            IconButton(onClick = { }, modifier = Modifier.size(40.dp)) {
                                 Icon(
                                     painter = painterResource(R.drawable.ic_lr_context_help),
                                     contentDescription = "Help",
-                                    tint = Color.White.copy(alpha = 0.9f),
-                                    modifier = Modifier.size(20.dp)
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
-                            IconButton(onClick = { viewModel.toggleComparingOriginal() }, modifier = Modifier.size(36.dp)) {
+                            IconButton(
+                                onClick = { isLensBlurVisualizeDepth = !isLensBlurVisualizeDepth },
+                                modifier = Modifier.size(40.dp)
+                            ) {
                                 Icon(
-                                    painter = painterResource(R.drawable.ic_lr_compare_before_after),
-                                    contentDescription = "Compare original",
-                                    tint = if (isComparingOriginal) SpectrumBlue else Color.White.copy(alpha = 0.9f),
-                                    modifier = Modifier.size(20.dp)
+                                    painter = painterResource(
+                                        if (isLensBlurVisualizeDepth) R.drawable.ic_lr_mask_overlay_on else R.drawable.ic_lr_mask_overlay_off
+                                    ),
+                                    contentDescription = "Visualize depth",
+                                    tint = if (isLensBlurVisualizeDepth) SpectrumBlue else Color(0xFFB8B8BE),
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                         }
@@ -434,18 +512,19 @@ fun EditorScreen(
                                 Icon(
                                     painter = painterResource(R.drawable.ic_lr_back_chevron),
                                     contentDescription = "Back to library",
-                                    tint = SpectrumTextPrimary
+                                    tint = SpectrumTextPrimary,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                         },
                         title = { },
                         colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = SpectrumSurface
+                            containerColor = Color.Black
                         ),
                     actions = {
                         val isPresetsOrActions = selectedMobileTool in listOf("Presets", "Actions")
                         val isMasking = selectedMobileTool == "Masking"
-                        val isCurvesOrSubColor = activeTab == EditorToolTab.CURVES || (activeTab == EditorToolTab.COLOR && colorSubTab in listOf("MIXER", "GRADING"))
+                        val isRemove = selectedMobileTool == "Remove"
 
                         // HDR Mode Pill Badge (Screenshot 14)
                         if (!isPresetsOrActions && (isHdrModeActive || recipe.isHdrEnabled)) {
@@ -464,113 +543,106 @@ fun EditorScreen(
                             }
                         }
 
-                        // Undo with dropdown arrow & long-press history (Screenshots 14, 34, 35)
+                        // Authentic Lightroom v11.8.15 Undo/Redo Popup Button (res/ixC.xml)
                         if (!isPresetsOrActions) {
                             Box {
-                                Row(
+                                Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .pointerInput(canUndo) {
+                                        .size(40.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .pointerInput(canUndo, canRedo) {
                                             detectTapGestures(
-                                                onTap = { if (canUndo) viewModel.undo() },
+                                                onTap = {
+                                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                                    if (canUndo) viewModel.undo()
+                                                },
                                                 onLongPress = {
                                                     view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                                                     showHistoryMenu = true
                                                 }
                                             )
-                                        }
-                                        .padding(horizontal = 6.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                        },
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         painter = painterResource(R.drawable.ic_lr_undo),
-                                        contentDescription = "Undo (Tap) / History (Long-Press)",
-                                        tint = if (canUndo) SpectrumTextPrimary else SpectrumIconDisabled,
-                                        modifier = Modifier.size(20.dp)
+                                        contentDescription = "Undo / Redo",
+                                        tint = if (canUndo || canRedo) Color.White else Color(0xFF6E6E6E),
+                                        modifier = Modifier.size(24.dp)
                                     )
                                     Icon(
-                                        painter = painterResource(R.drawable.ic_lr_chevron_down),
+                                        painter = painterResource(R.drawable.ic_lr_corner_triangle),
                                         contentDescription = null,
-                                        tint = if (canUndo) SpectrumTextPrimary else SpectrumIconDisabled,
-                                        modifier = Modifier.size(16.dp)
+                                        tint = if (canUndo || canRedo) Color.White else Color(0xFF6E6E6E),
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .padding(end = 5.dp, bottom = 6.dp)
+                                            .size(6.dp)
                                     )
                                 }
 
-                                DropdownMenu(
+                                AuthenticUndoRedoPopup(
                                     expanded = showHistoryMenu,
-                                    onDismissRequest = { showHistoryMenu = false },
-                                    modifier = Modifier
-                                        .background(SpectrumElevated)
-                                        .border(1.dp, SpectrumInnerBorder, RoundedCornerShape(8.dp))
-                                ) {
-                                    val historySteps = viewModel.getHistorySteps()
-                                    Text(
-                                        text = "Edit History (${historySteps.size} steps)",
-                                        color = SpectrumTextSecondary,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                                    )
-                                    HorizontalDivider(color = SpectrumInnerBorder)
-                                    historySteps.forEachIndexed { index, stepName ->
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    text = "${index + 1}. $stepName",
-                                                    color = if (index == historySteps.lastIndex) SpectrumBlue else SpectrumTextPrimary,
-                                                    fontSize = 13.sp,
-                                                    fontWeight = if (index == historySteps.lastIndex) FontWeight.Bold else FontWeight.Normal
-                                                )
-                                            },
-                                            onClick = {
-                                                viewModel.restoreToHistoryStep(index)
-                                                showHistoryMenu = false
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // Compare Before/After Icon (Shown in Edit and Remove, hidden in Masking, Curves, Color Mixer, Presets, Actions)
-                        if (!isPresetsOrActions && !isMasking && !isCurvesOrSubColor) {
-                            IconButton(onClick = { viewModel.toggleComparingOriginal() }) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_lr_compare_before_after),
-                                    contentDescription = "Compare before/after",
-                                    tint = if (isComparingOriginal) SpectrumBlue else SpectrumTextPrimary,
-                                    modifier = Modifier.size(20.dp)
+                                    onDismiss = { showHistoryMenu = false },
+                                    canUndo = canUndo,
+                                    canRedo = canRedo,
+                                    resetLabel = when {
+                                        isMasking -> "Reset Masking"
+                                        isRemove -> "Reset Remove"
+                                        else -> "Reset"
+                                    },
+                                    onUndo = { viewModel.undo() },
+                                    onRedo = { viewModel.redo() },
+                                    onReset = { showResetDialog = true },
+                                    onOpenVersions = { viewModel.setActiveTab(EditorToolTab.VERSIONS) }
                                 )
                             }
                         }
 
-                        // Share / Export Icon (Screenshots 4, 6: standard Android share icon)
+                        // Remove mode before/after overlay toggle (Screenshot 083752)
+                        if (isRemove) {
+                            IconButton(onClick = { viewModel.toggleComparingOriginal() }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_lr_grid_segmentation),
+                                    contentDescription = "Visualize spots",
+                                    tint = if (isComparingOriginal) SpectrumBlue else Color.White,
+                                    modifier = Modifier.size(21.dp)
+                                )
+                            }
+                        }
+
+                        // Share / Export Icon (Android 3-node share icon)
                         IconButton(onClick = { showShareSheet = true }) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_lr_share_export),
                                 contentDescription = "Share and Export",
-                                tint = SpectrumTextPrimary
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
 
-                        // Mask overlay toggle in Masking mode (Screenshot 34: Placed right after Share and before ⋮)
+                        // Mask overlay toggle in Masking mode (Screenshot 083730 / 201028: slashed mask box icon)
                         if (isMasking) {
                             IconButton(onClick = { viewModel.toggleMaskOverlay() }) {
                                 Icon(
-                                    painter = painterResource(R.drawable.ic_lr_mask_hide_eye),
+                                    painter = painterResource(
+                                        if (isMaskOverlayVisible) R.drawable.ic_lr_mask_overlay_on else R.drawable.ic_lr_mask_overlay_off
+                                    ),
                                     contentDescription = "Toggle mask overlay",
-                                    tint = if (isMaskOverlayVisible) SpectrumBlue else SpectrumIconDisabled
+                                    tint = if (recipe.masks.isEmpty()) Color(0xFF6E6E6E) else Color.White,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                         }
 
-                        // 3-dots Overflow Menu (Screenshots 4, 5: 3 vertical dots)
+                        // 3-dots Overflow Menu
                         Box {
                             IconButton(onClick = { showEditorOverflowMenu = true }) {
                                 Icon(
                                     painter = painterResource(R.drawable.ic_lr_more_vert),
                                     contentDescription = "More options",
-                                    tint = SpectrumTextPrimary
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
 
@@ -630,7 +702,7 @@ fun EditorScreen(
                                     },
                                     onClick = {
                                         showEditorOverflowMenu = false
-                                        viewModel.copyEditSettings()
+                                        showCopySettingsDialog = true
                                     }
                                 )
                                 DropdownMenuItem(
@@ -691,16 +763,18 @@ fun EditorScreen(
         if (!isCleanScreenMode) {
             if (isDedicatedSubMode) {
                 when (activeTab) {
-                    EditorToolTab.BLUR -> DedicatedCommitBottomBar(
-                        title = "Lens blur",
-                        onCancel = {
-                            viewModel.updateRecipe { it.copy(blur = it.blur.copy(amount = 0f)) }
-                            viewModel.setActiveTab(EditorToolTab.LIGHT)
-                        },
-                        onConfirm = {
-                            viewModel.setActiveTab(EditorToolTab.LIGHT)
-                        }
-                    )
+                    EditorToolTab.BLUR -> if (!isLensBlurFocusRangeMode) {
+                        DedicatedCommitBottomBar(
+                            title = "Lens blur",
+                            onCancel = {
+                                viewModel.updateRecipe { it.copy(blur = it.blur.copy(amount = 0f)) }
+                                viewModel.setActiveTab(EditorToolTab.LIGHT)
+                            },
+                            onConfirm = {
+                                viewModel.setActiveTab(EditorToolTab.LIGHT)
+                            }
+                        )
+                    }
                     EditorToolTab.PROFILES -> DedicatedCommitBottomBar(
                         title = "Profiles",
                         onCancel = { viewModel.setActiveTab(EditorToolTab.LIGHT) },
@@ -723,6 +797,7 @@ fun EditorScreen(
                     )
                     else -> MobilePrimaryToolbar(
                         selectedTool = selectedMobileTool,
+                        hasEdits = canUndo,
                         onToolSelected = synchronizeSelectedTool
                     )
                 }
@@ -735,7 +810,7 @@ fun EditorScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Loupe Canvas (Preview Area) with Canvas Background & 1.dp Inner Border (Tips 1, 2, 4)
+            // Loupe Canvas (Preview Area) — pure #000000 seamless canvas (no grey box border!)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -750,7 +825,6 @@ fun EditorScreen(
                             Modifier
                         }
                     )
-                    .border(1.dp, SpectrumInnerBorder)
             ) {
                 LoupeCanvas(
                     bitmap = bitmap,
@@ -787,26 +861,31 @@ fun EditorScreen(
                     isGuidedUprightActive = (cropSubPage == "Geometry" && recipe.crop.uprightMode == "Guided"),
                     isRemoveBrushActive = (selectedMobileTool == "Remove"),
                     removeBrushPoints = removeBrushPoints,
+                    removeStrokeBreakIndices = removeStrokeBreakIndices,
                     removeToolMode = removeToolMode,
                     isRefineEraseMode = isRefineEraseMode,
                     healCloneSourceNorm = healCloneSourceNorm,
                     onHealCloneSourceChanged = { nx, ny -> viewModel.setHealCloneSourceNorm(nx, ny) },
                     isGenAiProcessing = isGenAiProcessing,
                     opticalBlurPack = opticalBlurPack,
-                    onRemoveBrushPoint = { nx, ny -> viewModel.addRemoveBrushPoint(nx, ny) },
+                    isLensBlurVisualizeDepth = isLensBlurVisualizeDepth,
+                    activeMaskBitmap = activeMaskBitmap,
+                    onRemoveBrushPoint = { nx, ny, isNew -> viewModel.addRemoveBrushPoint(nx, ny, isNew) },
                     onCropRectChanged = { l, t, r, b -> viewModel.setCropRect(l, t, r, b) },
                     onGuidedLineChanged = { id, x1, y1, x2, y2 -> viewModel.updateGuidedLine(id, x1, y1, x2, y2) },
                     onTriggerExpandPreview = { viewModel.triggerGenerativeExpandPreview() },
                     isCurveActive = (activeTab == EditorToolTab.CURVES),
-                    curvePoints = when (selectedCurveChannel) {
+                    isParametricCurveMode = isParametricCurveMode,
+                    curvePoints = when (if (isParametricCurveMode) com.cleanlr.ui.components.CurveChannel.RGB else selectedCurveChannel) {
                         com.cleanlr.ui.components.CurveChannel.RGB -> recipe.curves.composite
                         com.cleanlr.ui.components.CurveChannel.RED -> recipe.curves.red
                         com.cleanlr.ui.components.CurveChannel.GREEN -> recipe.curves.green
                         com.cleanlr.ui.components.CurveChannel.BLUE -> recipe.curves.blue
                     },
-                    curveChannelColor = selectedCurveChannel.color,
+                    curveChannelColor = if (isParametricCurveMode) Color.White else selectedCurveChannel.color,
                     onCurvePointChanged = { updated ->
-                        val updatedCurves = when (selectedCurveChannel) {
+                        val effectiveCh = if (isParametricCurveMode) com.cleanlr.ui.components.CurveChannel.RGB else selectedCurveChannel
+                        val updatedCurves = when (effectiveCh) {
                             com.cleanlr.ui.components.CurveChannel.RGB -> recipe.curves.copy(composite = updated, pointCurve = updated)
                             com.cleanlr.ui.components.CurveChannel.RED -> recipe.curves.copy(red = updated)
                             com.cleanlr.ui.components.CurveChannel.GREEN -> recipe.curves.copy(green = updated)
@@ -820,7 +899,8 @@ fun EditorScreen(
                 )
 
                 // Tip 35: Floating Pill Dark Toast (#2C2C2C, #3E3E3E border, 12.dp radius)
-                exportStatus?.let { status ->
+                val activeToast = transientToast ?: exportStatus
+                activeToast?.let { status ->
                     val lastExportedUri by viewModel.lastExportedUri.collectAsState()
                     val context = androidx.compose.ui.platform.LocalContext.current
                     Surface(
@@ -839,7 +919,10 @@ fun EditorScreen(
                                 text = status,
                                 color = SpectrumTextPrimary,
                                 fontSize = 12.sp,
-                                modifier = Modifier.clickable { viewModel.clearExportStatus() }
+                                modifier = Modifier.clickable {
+                                    viewModel.clearTransientToast()
+                                    viewModel.clearExportStatus()
+                                }
                             )
 
                             if (lastExportedUri != null && status.contains("Exported")) {
@@ -871,36 +954,15 @@ fun EditorScreen(
                     }
                 }
 
-                // Floating Mask Dock & Canvas Overlay (Reference Screenshots 083741 & 201104)
+                // Full Adobe Lightroom Mobile Masking Canvas Overlay, Interactive Grids & Floating Docks
+                // (Reference Screenshots 083730, 083741, 201028, 201040, 201104–201117)
                 if (selectedMobileTool == "Masking" && !isCleanScreenMode) {
-                    MaskOverlayCanvas(
-                        masks = recipe.masks,
-                        activeMaskIndex = activeMaskLayerIndex,
-                        isOverlayVisible = true,
-                        onPinClick = { },
+                    EditorMaskingOverlayHost(
+                        viewModel = viewModel,
+                        recipe = recipe,
+                        bitmap = bitmap,
+                        onAddNewMaskClick = { showCreateMaskSheet = true },
                         modifier = Modifier.fillMaxSize()
-                    )
-
-                    FloatingMaskDock(
-                        masks = recipe.masks,
-                        activeMaskIndex = activeMaskLayerIndex,
-                        onSelectMask = { viewModel.selectMaskLayer(it) },
-                        onToggleLayer = { idx ->
-                            val layer = recipe.masks.getOrNull(idx)
-                            if (layer != null) {
-                                viewModel.updateMaskLayer(layer.copy(enabled = !layer.enabled))
-                            }
-                        },
-                        onInvertMask = { idx -> viewModel.invertMaskLayer(idx) },
-                        onDuplicateMask = { idx -> viewModel.duplicateMaskLayer(idx) },
-                        onDeleteMask = { idx -> viewModel.deleteMaskLayer(idx) },
-                        onAddNewMaskClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                            showCreateMaskSheet = true
-                        },
-                        modifier = Modifier
-                            .align(if (recipe.masks.isEmpty()) Alignment.BottomEnd else Alignment.CenterEnd)
-                            .padding(bottom = if (recipe.masks.isEmpty()) 16.dp else 0.dp)
                     )
                 }
 
@@ -953,26 +1015,27 @@ fun EditorScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 CircularProgressIndicator(
                                     color = Color.White,
-                                    strokeWidth = 2.dp,
-                                    modifier = Modifier.size(20.dp)
+                                    trackColor = Color(0x55FFFFFF),
+                                    strokeWidth = 3.dp,
+                                    modifier = Modifier.size(24.dp)
                                 )
-                                Spacer(Modifier.width(12.dp))
+                                Spacer(Modifier.width(14.dp))
                                 Text(
                                     text = "Detecting depth using AI...",
                                     color = Color.White,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Normal
                                 )
                             }
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(10.dp))
                             Text(
                                 text = "Cancel",
                                 color = Color.White,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier
                                     .align(Alignment.End)
-                                    .clickable { isLensBlurDepthDetecting = false }
+                                    .clickable { viewModel.cancelLensBlurDepthDetection() }
                             )
                         }
                     }
@@ -1028,34 +1091,20 @@ fun EditorScreen(
                 }
             }
 
-            // Tip 5: 8.dp Subtle Top Shadow between Canvas & Controls Panel
-            if (selectedMobileTool != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color(0x66000000))
-                            )
-                        )
-                )
-            }
-
-                // Tip 6: 3-Snap Panel Height Animation (Actions mode shows only secondary strip over photo, no upper panel)
+                // Panel Height Animation (Clean seamless transition from #000000 canvas to #1A1A1A panel)
                 val animatedPanelHeight by androidx.compose.animation.core.animateDpAsState(
                     targetValue = if (selectedMobileTool != null && selectedMobileTool != "Actions") {
                         if (isDedicatedSubMode) {
-                            if (activeTab == EditorToolTab.CURVES) 130.dp
-                            else if (activeTab == EditorToolTab.BLUR) 245.dp
-                            else if (activeTab == EditorToolTab.PROFILES) 160.dp
+                            if (activeTab == EditorToolTab.CURVES) 128.dp
+                            else if (activeTab == EditorToolTab.BLUR) (if (isLensBlurFocusRangeMode) 248.dp else 178.dp)
+                            else if (activeTab == EditorToolTab.PROFILES) 172.dp
                             else 360.dp
                         } else if (selectedMobileTool == "Masking" && recipe.masks.isEmpty()) {
                             0.dp
                         } else {
                             when (panelSnapState) {
                                 PanelSnapState.COLLAPSED -> 0.dp
-                                PanelSnapState.COMPACT -> if (selectedMobileTool == "Crop") (if (cropSubPage == "Geometry") 336.dp else 300.dp) else if (selectedMobileTool == "Presets") 300.dp else if (selectedMobileTool == "Remove") 220.dp else 210.dp
+                                PanelSnapState.COMPACT -> if (selectedMobileTool == "Crop") (if (cropSubPage == "Geometry") 336.dp else 306.dp) else if (selectedMobileTool == "Presets") 300.dp else if (selectedMobileTool == "Remove") 224.dp else 232.dp
                                 PanelSnapState.EXPANDED -> 380.dp
                             }
                         }
@@ -1077,31 +1126,12 @@ fun EditorScreen(
                 )
 
                 if (!isCleanScreenMode && animatedPanelHeight > 0.dp && selectedMobileTool != null) {
-                    if (selectedMobileTool == "Edit" && !isDedicatedSubMode) {
-                        // Tip 7: Pill Drag Handle (32.dp x 4.dp, #484848, corner radius 2.dp)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(SpectrumSurface)
-                                .clickable { viewModel.cyclePanelSnapState() }
-                                .padding(top = 4.dp, bottom = 2.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(width = 32.dp, height = 4.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(SpectrumPillHandle)
-                            )
-                        }
-                    }
-
-                    // Active Panel Controls (Scrollable) with 12.dp fading edge (Tip 22)
+                    // Active Panel Controls (Scrollable)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(animatedPanelHeight)
-                            .background(SpectrumSurface)
+                            .background(if (isCropActive || selectedMobileTool == "Crop") Color.Black else SpectrumSurface)
                             .graphicsLayer {
                                 alpha = animatedPanelAlpha
                                 compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Auto
@@ -1210,61 +1240,42 @@ fun EditorScreen(
                         }
 
                         EditorToolTab.LIGHT -> {
-                            // Curve Navigation Button (Screenshot 13)
+                            // Curve Navigation Button (Exact Lightroom v11.8.15 outlined button: Screenshot 083341)
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 4.dp),
+                                    .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 4.dp),
                                 horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Surface(
-                                    color = SpectrumElevated,
-                                    shape = RoundedCornerShape(16.dp),
-                                    border = BorderStroke(1.dp, SpectrumInnerBorder),
+                                    color = Color(0xFF141414),
+                                    shape = RoundedCornerShape(6.dp),
+                                    border = BorderStroke(1.dp, SpectrumButtonBorder),
                                     modifier = Modifier.clickable {
                                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                         viewModel.setActiveTab(EditorToolTab.CURVES)
                                     }
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_lr_curve),
                                             contentDescription = "Tone Curve",
-                                            tint = SpectrumBlue,
-                                            modifier = Modifier.size(16.dp)
+                                            tint = Color.White,
+                                            modifier = Modifier.size(18.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
                                         Text(
                                             text = "Curve",
-                                            color = SpectrumTextPrimary,
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Normal
                                         )
                                     }
                                 }
-                            }
-
-                            // Tip 52: Exposure track — subtle luminance gradient + EV stop marks
-                            val exposureTrackBrush = remember {
-                                Brush.horizontalGradient(listOf(Color(0xFF1A1A1A), Color(0xFFE0E0E0)))
-                            }
-                            // Tip 53: Contrast track — high-contrast dark-to-light bands
-                            val contrastTrackBrush = remember {
-                                Brush.horizontalGradient(listOf(
-                                    Color(0xFF555555), Color(0xFF1A1A1A), Color(0xFF555555), Color(0xFFE0E0E0), Color(0xFF555555)
-                                ))
-                            }
-                            // Tip 54: Highlights/Whites — matte grey to bright white
-                            val highlightsTrackBrush = remember {
-                                Brush.horizontalGradient(listOf(Color(0xFF606060), Color(0xFFFFFFFF)))
-                            }
-                            // Tip 55: Shadows/Blacks — deep blue-black to light grey
-                            val shadowsTrackBrush = remember {
-                                Brush.horizontalGradient(listOf(Color(0xFF0A1118), Color(0xFF909090)))
                             }
 
                             RampedSlider(
@@ -1273,9 +1284,6 @@ fun EditorScreen(
                                 minVal = -5.0f,
                                 maxVal = 5.0f,
                                 formatPattern = "%.2f",
-                                unitSuffix = "EV",
-                                trackBrush = exposureTrackBrush,
-                                showEvStops = true,
                                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(exposure = it)) } },
                                 onValueChangeEnd = { viewModel.onSliderTouchEnd("Exposure") }
@@ -1285,7 +1293,6 @@ fun EditorScreen(
                                 value = recipe.basic.contrast,
                                 minVal = -100f,
                                 maxVal = 100f,
-                                trackBrush = contrastTrackBrush,
                                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(contrast = it)) } },
                                 onValueChangeEnd = { viewModel.onSliderTouchEnd("Contrast") }
@@ -1295,7 +1302,6 @@ fun EditorScreen(
                                 value = recipe.basic.highlights,
                                 minVal = -100f,
                                 maxVal = 100f,
-                                trackBrush = highlightsTrackBrush,
                                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(highlights = it)) } },
                                 onValueChangeEnd = { viewModel.onSliderTouchEnd("Highlights") }
@@ -1305,7 +1311,6 @@ fun EditorScreen(
                                 value = recipe.basic.shadows,
                                 minVal = -100f,
                                 maxVal = 100f,
-                                trackBrush = shadowsTrackBrush,
                                 onValueChangeStart = { viewModel.onSliderTouchStart() },
                                 onValueChange = { viewModel.updateRecipe { r -> r.copy(basic = r.basic.copy(shadows = it)) } },
                                 onValueChangeEnd = { viewModel.onSliderTouchEnd("Shadows") }
@@ -1315,7 +1320,6 @@ fun EditorScreen(
                                 value = recipe.basic.whites,
                                 minVal = -100f,
                                 maxVal = 100f,
-                                trackBrush = highlightsTrackBrush,
                                 onValueChangeStart = {
                                     viewModel.onSliderTouchStart()
                                     viewModel.setAltClippingMode(1)
@@ -1331,7 +1335,6 @@ fun EditorScreen(
                                 value = recipe.basic.blacks,
                                 minVal = -100f,
                                 maxVal = 100f,
-                                trackBrush = shadowsTrackBrush,
                                 onValueChangeStart = {
                                     viewModel.onSliderTouchStart()
                                     viewModel.setAltClippingMode(2)
@@ -1441,20 +1444,20 @@ fun EditorScreen(
                             val isMixerModified = recipe.hsl != com.cleanlr.model.HslAdjustments()
                             val isGradingModified = recipe.colorGrading != com.cleanlr.model.ColorGrading()
 
-                            // Authentic Adobe Lightroom Header (Screenshot 083509)
+                            // Authentic Adobe Lightroom v11.8.15 Header (Screenshot 083509: outlined dark buttons)
                             if (colorSubTab == "WB") {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                                        .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 6.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     val isBw = recipe.presence.saturation <= -99f
                                     Surface(
-                                        color = if (isBw) SpectrumBlue else SpectrumElevated,
-                                        shape = RoundedCornerShape(8.dp),
-                                        border = BorderStroke(1.dp, SpectrumInnerBorder),
+                                        color = if (isBw) SpectrumBlue else Color(0xFF141414),
+                                        shape = RoundedCornerShape(6.dp),
+                                        border = BorderStroke(1.dp, if (isBw) SpectrumBlue else SpectrumButtonBorder),
                                         modifier = Modifier.clickable {
                                             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                             viewModel.updateRecipe(if (isBw) "Exit B&W" else "Enter B&W") {
@@ -1468,40 +1471,40 @@ fun EditorScreen(
                                     ) {
                                         Text(
                                             text = "B & W",
-                                            color = if (isBw) Color.White else SpectrumTextPrimary,
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            modifier = Modifier.padding(horizontal = 22.dp, vertical = 8.dp)
                                         )
                                     }
 
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        // Grading Button (Screenshot 083509)
+                                        // Grading Button (Screenshot 083509: 3 hollow circles)
                                         Surface(
-                                            color = SpectrumElevated,
-                                            shape = RoundedCornerShape(8.dp),
-                                            border = BorderStroke(1.dp, SpectrumInnerBorder),
+                                            color = Color(0xFF141414),
+                                            shape = RoundedCornerShape(6.dp),
+                                            border = BorderStroke(1.dp, SpectrumButtonBorder),
                                             modifier = Modifier.clickable {
                                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                                 colorSubTab = "GRADING"
                                             }
                                         ) {
                                             Row(
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 Icon(
-                                                    painter = painterResource(R.drawable.ic_lr_cg_3way_wheels),
+                                                    painter = painterResource(R.drawable.ic_lr_color_grading),
                                                     contentDescription = "Color Grading",
-                                                    tint = SpectrumTextPrimary,
-                                                    modifier = Modifier.size(16.dp)
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(18.dp)
                                                 )
                                                 Spacer(modifier = Modifier.width(6.dp))
                                                 Text(
                                                     text = "Grading",
-                                                    color = SpectrumTextPrimary,
-                                                    fontSize = 12.sp,
-                                                    fontWeight = FontWeight.Medium
+                                                    color = Color.White,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.Normal
                                                 )
                                                 if (isGradingModified) {
                                                     Spacer(modifier = Modifier.width(4.dp))
@@ -1509,7 +1512,7 @@ fun EditorScreen(
                                                         modifier = Modifier
                                                             .size(4.dp)
                                                             .clip(CircleShape)
-                                                            .background(SpectrumBlue)
+                                                            .background(Color.White)
                                                     )
                                                 }
                                             }
@@ -1517,30 +1520,30 @@ fun EditorScreen(
 
                                         // Mix Button (Screenshot 083509)
                                         Surface(
-                                            color = SpectrumElevated,
-                                            shape = RoundedCornerShape(8.dp),
-                                            border = BorderStroke(1.dp, SpectrumInnerBorder),
+                                            color = Color(0xFF141414),
+                                            shape = RoundedCornerShape(6.dp),
+                                            border = BorderStroke(1.dp, SpectrumButtonBorder),
                                             modifier = Modifier.clickable {
                                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                                 colorSubTab = "MIXER"
                                             }
                                         ) {
                                             Row(
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Canvas(modifier = Modifier.size(14.dp)) {
+                                                Canvas(modifier = Modifier.size(16.dp)) {
                                                     drawCircle(
                                                         brush = Brush.sweepGradient(listOf(Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red)),
-                                                        style = Stroke(width = 2.dp.toPx())
+                                                        style = Stroke(width = 2.2.dp.toPx())
                                                     )
                                                 }
-                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Spacer(modifier = Modifier.width(7.dp))
                                                 Text(
                                                     text = "Mix",
-                                                    color = SpectrumTextPrimary,
-                                                    fontSize = 12.sp,
-                                                    fontWeight = FontWeight.Medium
+                                                    color = Color.White,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.Normal
                                                 )
                                                 if (isMixerModified) {
                                                     Spacer(modifier = Modifier.width(4.dp))
@@ -1548,14 +1551,13 @@ fun EditorScreen(
                                                         modifier = Modifier
                                                             .size(4.dp)
                                                             .clip(CircleShape)
-                                                            .background(SpectrumBlue)
+                                                            .background(Color.White)
                                                     )
                                                 }
                                             }
                                         }
                                     }
                                 }
-                                HorizontalDivider(color = SpectrumGroupDivider, thickness = 1.dp, modifier = Modifier.padding(vertical = 4.dp))
                             }
 
                             when (colorSubTab) {
@@ -1584,8 +1586,8 @@ fun EditorScreen(
                                     ) {
                                         Text(
                                             text = "White balance",
-                                            color = SpectrumTextSecondary,
-                                            fontSize = 13.sp,
+                                            color = SpectrumSliderLabel,
+                                            fontSize = 14.sp,
                                             fontWeight = FontWeight.Normal
                                         )
 
@@ -1599,16 +1601,16 @@ fun EditorScreen(
                                             ) {
                                                 Text(
                                                     text = currentWbPreset,
-                                                    color = Color.White,
-                                                    fontSize = 13.sp,
-                                                    fontWeight = FontWeight.Medium
+                                                    color = SpectrumSliderLabel,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.Normal
                                                 )
-                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Spacer(modifier = Modifier.width(6.dp))
                                                 Icon(
                                                     painter = painterResource(R.drawable.ic_lr_chevron_down),
                                                     contentDescription = "Select White Balance Preset",
-                                                    tint = SpectrumTextSecondary,
-                                                    modifier = Modifier.size(18.dp)
+                                                    tint = SpectrumSliderLabel,
+                                                    modifier = Modifier.size(14.dp)
                                                 )
                                             }
 
@@ -1652,7 +1654,7 @@ fun EditorScreen(
                                             Icon(
                                                 painter = painterResource(R.drawable.ic_lr_wb_eyedropper),
                                                 contentDescription = "White Balance Eyedropper",
-                                                tint = SpectrumIconNormal,
+                                                tint = Color.White,
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         }
@@ -1960,132 +1962,58 @@ fun EditorScreen(
                         }
 
                         EditorToolTab.CURVES -> {
-                            // Authentic Tone Curve Header (Screenshot 083443)
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Curve",
-                                    color = Color.White,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Surface(
-                                    color = SpectrumElevated,
-                                    shape = RoundedCornerShape(6.dp),
-                                    border = BorderStroke(1.dp, SpectrumInnerBorder),
-                                    modifier = Modifier.clickable {
-                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                        viewModel.setActiveTab(EditorToolTab.LIGHT)
-                                    }
-                                ) {
-                                    Text(
-                                        text = "DONE",
-                                        color = Color.White,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
-                                    )
-                                }
-                            }
-
-                            // Authentic 5-Channel Selector Buttons Row (RGB, Red, Green, Blue, Parametric)
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 10.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                com.cleanlr.ui.components.CurveChannel.entries.forEach { ch ->
-                                    val isSelected = selectedCurveChannel == ch
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(horizontal = 14.dp)
-                                            .size(32.dp)
-                                            .clip(CircleShape)
-                                            .clickable {
-                                                selectedCurveChannel = ch
-                                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                            },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        if (isSelected) {
-                                            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                                                drawCircle(ch.color)
-                                                drawCircle(if (ch == com.cleanlr.ui.components.CurveChannel.RGB) Color.Black else Color.White, radius = 3.dp.toPx())
-                                            }
-                                        } else {
-                                            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                                                drawCircle(
-                                                    color = ch.color,
-                                                    style = Stroke(width = 1.8.dp.toPx())
-                                                )
-                                            }
-                                        }
+                            AuthenticToneCurveControls(
+                                selectedChannel = selectedCurveChannel,
+                                isParametricMode = isParametricCurveMode,
+                                onSelectChannel = { ch ->
+                                    isParametricCurveMode = false
+                                    selectedCurveChannel = ch
+                                },
+                                onSelectParametric = {
+                                    isParametricCurveMode = true
+                                },
+                                onDone = {
+                                    isParametricCurveMode = false
+                                    viewModel.setActiveTab(EditorToolTab.LIGHT)
+                                },
+                                parametricHighlights = recipe.curves.parametricHighlights,
+                                parametricLights = recipe.curves.parametricLights,
+                                parametricDarks = recipe.curves.parametricDarks,
+                                parametricShadows = recipe.curves.parametricShadows,
+                                onParametricChange = { h, l, d, s ->
+                                    viewModel.updateRecipe("Parametric Curve") { r ->
+                                        r.copy(curves = r.curves.copy(
+                                            parametricHighlights = h,
+                                            parametricLights = l,
+                                            parametricDarks = d,
+                                            parametricShadows = s
+                                        ))
                                     }
                                 }
-
-                                // 5th Button: Parametric Curve Icon Button
-                                Box(
-                                    modifier = Modifier
-                                        .padding(horizontal = 14.dp)
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .clickable {
-                                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                                        val p = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(size.width * 0.25f, size.height * 0.75f)
-                                            cubicTo(
-                                                size.width * 0.45f, size.height * 0.75f,
-                                                size.width * 0.55f, size.height * 0.25f,
-                                                size.width * 0.75f, size.height * 0.25f
-                                            )
-                                        }
-                                        drawPath(p, color = Color(0xFFAAAAAA), style = Stroke(width = 2.dp.toPx()))
-                                    }
-                                }
-                            }
+                            )
                         }
 
                         EditorToolTab.BLUR -> {
-                            LensBlurPanel(
+                            AuthenticLensBlurPanel(
                                 blurAmount = recipe.blur.amount,
                                 onBlurAmountChange = { amt ->
                                     viewModel.updateRecipe { it.copy(blur = it.blur.copy(amount = amt)) }
                                 },
-                                bokehBoost = recipe.blur.boost,
-                                onBokehBoostChange = { boost ->
-                                    viewModel.updateRecipe { it.copy(blur = it.blur.copy(boost = boost)) }
-                                },
-                                focalDepth = ((recipe.blur.focalRangeStart + recipe.blur.focalRangeEnd) * 0.5f),
-                                onFocalDepthChange = { focal ->
-                                    val half = 0.08f
+                                focalRangeStart = recipe.blur.focalRangeStart,
+                                focalRangeEnd = recipe.blur.focalRangeEnd,
+                                onFocalRangeChange = { s, e ->
                                     viewModel.updateRecipe {
-                                        it.copy(
-                                            blur = it.blur.copy(
-                                                focalRangeStart = (focal - half).coerceIn(0f, 1f),
-                                                focalRangeEnd = (focal + half).coerceIn(0f, 1f)
-                                            )
-                                        )
+                                        it.copy(blur = it.blur.copy(focalRangeStart = s, focalRangeEnd = e))
                                     }
                                 },
                                 selectedBokehShape = recipe.blur.bokehShape,
                                 onBokehShapeSelected = { shape ->
                                     viewModel.updateRecipe { it.copy(blur = it.blur.copy(bokehShape = shape)) }
                                 },
-                                hasOpticalPack = opticalBlurPack != null,
-                                opticalStatusText = opticalStageStatus,
-                                onBuildOpticalCleanPlate = { viewModel.buildOpticalCleanPlateAndDepth() },
-                                onOpenByomModels = { viewModel.openModelManagerSheet() }
+                                isVisualizeDepthActive = isLensBlurVisualizeDepth,
+                                onToggleVisualizeDepth = { isLensBlurVisualizeDepth = !isLensBlurVisualizeDepth },
+                                isFocusRangeSubMode = isLensBlurFocusRangeMode,
+                                onFocusRangeSubModeChange = { isLensBlurFocusRangeMode = it }
                             )
                         }
 
@@ -2103,12 +2031,15 @@ fun EditorScreen(
                         }
 
                         EditorToolTab.PROFILES -> {
-                            ProfilesPanel(
+                            AuthenticProfilesPanel(
+                                sourceBitmap = bitmap,
                                 selectedGroup = selectedProfileGroup,
                                 onGroupSelected = { selectedProfileGroup = it },
                                 selectedProfile = recipe.profile,
                                 onProfileSelected = { prof ->
-                                    viewModel.updateRecipe { it.copy(profile = prof) }
+                                    viewModel.updateRecipe("Profile: $prof") { current ->
+                                        ProfilePreviewEngine.applyProfileLookToRecipe(prof, current)
+                                    }
                                 }
                             )
                         }
@@ -2149,14 +2080,139 @@ fun EditorScreen(
                                 layers = recipe.masks,
                                 activeLayerIndex = activeMaskLayerIndex,
                                 selectedCategory = selectedMaskCategory,
+                                onCategorySelected = { selectedMaskCategory = it },
                                 onUpdateLayerAdjustments = { layer -> viewModel.updateMaskLayer(layer) },
                                 onDeleteActiveLayer = { viewModel.deleteActiveMaskLayer() },
-                                onAddSubMaskToActive = { subMask -> viewModel.addSubMaskToActive(subMask) }
+                                onAddSubMaskToActive = { subMask -> viewModel.addSubMaskToActive(subMask) },
+                                showCategoryTabs = true
                             )
                         }
 
-                        EditorToolTab.ACTIONS, EditorToolTab.REMOVE -> {}
-                        EditorToolTab.ACTIONS -> {}
+                        EditorToolTab.ACTIONS -> {
+                            val actionName = activeQuickAction
+                            if (actionName != null) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(spectrum_surface_dark)
+                                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                                ) {
+                                    // Header: [✕] ... Action Name ... [✓]
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        IconButton(onClick = { activeQuickAction = null }) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.ic_lr_close),
+                                                contentDescription = "Cancel",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        Text(
+                                            text = actionName,
+                                            color = Color.White,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        IconButton(onClick = {
+                                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                            when (actionName) {
+                                                "Subject" -> {
+                                                    viewModel.updateRecipe("Quick Action: Subject") { r ->
+                                                        r.copy(basic = r.basic.copy(exposure = (r.basic.exposure + quickActionExposure).coerceIn(-5f, 5f), saturation = (r.basic.saturation + quickActionSaturation).coerceIn(-100f, 100f))).syncLegacyFields()
+                                                    }
+                                                }
+                                                "Background" -> {
+                                                    viewModel.updateRecipe("Quick Action: Background") { r ->
+                                                        r.copy(basic = r.basic.copy(exposure = (r.basic.exposure + quickActionExposure).coerceIn(-5f, 5f), saturation = (r.basic.saturation + quickActionSaturation).coerceIn(-100f, 100f))).syncLegacyFields()
+                                                    }
+                                                }
+                                                "Sky" -> {
+                                                    viewModel.updateRecipe("Quick Action: Sky") { r ->
+                                                        r.copy(basic = r.basic.copy(exposure = (r.basic.exposure + quickActionExposure).coerceIn(-5f, 5f)), effects = r.effects.copy(dehaze = (r.effects.dehaze + quickActionSaturation).coerceIn(-100f, 100f))).syncLegacyFields()
+                                                    }
+                                                }
+                                                "Enhance" -> {
+                                                    viewModel.updateRecipe("Quick Action: Enhance") { r ->
+                                                        r.copy(basic = r.basic.copy(exposure = (r.basic.exposure + quickActionExposure * 0.5f).coerceIn(-5f, 5f), vibrance = (r.basic.vibrance + quickActionSaturation).coerceIn(-100f, 100f))).syncLegacyFields()
+                                                    }
+                                                }
+                                            }
+                                            viewModel.showTransientToast("$actionName applied")
+                                            activeQuickAction = null
+                                            quickActionExposure = 0f
+                                            quickActionSaturation = 0f
+                                            quickActionStyle = "None"
+                                        }) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.ic_lr_select_checkmark),
+                                                contentDescription = "Apply",
+                                                tint = SpectrumBlue,
+                                                modifier = Modifier.size(22.dp)
+                                            )
+                                        }
+                                    }
+
+                                    // Styles row
+                                    val styles = listOf("None", "Pop", "Warm Pop", "Cool Light", "Dramatic", "Matte")
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+                                    ) {
+                                        items(styles) { style ->
+                                            val isSelected = style == quickActionStyle
+                                            Surface(
+                                                color = if (isSelected) SpectrumBlue else Color(0xFF262628),
+                                                shape = RoundedCornerShape(16.dp),
+                                                border = androidx.compose.foundation.BorderStroke(0.5.dp, if (isSelected) SpectrumBlue else Color(0xFF404040)),
+                                                modifier = Modifier.clickable {
+                                                    quickActionStyle = style
+                                                    when (style) {
+                                                        "None" -> { quickActionExposure = 0f; quickActionSaturation = 0f }
+                                                        "Pop" -> { quickActionExposure = 0.35f; quickActionSaturation = 15f }
+                                                        "Warm Pop" -> { quickActionExposure = 0.25f; quickActionSaturation = 12f }
+                                                        "Cool Light" -> { quickActionExposure = 0.15f; quickActionSaturation = -8f }
+                                                        "Dramatic" -> { quickActionExposure = -0.2f; quickActionSaturation = 25f }
+                                                        "Matte" -> { quickActionExposure = 0.1f; quickActionSaturation = -15f }
+                                                    }
+                                                }
+                                            ) {
+                                                Text(
+                                                    text = style,
+                                                    color = Color.White,
+                                                    fontSize = 12.sp,
+                                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    // Sliders
+                                    RampedSlider(
+                                        label = if (actionName == "Sky") "Sky Exposure" else "Exposure",
+                                        value = quickActionExposure,
+                                        minVal = -3.0f,
+                                        maxVal = 3.0f,
+                                        defaultValue = 0f,
+                                        isBipolar = true,
+                                        formatPattern = "%.2f EV",
+                                        onValueChange = { quickActionExposure = it }
+                                    )
+                                    RampedSlider(
+                                        label = if (actionName == "Sky") "Dehaze" else "Saturation",
+                                        value = quickActionSaturation,
+                                        minVal = -100f,
+                                        maxVal = 100f,
+                                        defaultValue = 0f,
+                                        isBipolar = true,
+                                        onValueChange = { quickActionSaturation = it }
+                                    )
+                                }
+                            }
+                        }
                         EditorToolTab.REMOVE -> {}
                         }
                     }
@@ -2165,17 +2221,15 @@ fun EditorScreen(
             }
         }
 
-            // Category Tool Tabs Bar — Adobe Lightroom Mobile Signature Style (Screenshots 7, 13, 20, 34)
-            // Rendered directly beneath the active controls panel, right above the primary bottom navigation
+            // Category Tool Tabs Bar — Exact Adobe Lightroom v11.8.15 Style (Screenshots 083341, 083509, 083640, 083710)
             if (!isCleanScreenMode && !isDedicatedSubMode && selectedMobileTool in listOf("Edit", "Actions", "Masking")) {
-                HorizontalDivider(color = Color(0xFF242424), thickness = 0.5.dp)
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(spectrum_surface_dark)
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp),
+                        .padding(top = 4.dp, bottom = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (selectedMobileTool == "Actions") {
@@ -2254,19 +2308,19 @@ fun EditorScreen(
                         }
                         val maskActions = listOf(
                             Triple("Subject", R.drawable.ic_lr_mask_subject) {
-                                viewModel.setActiveTab(EditorToolTab.MASKS)
-                                selectedMobileTool = "Masking"
+                                activeQuickAction = "Subject"
+                                viewModel.setActiveTab(EditorToolTab.ACTIONS)
                             },
                             Triple("Background", R.drawable.ic_lr_mask_background) {
-                                viewModel.setActiveTab(EditorToolTab.MASKS)
-                                selectedMobileTool = "Masking"
+                                activeQuickAction = "Background"
+                                viewModel.setActiveTab(EditorToolTab.ACTIONS)
                             },
                             Triple("Sky", R.drawable.ic_lr_mask_sky) {
-                                viewModel.setActiveTab(EditorToolTab.MASKS)
-                                selectedMobileTool = "Masking"
+                                activeQuickAction = "Sky"
+                                viewModel.setActiveTab(EditorToolTab.ACTIONS)
                             },
                             Triple("Animate", R.drawable.ic_lr_edit_replay_video) {
-                                android.widget.Toast.makeText(context, "Animation requires motion preview export pipeline", android.widget.Toast.LENGTH_SHORT).show()
+                                viewModel.showTransientToast("Animation requires motion preview export")
                             }
                         )
                         items(maskActions) { (label, iconRes, action) ->
@@ -2303,64 +2357,83 @@ fun EditorScreen(
                             "Color" to (R.drawable.ic_lr_color to LocalAdjustmentCategory.COLOR),
                             "Effects" to (R.drawable.ic_lr_effects to LocalAdjustmentCategory.EFFECTS),
                             "Detail" to (R.drawable.ic_lr_detail to LocalAdjustmentCategory.DETAIL),
-                            "Optics" to (R.drawable.ic_lr_optics to null)
+                            "Optics" to (R.drawable.ic_lr_optics to LocalAdjustmentCategory.OPTICS)
                         )
                         val isDimmed = recipe.masks.isEmpty()
                         items(maskTabs) { (title, tabData) ->
                             val (iconRes, category) = tabData
-                            val isSelected = !isDimmed && category != null && selectedMaskCategory == category
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
+                            val isSelected = !isDimmed && selectedMaskCategory == category
+                            Surface(
+                                color = if (isSelected) Color(0xFF2C2C2C) else Color.Transparent,
+                                shape = RoundedCornerShape(6.dp),
                                 modifier = Modifier
-                                    .clickable(enabled = !isDimmed && category != null) {
-                                        category?.let { selectedMaskCategory = it }
+                                    .padding(horizontal = 4.dp)
+                                    .width(58.dp)
+                                    .clickable(enabled = !isDimmed) {
+                                        selectedMaskCategory = category
                                     }
-                                    .padding(horizontal = 10.dp, vertical = 4.dp)
                                     .graphicsLayer { alpha = if (isDimmed) 0.35f else 1.0f }
                             ) {
-                                Icon(
-                                    painter = painterResource(iconRes),
-                                    contentDescription = title,
-                                    tint = if (isSelected) SpectrumBlue else SpectrumIconNormal,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = title,
-                                    color = if (isSelected) SpectrumBlue else SpectrumTextSecondary,
-                                    fontSize = 10.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.padding(vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(iconRes),
+                                        contentDescription = title,
+                                        tint = if (isSelected) Color.White else Color(0xFFA2A2A2),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(5.dp))
+                                    Text(
+                                        text = title,
+                                        color = if (isSelected) Color.White else Color(0xFFA2A2A2),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        maxLines = 1
+                                    )
+                                }
                             }
                         }
                     } else {
-                        // Adobe Signature "Auto" One-Touch Button
+                        // Adobe Signature "Auto" One-Touch Button + Vertical Divider (Screenshot 083341)
                         item {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier
+                                    .width(46.dp)
                                     .clickable {
                                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                         viewModel.autoTone()
                                     }
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .padding(vertical = 6.dp)
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.ic_lr_auto),
                                     contentDescription = "Auto Tone",
-                                    tint = SpectrumIconNormal,
+                                    tint = Color(0xFFA2A2A2),
                                     modifier = Modifier.size(20.dp)
                                 )
-                                Spacer(modifier = Modifier.height(2.dp))
+                                Spacer(modifier = Modifier.height(5.dp))
                                 Text(
                                     text = "Auto",
-                                    color = SpectrumTextPrimary,
+                                    color = Color(0xFFA2A2A2),
                                     fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Normal,
+                                    maxLines = 1
                                 )
-                                Spacer(modifier = Modifier.height(7.dp))
                             }
+                        }
+
+                        // Crisp 1dp vertical divider between Auto and Light (exact match to Lightroom v11.8.15)
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 2.dp)
+                                    .width(1.dp)
+                                    .height(28.dp)
+                                    .background(Color(0xFF393939))
+                            )
                         }
 
                         val visibleTabs = listOf(
@@ -2391,73 +2464,62 @@ fun EditorScreen(
                                 EditorToolTab.VERSIONS -> R.drawable.ic_lr_versions
                                 EditorToolTab.MASKS -> R.drawable.ic_lr_masking
                                 EditorToolTab.ACTIONS -> R.drawable.ic_lr_quick_actions
-                                EditorToolTab.REMOVE -> R.drawable.ic_lr_generative_remove
+                                EditorToolTab.REMOVE -> R.drawable.ic_lr_eraser
                             }
-                            Surface(
-                                color = if (isSelected) Color(0xFF2C2C2C) else Color.Transparent,
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier
-                                    .pointerInput(tab) {
-                                        detectTapGestures(
-                                            onTap = {
-                                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                                viewModel.setActiveTab(tab)
-                                            },
-                                            onLongPress = {
-                                                // Tip 25: Long-press to reset tab
-                                                view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                                                viewModel.resetTab(tab)
-                                            },
-                                            onDoubleTap = {
-                                                // Tip 26: Double-tap to bypass tab
-                                                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                                                viewModel.toggleBypassTab(tab)
-                                            }
-                                        )
-                                    }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.width(48.dp)
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = tabIconRes),
-                                        contentDescription = tab.title,
-                                        tint = if (isSelected) Color.White else if (isBypassed) SpectrumIconDisabled else SpectrumIconNormal,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = tab.title,
-                                            color = if (isSelected) Color.White else if (isBypassed) SpectrumIconDisabled else SpectrumTextSecondary,
-                                            fontSize = 10.sp,
-                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                        )
-                                        if (isModified) {
-                                            Spacer(modifier = Modifier.width(3.dp))
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(4.dp)
-                                                    .clip(CircleShape)
-                                                    .background(Color(0xFF2680EB))
+                                Surface(
+                                    color = if (isSelected) Color(0xFF2C2C2C) else Color.Transparent,
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .pointerInput(tab) {
+                                            detectTapGestures(
+                                                onTap = {
+                                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                                    viewModel.setActiveTab(tab)
+                                                },
+                                                onLongPress = {
+                                                    view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                                    viewModel.resetTab(tab)
+                                                },
+                                                onDoubleTap = {
+                                                    view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                                                    viewModel.toggleBypassTab(tab)
+                                                }
                                             )
                                         }
-                                    }
-                                    if (isSelected) {
-                                        Spacer(modifier = Modifier.height(3.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .size(4.dp)
-                                                .clip(CircleShape)
-                                                .background(Color(0xFF2680EB))
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.padding(vertical = 6.dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = tabIconRes),
+                                            contentDescription = tab.title,
+                                            tint = if (isSelected) Color.White else if (isBypassed) SpectrumIconDisabled else Color(0xFFA2A2A2),
+                                            modifier = Modifier.size(20.dp)
                                         )
-                                    } else {
-                                        Spacer(modifier = Modifier.height(7.dp))
+                                        Spacer(modifier = Modifier.height(5.dp))
+                                        Text(
+                                            text = tab.title,
+                                            color = if (isSelected) Color.White else if (isBypassed) SpectrumIconDisabled else Color(0xFFA2A2A2),
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            maxLines = 1
+                                        )
                                     }
                                 }
+                                // Subtle 3dp white modified indicator dot at bottom edge (matching Screenshot 083509)
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 2.dp)
+                                        .size(width = 4.dp, height = 2.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isModified) Color.White else Color.Transparent)
+                                )
                             }
                         }
 
@@ -2466,26 +2528,27 @@ fun EditorScreen(
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier
+                                    .width(46.dp)
                                     .clickable {
                                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                         showResetDialog = true
                                     }
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .padding(vertical = 6.dp)
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.ic_lr_reset_all),
                                     contentDescription = "Reset All",
-                                    tint = SpectrumIconNormal,
+                                    tint = Color(0xFFA2A2A2),
                                     modifier = Modifier.size(20.dp)
                                 )
-                                Spacer(modifier = Modifier.height(2.dp))
+                                Spacer(modifier = Modifier.height(5.dp))
                                 Text(
                                     text = "Reset",
-                                    color = SpectrumTextSecondary,
+                                    color = Color(0xFFA2A2A2),
                                     fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Normal,
+                                    maxLines = 1
                                 )
-                                Spacer(modifier = Modifier.height(7.dp))
                             }
                         }
                     }
@@ -2570,36 +2633,20 @@ fun EditorScreen(
             )
         }
 
-        if (showGenAiSettingsDialog) {
-            FluxFillServerConfigDialog(
-                currentConfig = genAiConfig,
-                onDismiss = { viewModel.dismissGenAiSettingsDialog() },
-                onSave = { viewModel.saveGenAiConfig(it) }
-            )
-        }
-
-        if (showModelManagerSheet) {
-            ModelManagerBottomSheet(
-                modelStates = modelStates,
-                storageSummary = remember(modelStates) { viewModel.modelManager.getStorageSummary() },
-                discoveredLanServers = discoveredLanServers,
-                isLanScanning = isLanScanning,
-                onDismiss = { viewModel.dismissModelManagerSheet() },
-                onDownloadModel = { viewModel.downloadByomModel(it) },
-                onPauseDownload = { viewModel.pauseByomModelDownload(it) },
-                onImportLocalModel = { modelId ->
-                    pendingImportModelId = modelId
-                    localModelPickerLauncher.launch("*/*")
-                },
-                onDeleteModel = { viewModel.deleteByomModel(it) },
-                onStartLanScan = { viewModel.startLanBridgeScan() },
-                onConnectLanServer = { viewModel.connectLanServer(it) },
-                onOpenCustomEndpointDialog = {
-                    viewModel.dismissModelManagerSheet()
-                    viewModel.openGenAiSettingsDialog()
+        if (showCopySettingsDialog) {
+            val currentSel by viewModel.clipboardSelection.collectAsState()
+            CopySettingsDialog(
+                initialSelection = currentSel,
+                onDismissRequest = { showCopySettingsDialog = false },
+                onConfirmCopy = { selection ->
+                    showCopySettingsDialog = false
+                    viewModel.copyEditSettingsSelective(selection)
                 }
             )
         }
+
+        // Cleanroom: zero external model selector / LAN AI popups
+        // Device AI runs natively without intrusive sheets
 
     if (showSavePresetDialog) {
         AlertDialog(
@@ -2975,15 +3022,15 @@ private fun DedicatedCommitBottomBar(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF121212))
+            .background(spectrum_surface_dark)
             .navigationBarsPadding()
     ) {
-        HorizontalDivider(color = Color(0xFF222222))
+        HorizontalDivider(color = Color(0xFF2E2E2E), thickness = 0.8.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = 14.dp),
+                .height(54.dp)
+                .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -2992,21 +3039,21 @@ private fun DedicatedCommitBottomBar(
                     painter = painterResource(R.drawable.ic_lr_close),
                     contentDescription = "Cancel",
                     tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
             Text(
                 text = title,
                 color = Color.White,
                 fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Medium
             )
             IconButton(onClick = onConfirm) {
                 Icon(
                     painter = painterResource(R.drawable.ic_lr_select_checkmark),
                     contentDescription = "Apply",
                     tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
@@ -3107,6 +3154,7 @@ private fun ActionsPanel(
 @Composable
 private fun MobilePrimaryToolbar(
     selectedTool: String?,
+    hasEdits: Boolean = false,
     onToolSelected: (String) -> Unit
 ) {
     val tools = listOf(
@@ -3115,29 +3163,30 @@ private fun MobilePrimaryToolbar(
         "Crop" to R.drawable.ic_lr_crop,
         "Edit" to R.drawable.ic_lr_edit_sliders,
         "Masking" to R.drawable.ic_lr_masking,
-        "Remove" to R.drawable.ic_lr_remove_plain
+        "Remove" to R.drawable.ic_lr_eraser
     )
 
     if (selectedTool == null) {
-        // Resting Loupe Floating Pill (Reference Screenshot 4)
+        // Resting Loupe Floating Pill (Reference Screenshot 083216)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(Color.Black)
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 24.dp, vertical = 12.dp),
             contentAlignment = Alignment.Center
         ) {
             Surface(
                 color = spectrum_surface_dark,
-                shape = RoundedCornerShape(28.dp),
-                border = BorderStroke(0.5.dp, Color(0xFF242424)),
-                shadowElevation = 8.dp
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(0.8.dp, Color(0xFF2B2B2D)),
+                shadowElevation = 6.dp
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(60.dp)
-                        .padding(horizontal = 8.dp),
+                        .height(62.dp)
+                        .padding(horizontal = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     tools.forEach { (label, iconRes) ->
@@ -3145,22 +3194,22 @@ private fun MobilePrimaryToolbar(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .clickable { onToolSelected(label) }
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = 6.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
                             Icon(
                                 painter = painterResource(iconRes),
                                 contentDescription = label,
-                                tint = Color(0xFFCCCCCC),
-                                modifier = Modifier.size(20.dp)
+                                tint = Color(0xFFB8B8B8),
+                                modifier = Modifier.size(22.dp)
                             )
-                            Spacer(Modifier.height(3.dp))
+                            Spacer(Modifier.height(5.dp))
                             Text(
                                 text = label,
-                                color = Color(0xFFAAAAAA),
+                                color = Color(0xFFD0D0D0),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Normal,
                                 maxLines = 1
@@ -3171,36 +3220,36 @@ private fun MobilePrimaryToolbar(
             }
         }
     } else {
-        // Active Editing Docked Toolbar (Reference Screenshots 7, 8, 13, 20, 34, 35)
-        // Docked edge-to-edge, icon-only, active tool enclosed in vibrant blue rounded square with indicator dot
+        // Active Editing Docked Toolbar (Exact Lightroom v11.8.15: Screenshots 083341, 083509, 083752)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(spectrum_surface_dark)
                 .navigationBarsPadding()
         ) {
-            HorizontalDivider(color = Color(0xFF242424), thickness = 0.5.dp)
+            HorizontalDivider(color = Color(0xFF2E2E2E), thickness = 0.8.dp)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
-                    .padding(horizontal = 8.dp),
+                    .height(58.dp)
+                    .padding(horizontal = 18.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 tools.forEach { (label, iconRes) ->
                     val active = selectedTool == label
-                    Box(
+                    Column(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight(),
-                        contentAlignment = Alignment.Center
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
                         if (active) {
                             Box(
                                 modifier = Modifier
-                                    .size(42.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFF1473E6))
+                                    .size(width = 48.dp, height = 42.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF2680EB))
                                     .clickable { onToolSelected(label) },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -3208,34 +3257,37 @@ private fun MobilePrimaryToolbar(
                                     painter = painterResource(iconRes),
                                     contentDescription = label,
                                     tint = Color.White,
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(23.dp)
+                                )
+                            }
+                            if (hasEdits && label == "Edit") {
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(width = 4.dp, height = 2.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White)
                                 )
                             }
                         } else {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                            IconButton(
+                                onClick = { onToolSelected(label) },
+                                modifier = Modifier.size(42.dp)
                             ) {
-                                IconButton(
-                                    onClick = { onToolSelected(label) },
-                                    modifier = Modifier.size(42.dp)
-                                ) {
-                                    Icon(
-                                        painter = painterResource(iconRes),
-                                        contentDescription = label,
-                                        tint = Color(0xFF8E8E93),
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                                if (label == "Edit") {
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .size(3.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.White)
-                                    )
-                                }
+                                Icon(
+                                    painter = painterResource(iconRes),
+                                    contentDescription = label,
+                                    tint = Color(0xFFA2A2A2),
+                                    modifier = Modifier.size(23.dp)
+                                )
+                            }
+                            if (hasEdits && label == "Edit") {
+                                Box(
+                                    modifier = Modifier
+                                        .size(width = 4.dp, height = 2.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White)
+                                )
                             }
                         }
                     }
@@ -3459,11 +3511,11 @@ private fun CropAndExpandPanel(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(SpectrumSurface)
+            .background(Color.Black)
     ) {
         if (page == "Aspect") {
             // ═════════════════════════════════════════════════════════════════
-            // CURVED SMILE DIAL ARC (Screenshot 083306)
+            // CURVED SMILE DIAL ARC on Pure Black Canvas (Screenshot 083306)
             // ═════════════════════════════════════════════════════════════════
             CurvedStraightenDial(
                 angle = crop.straightenAngle,
@@ -3473,42 +3525,45 @@ private fun CropAndExpandPanel(
             )
 
             // ═════════════════════════════════════════════════════════════════
-            // 4 FLOATING CIRCULAR ACTION BUTTONS (Screenshot 083306)
+            // 4 FLOATING CIRCULAR ACTION BUTTONS on Pure Black (Screenshot 083306)
             // ═════════════════════════════════════════════════════════════════
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 4.dp),
+                    .background(Color.Black)
+                    .padding(horizontal = 18.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left 2 buttons: Swap Orientation / Aspect Ratios, Aspect Lock
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                // Left 2 buttons: Auto-Straighten / Rotate frame, Aspect Lock
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Surface(
                         shape = CircleShape,
-                        color = Color(0xFF262628),
+                        color = Color(0xFF1E1E20),
+                        border = BorderStroke(1.dp, Color(0xFF3E3E42)),
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(44.dp)
                             .clickable {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                onSwapAspectOrientation()
+                                onAutoStraighten()
                             }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                painter = painterResource(R.drawable.ic_lr_aspect_ratio),
+                                painter = painterResource(R.drawable.ic_lr_crop_swap_orient),
                                 contentDescription = "Swap aspect orientation",
-                                tint = if (crop.aspectRatio != "Free" && crop.aspectRatio != "Original") SpectrumBlue else Color.White,
-                                modifier = Modifier.size(20.dp)
+                                tint = if (crop.aspectRatio != "Free" && crop.aspectRatio != "Original") SpectrumBlue else Color(0xFFE0E0E0),
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }
 
                     Surface(
                         shape = CircleShape,
-                        color = Color(0xFF262628),
+                        color = Color(0xFF1E1E20),
+                        border = BorderStroke(1.dp, Color(0xFF3E3E42)),
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(44.dp)
                             .clickable {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                 onToggleAspectLock()
@@ -3518,7 +3573,7 @@ private fun CropAndExpandPanel(
                             Icon(
                                 painter = painterResource(if (crop.aspectLocked) R.drawable.ic_lr_crop_lock_closed else R.drawable.ic_lr_crop_lock_open),
                                 contentDescription = "Aspect lock",
-                                tint = if (crop.aspectLocked) SpectrumBlue else Color.White,
+                                tint = if (crop.aspectLocked) SpectrumBlue else Color(0xFFE0E0E0),
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -3526,12 +3581,13 @@ private fun CropAndExpandPanel(
                 }
 
                 // Right 2 buttons: Rotate 90 deg clockwise, Overflow Menu
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Surface(
                         shape = CircleShape,
-                        color = Color(0xFF262628),
+                        color = Color(0xFF1E1E20),
+                        border = BorderStroke(1.dp, Color(0xFF3E3E42)),
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(44.dp)
                             .clickable {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                 onRotate(true)
@@ -3541,7 +3597,7 @@ private fun CropAndExpandPanel(
                             Icon(
                                 painter = painterResource(R.drawable.ic_lr_crop_rotate_circle),
                                 contentDescription = "Rotate 90 degrees",
-                                tint = if (crop.rotationDegrees != 0f) SpectrumBlue else Color.White,
+                                tint = if (crop.rotationDegrees != 0f) SpectrumBlue else Color(0xFFE0E0E0),
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -3550,9 +3606,10 @@ private fun CropAndExpandPanel(
                     Box {
                         Surface(
                             shape = CircleShape,
-                            color = Color(0xFF262628),
+                            color = Color(0xFF1E1E20),
+                            border = BorderStroke(1.dp, Color(0xFF3E3E42)),
                             modifier = Modifier
-                                .size(42.dp)
+                                .size(44.dp)
                                 .clickable {
                                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                     showOverflowMenu = true
@@ -3562,7 +3619,7 @@ private fun CropAndExpandPanel(
                                 Icon(
                                     painter = painterResource(R.drawable.ic_lr_crop_overflow),
                                     contentDescription = "More crop tools",
-                                    tint = if (crop.flipHorizontal || crop.flipVertical) SpectrumBlue else Color.White,
+                                    tint = if (crop.flipHorizontal || crop.flipVertical) SpectrumBlue else Color(0xFFE0E0E0),
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -3630,12 +3687,18 @@ private fun CropAndExpandPanel(
         }
 
         // ═════════════════════════════════════════════════════════════════
-        // SUB-TABS: Aspect | Geometry (Screenshot 083306 & 083314)
+        // SUB-TABS & CONTENT ON #1A1A1A SURFACE (Screenshot 083306 & 083314)
         // ═════════════════════════════════════════════════════════════════
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .background(SpectrumSurface)
+        ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 4.dp, bottom = 6.dp),
+                .padding(top = 8.dp, bottom = 6.dp),
             horizontalArrangement = Arrangement.Center
         ) {
             listOf("Aspect", "Geometry").forEach { tabName ->
@@ -3646,19 +3709,19 @@ private fun CropAndExpandPanel(
                             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             onPageChanged(tabName)
                         }
-                        .padding(horizontal = 24.dp, vertical = 4.dp),
+                        .padding(horizontal = 28.dp, vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = tabName,
-                        color = if (isSelected) Color.White else Color(0xFF8E8E93),
+                        color = if (isSelected) Color.White else Color(0xFFA2A2A2),
                         fontSize = 15.sp,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                        fontWeight = FontWeight.Normal
                     )
                     Spacer(Modifier.height(6.dp))
                     Box(
                         Modifier
-                            .width(56.dp)
+                            .width(68.dp)
                             .height(2.dp)
                             .background(if (isSelected) Color.White else Color.Transparent)
                     )
@@ -3667,7 +3730,7 @@ private fun CropAndExpandPanel(
         }
 
         // ═════════════════════════════════════════════════════════════════
-        // ASPECT TAB CONTENT: Expand switch, Original, Ratios, Instagram, Tiktok
+        // ASPECT TAB CONTENT: Expand switch, Original | Ratios, Instagram, Tiktok
         // ═════════════════════════════════════════════════════════════════
         if (page == "Aspect") {
             Row(
@@ -3678,7 +3741,7 @@ private fun CropAndExpandPanel(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. Expand Card with Switch toggle
+                // 1. Expand Card with Adobe Spectrum Toggle Switch
                 Surface(
                     color = Color.Transparent,
                     modifier = Modifier
@@ -3690,42 +3753,27 @@ private fun CropAndExpandPanel(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Switch(
+                        SpectrumToggleSwitch(
                             checked = isExpandEnabled,
                             onCheckedChange = {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                 onExpandToggled(it)
-                            },
-                            modifier = Modifier.scale(0.72f),
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = Color(0xFF1686FF),
-                                uncheckedThumbColor = Color(0xFFAAAAAA),
-                                uncheckedTrackColor = Color(0xFF333333)
-                            )
+                            }
                         )
-                        Spacer(Modifier.height(2.dp))
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             text = "Expand",
-                            color = if (isExpandEnabled) Color(0xFF38A9FF) else Color.White,
+                            color = if (isExpandEnabled) Color(0xFF38A9FF) else Color(0xFFD0D0D0),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Normal
                         )
                     }
                 }
 
-                // Divider line between Expand and Aspect cards
-                Box(
-                    modifier = Modifier
-                        .width(1.dp)
-                        .height(36.dp)
-                        .background(Color(0xFF383838))
-                )
-
                 // 2. Original Card (Authentic svg_original_crop.svg)
                 val isOriginalSelected = selectedAspectCategory == "Original"
                 Surface(
-                    color = if (isOriginalSelected) Color(0xFF2C2C2E) else Color.Transparent,
+                    color = if (isOriginalSelected) Color(0xFF2C2C2C) else Color.Transparent,
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .width(64.dp)
@@ -3744,18 +3792,26 @@ private fun CropAndExpandPanel(
                         Icon(
                             painter = painterResource(R.drawable.ic_lr_crop_original),
                             contentDescription = "Original",
-                            tint = if (isOriginalSelected) Color.White else Color(0xFFA0A0A0),
+                            tint = if (isOriginalSelected) Color.White else Color(0xFFA2A2A2),
                             modifier = Modifier.size(22.dp)
                         )
-                        Spacer(Modifier.height(5.dp))
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             text = "Original",
-                            color = if (isOriginalSelected) Color.White else Color(0xFFA0A0A0),
+                            color = if (isOriginalSelected) Color.White else Color(0xFFA2A2A2),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Normal
                         )
                     }
                 }
+
+                // Divider line sits between Original and Ratios (exact match to Screenshot 083306!)
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(42.dp)
+                        .background(Color(0xFF393939))
+                )
 
                 // 3. Ratios Card (Authentic svg_ratios_crop.svg)
                 val isRatiosSelected = selectedAspectCategory == "Ratios"
@@ -4163,6 +4219,7 @@ private fun CropAndExpandPanel(
                 }
             }
         }
+        }
     }
 }
 
@@ -4326,175 +4383,6 @@ private fun FluxFillServerConfigDialog(
 }
 
 /**
- * 5-Stage Optical Lens Blur Panel (Clean-Plate + 16-bit Depth CoC + Linear HDR Bokeh +
- * 7 Aperture Blade Shapes + Partial Occlusion + Sensor Grain Matching)
- */
-@Composable
-private fun LensBlurPanel(
-    blurAmount: Float,
-    onBlurAmountChange: (Float) -> Unit,
-    bokehBoost: Float = 50f,
-    onBokehBoostChange: (Float) -> Unit = {},
-    focalDepth: Float = 0.42f,
-    onFocalDepthChange: (Float) -> Unit = {},
-    selectedBokehShape: String,
-    onBokehShapeSelected: (String) -> Unit,
-    hasOpticalPack: Boolean = false,
-    opticalStatusText: String? = null,
-    onBuildOpticalCleanPlate: () -> Unit = {},
-    onOpenByomModels: () -> Unit = {}
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(spectrum_surface_dark)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // 5-Stage Optical Clean-Plate & 16-bit Depth Action Bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                color = if (hasOpticalPack) Color(0xFF1F3B2C) else Color(0xFF1E2D45),
-                shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, if (hasOpticalPack) Color(0xFF4CD964) else SpectrumBlue),
-                modifier = Modifier.clickable { onBuildOpticalCleanPlate() }
-            ) {
-                Text(
-                    text = if (hasOpticalPack) "5-Stage Clean-Plate Ready ✓" else "Build Clean-Plate & 16-bit Depth",
-                    color = Color.White,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                )
-            }
-            Surface(
-                color = Color(0xFF28282C),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.clickable { onOpenByomModels() }
-            ) {
-                Text(
-                    text = "AI Engine ✓",
-                    color = Color(0xFF4CD964),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                )
-            }
-        }
-
-        if (!opticalStatusText.isNullOrBlank()) {
-            Text(
-                text = opticalStatusText,
-                color = Color(0xFF9A9AA2),
-                fontSize = 10.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-
-        // Blur amount slider
-        RampedSlider(
-            label = "Blur amount (Aperture K)",
-            value = blurAmount,
-            minVal = 0f,
-            maxVal = 100f,
-            defaultValue = 0f,
-            isBipolar = false,
-            formatPattern = "%.0f",
-            onValueChange = onBlurAmountChange
-        )
-
-        // HDR Specular Bokeh Boost + Focal Plane Depth S
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
-                RampedSlider(
-                    label = "HDR Bokeh Boost",
-                    value = bokehBoost,
-                    minVal = 0f,
-                    maxVal = 100f,
-                    defaultValue = 50f,
-                    isBipolar = false,
-                    formatPattern = "%.0f",
-                    onValueChange = onBokehBoostChange
-                )
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                RampedSlider(
-                    label = "Focal Plane (S)",
-                    value = focalDepth * 100f,
-                    minVal = 10f,
-                    maxVal = 95f,
-                    defaultValue = 42f,
-                    isBipolar = false,
-                    formatPattern = "%.0f",
-                    onValueChange = { onFocalDepthChange(it / 100f) }
-                )
-            }
-        }
-
-        // All 7 Aperture Blade Shapes (Circle, Bubble, 5/7/9-blade, Anamorphic Oval, Cat eye)
-        val bokehShapes = listOf(
-            "Circle" to R.drawable.ic_lr_lens_blur,
-            "Bubble" to R.drawable.ic_lr_lens_blur,
-            "5-blade" to R.drawable.ic_lr_lens_blur,
-            "7-blade" to R.drawable.ic_lr_lens_blur,
-            "9-blade" to R.drawable.ic_lr_lens_blur,
-            "Oval" to R.drawable.ic_lr_lens_blur,
-            "Cat eye" to R.drawable.ic_lr_lens_blur
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            bokehShapes.forEach { (name, iconRes) ->
-                val isSelected = selectedBokehShape.equals(name, ignoreCase = true)
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.clickable { onBokehShapeSelected(name) }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) Color(0xFF2E2E2E) else Color(0xFF1E1E1E))
-                            .border(
-                                1.dp,
-                                if (isSelected) Color(0xFF1473E6) else Color(0xFF333333),
-                                RoundedCornerShape(8.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(iconRes),
-                            contentDescription = name,
-                            tint = if (isSelected) Color(0xFF1473E6) else Color(0xFF888888),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        text = name,
-                        color = if (isSelected) Color.White else Color(0xFF888888),
-                        fontSize = 10.sp
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
  * Optics Panel matching Reference Screenshot 31
  */
 @Composable
@@ -4507,222 +4395,45 @@ private fun OpticsPanel(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(22.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
+                .clickable { onRemoveChromaticAberrationChange(!removeChromaticAberration) },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Remove chromatic aberration",
-                color = Color.White,
-                fontSize = 14.sp,
+                text = "Remove Chromatic Aberration",
+                color = SpectrumSliderLabel,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Normal,
                 modifier = Modifier.weight(1f)
             )
-            Switch(
+            SpectrumToggleSwitch(
                 checked = removeChromaticAberration,
-                onCheckedChange = onRemoveChromaticAberrationChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = Color(0xFF1686FF)
-                )
+                onCheckedChange = onRemoveChromaticAberrationChange
             )
         }
-
-        HorizontalDivider(color = Color(0xFF333333))
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
+                .clickable { onEnableLensCorrectionsChange(!enableLensCorrections) },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Enable lens corrections",
-                color = Color.White,
-                fontSize = 14.sp,
+                text = "Enable Lens Corrections",
+                color = SpectrumSliderLabel,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Normal,
                 modifier = Modifier.weight(1f)
             )
-            Switch(
+            SpectrumToggleSwitch(
                 checked = enableLensCorrections,
-                onCheckedChange = onEnableLensCorrectionsChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = Color(0xFF1686FF)
-                )
+                onCheckedChange = onEnableLensCorrectionsChange
             )
-        }
-    }
-}
-
-/**
- * Profiles Panel matching Reference Screenshot 083723
- */
-@Composable
-private fun ProfilesPanel(
-    selectedGroup: String,
-    onGroupSelected: (String) -> Unit,
-    selectedProfile: String,
-    onProfileSelected: (String) -> Unit
-) {
-    var showGroupMenu by remember { mutableStateOf(false) }
-    val profiles = remember(selectedGroup) {
-        ProfileManager.getProfilesByGroup(selectedGroup)
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(spectrum_surface_dark)
-            .padding(horizontal = 14.dp, vertical = 6.dp)
-    ) {
-        // Header Row: "<selectedGroup> ⌄" + Three-dots overflow
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                modifier = Modifier
-                    .clickable { showGroupMenu = true }
-                    .padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = selectedGroup,
-                    color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Icon(
-                    painter = painterResource(R.drawable.ic_lr_chevron_down),
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            IconButton(onClick = { }, modifier = Modifier.size(28.dp)) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_lr_more_vert),
-                    contentDescription = "Options",
-                    tint = Color(0xFF888888),
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
-
-        DropdownMenu(
-            expanded = showGroupMenu,
-            onDismissRequest = { showGroupMenu = false }
-        ) {
-            ProfileManager.GROUPS.forEach { group ->
-                DropdownMenuItem(
-                    text = { Text(group) },
-                    onClick = {
-                        onGroupSelected(group)
-                        showGroupMenu = false
-                    }
-                )
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        // Profiles Thumbnails Horizontal Row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            profiles.forEachIndexed { index, profileItem ->
-                val isSelected = selectedProfile == profileItem.name
-                val isMonochrome = profileItem.isMonochrome
-
-                Surface(
-                    color = Color(0xFF1E1E1E),
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.5.dp, if (isSelected) Color(0xFF2680EB) else Color(0xFF242424)),
-                    modifier = Modifier
-                        .width(108.dp)
-                        .height(96.dp)
-                        .clickable { onProfileSelected(profileItem.name) }
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        // Landscape mountain / sunset gradient thumbnail simulating the photo
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    if (isMonochrome) {
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                Color(0xFF222222),
-                                                Color(0xFF444444),
-                                                Color(0xFF666666),
-                                                Color(0xFF222222)
-                                            )
-                                        )
-                                    } else {
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                Color(0xFF1B2338),
-                                                Color(0xFF753852),
-                                                Color(0xFFD26E45),
-                                                Color(0xFF241C24)
-                                            )
-                                        )
-                                    }
-                                )
-                        )
-
-                        // Star icon on top right for favorite (e.g. on Monochrome in Screenshot 083723)
-                        if (isMonochrome) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_lr_star_filled),
-                                contentDescription = "Favorite",
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(6.dp)
-                                    .size(12.dp)
-                            )
-                        }
-
-                        // Profile name label at bottom
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .fillMaxWidth()
-                                .background(Color(0xB3111111))
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = profileItem.name,
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-
-                // Vertical separator after first item if monochrome
-                if (index == 0 && isMonochrome) {
-                    Box(
-                        modifier = Modifier
-                            .height(50.dp)
-                            .width(1.dp)
-                            .background(Color(0xFF383838))
-                    )
-                }
-            }
         }
     }
 }

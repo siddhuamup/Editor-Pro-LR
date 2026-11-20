@@ -1,5 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="22.003dp" android:height="22dp" android:viewportWidth="22.003000259399414" android:viewportHeight="22.0" android:tint="?attr/colorControlNormal">
-    <path android:pathData="M0.003,0h22v22h-22z" android:fillColor="#00000000" />
-    <path android:pathData="M6.797,8.555L21.319,8.555A0.684,0.684 0,0 0,22.002 7.872L22.002,3.127A0.683,0.683 0,0 0,21.319 2.444L6.797,2.444a0.683,0.683 0,0 0,-0.683 0.683L6.114,4.888L3.669,4.888A1.222,1.222 0,0 0,2.447 6.111L2.447,8.005a3.056,3.056 0,0 0,0 5.989v1.894a1.222,1.222 0,0 0,1.222 1.222L6.114,17.11v1.761a0.684,0.684 0,0 0,0.683 0.683L21.319,19.554A0.684,0.684 0,0 0,22.002 18.872L22.002,14.127A0.683,0.683 0,0 0,21.319 13.444L6.797,13.444a0.683,0.683 0,0 0,-0.683 0.683v1.761L3.669,15.888L3.669,13.994a3.056,3.056 0,0 0,0 -5.989L3.669,6.111L6.114,6.111L6.114,7.872a0.684,0.684 0,0 0,0.683 0.683ZM4.891,11A1.833,1.833 0,1 1,3.058 9.166,1.833 1.833,0 0,1 4.891,11Z" android:fillColor="#FFFFFFFF" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Left half: 3x4 checkerboard dots, Right half: solid square (Exact Remove top-bar icon: Screenshot 083752) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,3H19.5A1.5,1.5 0,0 1,21 4.5V19.5A1.5,1.5 0,0 1,19.5 21H12V3Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M4.5,3H12V5H3V4.5A1.5,1.5 0,0 1,4.5 3Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M3,6.5H5.2V8.7H3V6.5ZM7.5,6.5H9.7V8.7H7.5V6.5ZM5.2,9.2H7.5V11.4H5.2V9.2ZM9.7,9.2H12V11.4H9.7V9.2ZM3,12H5.2V14.2H3V12ZM7.5,12H9.7V14.2H7.5V12ZM5.2,14.8H7.5V17H5.2V14.8ZM9.7,14.8H12V17H9.7V14.8ZM3,17.6H5.2V19.8H3V17.6ZM7.5,17.6H9.7V19.8H7.5V17.6Z" />
 </vector>

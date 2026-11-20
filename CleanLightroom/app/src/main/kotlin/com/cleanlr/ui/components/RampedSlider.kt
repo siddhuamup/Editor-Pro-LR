@@ -104,6 +104,15 @@ fun RampedSlider(
     val density = LocalDensity.current
     val maxAbsRange = if (isBipolar) maxOf(abs(minVal), abs(maxVal)) else (maxVal - minVal)
 
+    // Remember updated states to ensure gesture closures never hold stale values
+    val currentValueState = rememberUpdatedState(value)
+    val minValState = rememberUpdatedState(minVal)
+    val maxValState = rememberUpdatedState(maxVal)
+    val defaultValueState = rememberUpdatedState(defaultValue)
+    val onValueChangeState = rememberUpdatedState(onValueChange)
+    val onValueChangeStartState = rememberUpdatedState(onValueChangeStart)
+    val onValueChangeEndState = rememberUpdatedState(onValueChangeEnd)
+
     // --- Tip 76: Smooth animated value for undo/redo ---
     val animatedValue by animateFloatAsState(
         targetValue = value,
@@ -120,15 +129,20 @@ fun RampedSlider(
         }
     }
 
-    // --- Tip 44: Thumb pressed state & animation ---
+    // --- Adobe Spectrum Slider Handle Dimensions (Lightroom v11.8.15) ---
     var isThumbPressed by remember { mutableStateOf(false) }
     val thumbDiameter by animateFloatAsState(
-        targetValue = if (isThumbPressed) 16f else 12f,
-        animationSpec = spring(dampingRatio = 0.6f, stiffness = 800f),
+        targetValue = if (isThumbPressed) 22f else 20f,
+        animationSpec = spring(dampingRatio = 0.65f, stiffness = 800f),
         label = "thumbScale"
     )
+    val thumbStrokeDp by animateFloatAsState(
+        targetValue = if (isThumbPressed) 2.5f else 1.9f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 700f),
+        label = "thumbStroke"
+    )
     val haloAlpha by animateFloatAsState(
-        targetValue = if (isThumbPressed) 0.20f else 0f,
+        targetValue = if (isThumbPressed) 0.16f else 0f,
         animationSpec = spring(dampingRatio = 0.7f, stiffness = 600f),
         label = "haloAlpha"
     )
@@ -156,16 +170,17 @@ fun RampedSlider(
     // --- Row height: Tip 65 ---
     val rowHeight = if (compactMode) 44.dp else 52.dp
 
-    // ── Format the display value ──
+    // ── Format the display value (Adobe LR style: "+ 14" / "− 14" for bipolar, clean "10" for unipolar) ──
     val rawFormatted = if (formatPattern.contains("f")) {
-        val prefix = if (isBipolar && value > 0.001f) "+" else ""
+        val prefix = if (isBipolar && value > 0.001f && !formatPattern.startsWith("+")) "+ " else ""
         prefix + String.format(Locale.US, formatPattern, value)
     } else {
-        val prefix = if (isBipolar && value > 0.001f) "+" else ""
-        prefix + value.toInt().toString()
+        val intVal = value.roundToInt()
+        val prefix = if (isBipolar && intVal > 0 && !formatPattern.startsWith("+")) "+ " else ""
+        prefix + intVal.toString()
     }
-    // Tip 28: True mathematical minus (− U+2212)
-    val displayValue = rawFormatted.replace("-", "\u2212")
+    // Tip 28: True mathematical minus (− U+2212) with subtle space
+    val displayValue = rawFormatted.replace("-", "\u2212 ")
     val valueColor = if (isModified) SpectrumSliderModified else SpectrumSliderDefault
 
     // ── Extract unit suffix from formatPattern if not provided ──
@@ -179,16 +194,18 @@ fun RampedSlider(
     }
 
     // ════════════════════════════════════════════════════
-    // LAYOUT
+    // LAYOUT (Adobe Lightroom v11.8.15 Spectrum Darkest)
     // ════════════════════════════════════════════════════
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = if (compactMode) 1.dp else 2.dp, horizontal = 12.dp)
+            .padding(vertical = if (compactMode) 1.dp else 2.dp, horizontal = 16.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(22.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -196,9 +213,9 @@ fun RampedSlider(
             Text(
                 text = label,
                 color = SpectrumSliderLabel,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.2.sp,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal,
+                letterSpacing = 0.sp,
                 modifier = Modifier.pointerInput(Unit) {
                     detectTapGestures(
                         onDoubleTap = {
@@ -248,21 +265,21 @@ fun RampedSlider(
                         }
                         showNumericInputDialog = true
                     }
-                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                    .padding(horizontal = 2.dp, vertical = 1.dp)
             ) {
                 Text(
                     text = displayValue,
                     color = valueColor,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
                     style = TextStyle(fontFeatureSettings = "tnum")
                 )
                 if (effectiveUnit.isNotEmpty()) {
-                    Spacer(modifier = Modifier.width(2.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
                     Text(
                         text = effectiveUnit,
-                        color = Color(0xFF6E6E6E), // Tip 77
-                        fontSize = 10.sp,
+                        color = Color(0xFF9A9A9A),
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Normal,
                         style = TextStyle(fontFeatureSettings = "tnum")
                     )
@@ -279,7 +296,7 @@ fun RampedSlider(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .height(if (compactMode) 30.dp else 32.dp)
                 // Tip 75: Accessibility semantics
                 .semantics {
                     contentDescription = "$label: $displayValue $effectiveUnit"
@@ -289,42 +306,9 @@ fun RampedSlider(
                         true
                     }
                 }
-                // Tip 48: Double-tap reset anywhere on slider row
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = {
-                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                            onValueChangeStart()
-                            onValueChange(defaultValue)
-                            onValueChangeEnd()
-                        },
-                        // Tip 37 & 47: Single tap → step nudge (< / >) or absolute jump
-                        onTap = { offset ->
-                            val width = size.width.toFloat()
-                            if (width > 0) {
-                                onValueChangeStart()
-                                val step = if (formatPattern.contains(".2f")) 0.05f else 1.0f
-                                val edgeThreshold = with(density) { 24.dp.toPx() }
-                                val targetVal = when {
-                                    // Tip 47: Left edge (<) nudges down by step
-                                    offset.x < edgeThreshold -> (value - step).coerceIn(minVal, maxVal)
-                                    // Tip 47: Right edge (>) nudges up by step
-                                    offset.x > (width - edgeThreshold) -> (value + step).coerceIn(minVal, maxVal)
-                                    // Tip 37: Track tap jumps to position
-                                    else -> {
-                                        val normX = (offset.x / width).coerceIn(0f, 1f)
-                                        computeValueFromNorm(normX, isBipolar, minVal, maxVal, maxAbsRange, useMiredScale).coerceIn(minVal, maxVal)
-                                    }
-                                }
-                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                onValueChange(targetVal)
-                                onValueChangeEnd()
-                            }
-                        }
-                    )
-                }
-                // Tip 36, 38, 39, 68, 69: Relative horizontal drag with precision + fine-tune
-                .pointerInput(minVal, maxVal, isBipolar) {
+                // Tip 36, 38, 39: Relative horizontal drag with precision & vertical fine-tune
+                .pointerInput(isBipolar, useMiredScale) {
+                    var dragNorm = 0f
                     detectHorizontalDragGestures(
                         onDragStart = { startOffset ->
                             isThumbPressed = true
@@ -332,40 +316,43 @@ fun RampedSlider(
                             verticalOffset = 0f
                             fineTuneLabel = null
                             wasAtEndpoint = false
-                            onValueChangeStart()
+                            onValueChangeStartState.value()
+                            val curVal = currentValueState.value
+                            val minV = minValState.value
+                            val maxV = maxValState.value
+                            val maxRange = if (isBipolar) maxOf(abs(minV), abs(maxV)) else (maxV - minV)
+                            dragNorm = if (isBipolar) {
+                                (ColorScience.inverseRampedValue(curVal, maxRange) + 1f) / 2f
+                            } else {
+                                ((curVal - minV) / (maxV - minV)).coerceIn(0f, 1f)
+                            }
                         },
                         onDragEnd = {
                             isThumbPressed = false
                             showLoupe = false
                             fineTuneLabel = null
                             verticalOffset = 0f
-
-                            // Tip 71: Near-zero snap on release
-                            if (isBipolar && abs(value) < (maxAbsRange * 0.005f)) {
-                                onValueChange(0.0f)
+                            val maxRange = if (isBipolar) maxOf(abs(minValState.value), abs(maxValState.value)) else (maxValState.value - minValState.value)
+                            if (isBipolar && abs(currentValueState.value) < (maxRange * 0.005f)) {
+                                onValueChangeState.value(0.0f)
                             }
-
-                            onValueChangeEnd()
+                            onValueChangeEndState.value()
                         },
                         onDragCancel = {
                             isThumbPressed = false
                             showLoupe = false
                             fineTuneLabel = null
                             verticalOffset = 0f
-                            onValueChangeEnd()
+                            onValueChangeEndState.value()
                         },
                         onHorizontalDrag = { change: PointerInputChange, dragAmount: Float ->
                             change.consume()
                             val width = size.width.toFloat()
-                            if (width > 0) {
-                                // Tip 39: Track vertical distance for fine-tuning
-                                // (Use position.y difference from center as proxy)
+                            if (width > 0f) {
                                 val vy = change.position.y
                                 val trackCenterY = size.height / 2f
                                 val vertDist = (trackCenterY - vy).coerceAtLeast(0f)
                                 val vertDistDp = with(density) { vertDist.toDp().value }
-
-                                // Tip 38 & 39: Velocity-based + vertical precision
                                 val dragDp = with(density) { abs(dragAmount).toDp().value }
                                 val baseSpeed = when {
                                     vertDistDp > 120f -> {
@@ -377,7 +364,6 @@ fun RampedSlider(
                                         0.2f
                                     }
                                     dragDp < 1.5f -> {
-                                        // Tip 38: Slow velocity → precision mode
                                         fineTuneLabel = null
                                         0.35f
                                     }
@@ -387,38 +373,29 @@ fun RampedSlider(
                                     }
                                 }
 
-                                // Tip 36: Delta-based relative drag
+                                val minV = minValState.value
+                                val maxV = maxValState.value
+                                val maxRange = if (isBipolar) maxOf(abs(minV), abs(maxV)) else (maxV - minV)
                                 val normalizedDelta = (dragAmount / width) * baseSpeed
-                                val currentNorm = if (isBipolar) {
-                                    (ColorScience.inverseRampedValue(value, maxAbsRange) + 1f) / 2f
-                                } else {
-                                    (value - minVal) / (maxVal - minVal)
-                                }
+                                dragNorm = (dragNorm + normalizedDelta).coerceIn(0f, 1f)
+                                var targetVal = computeValueFromNorm(dragNorm, isBipolar, minV, maxV, maxRange, useMiredScale)
 
-                                val newNorm = (currentNorm + normalizedDelta).coerceIn(0f, 1f)
-                                var targetVal = computeValueFromNorm(newNorm, isBipolar, minVal, maxVal, maxAbsRange, useMiredScale)
-
-                                // Tip 40: Center notch magnetic snap (only at low speed)
                                 if (isBipolar && baseSpeed <= 0.5f) {
-                                    val centerZone = maxAbsRange * 0.025f
-                                    if (abs(targetVal - defaultValue) < centerZone && abs(value - defaultValue) >= centerZone) {
-                                        targetVal = defaultValue
-                                        // Tip 41: Haptic on zero snap
+                                    val centerZone = maxRange * 0.025f
+                                    val curVal = currentValueState.value
+                                    if (abs(targetVal - defaultValueState.value) < centerZone && abs(curVal - defaultValueState.value) >= centerZone) {
+                                        targetVal = defaultValueState.value
                                         view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                                     }
                                 }
 
-                                targetVal = targetVal.coerceIn(minVal, maxVal)
-
-                                // Tip 42: Haptic on endpoint collision
-                                val isAtEndpoint = (targetVal == minVal || targetVal == maxVal)
+                                targetVal = targetVal.coerceIn(minV, maxV)
+                                val isAtEndpoint = (targetVal == minV || targetVal == maxV)
                                 if (isAtEndpoint && !wasAtEndpoint) {
                                     view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                                 }
                                 wasAtEndpoint = isAtEndpoint
-
-                                // Tip 80: Only update (frame-rate throttled by Compose recomposition)
-                                onValueChange(targetVal)
+                                onValueChangeState.value(targetVal)
                             }
                         }
                     )
@@ -488,239 +465,125 @@ fun RampedSlider(
             }
 
             // ════════════════════════════════════
-            // CANVAS: Track + Thumb + Sub-ticks
+            // CANVAS: Adobe Spectrum Track + 4dp Handle Gap + 20dp Hollow Ring Thumb
             // ════════════════════════════════════
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val centerY = size.height / 2f
-                val inactiveTrackHeight = 2.dp.toPx()
-                val activeTrackHeight = 3.dp.toPx()
+                val trackH = 2.dp.toPx()
                 val thumbR = (thumbDiameter / 2f).dp.toPx()
+                val handleGap = 4.dp.toPx() // spectrum_slider_default_dimensions_handle_gap = 4dp
+                val usableMinX = thumbR
+                val usableMaxX = (size.width - thumbR).coerceAtLeast(usableMinX + 1f)
+                val usableW = usableMaxX - usableMinX
 
-                // ── Track Background ──
+                val thumbX = if (isBipolar) {
+                    val midX = usableMinX + usableW * 0.5f
+                    (midX + normalizedPos * (usableW * 0.5f)).coerceIn(usableMinX, usableMaxX)
+                } else {
+                    (usableMinX + normalizedPos * usableW).coerceIn(usableMinX, usableMaxX)
+                }
+                val gapLeft = (thumbX - thumbR - handleGap).coerceAtLeast(0f)
+                val gapRight = (thumbX + thumbR + handleGap).coerceAtMost(size.width)
+
+                // ── Track Segments (with crisp 4dp gap around hollow ring thumb!) ──
                 if (trackBrush != null) {
-                    val trackH = 3.5.dp.toPx()
-                    drawRoundRect(
-                        brush = trackBrush,
-                        topLeft = Offset(0f, centerY - trackH / 2f),
-                        size = Size(size.width, trackH),
-                        cornerRadius = CornerRadius(trackH / 2f)
-                    )
-                } else {
-                    // Tip 63: Inactive track 2.dp #383838
-                    drawRoundRect(
-                        color = Color(0xFF383838),
-                        topLeft = Offset(0f, centerY - inactiveTrackHeight / 2f),
-                        size = Size(size.width, inactiveTrackHeight),
-                        cornerRadius = CornerRadius(inactiveTrackHeight / 2f)
-                    )
-                }
-
-                // ── Sub-ticks (Tip 43) ──
-                if (isBipolar) {
-                    val tickSpacing = if (showEvStops) {
-                        // Tip 70: EV stops for Exposure
-                        (maxAbsRange / (maxAbsRange)).let { size.width / ((maxVal - minVal) / 1f) }
-                    } else {
-                        val range = maxVal - minVal
-                        val stepUnit = when {
-                            range <= 20f -> 5f
-                            range <= 100f -> 10f
-                            range <= 200f -> 25f
-                            else -> 50f
-                        }
-                        size.width * stepUnit / range
-                    }
-
-                    if (showEvStops) {
-                        // Tip 70: Exposure EV stops -4 to +4
-                        val evRange = maxVal - minVal // e.g. 10.0
-                        for (ev in -4..4) {
-                            val normEv = (ev.toFloat() - minVal) / evRange
-                            val x = normEv * size.width
-                            if (x in 2f..size.width - 2f) {
-                                val tickH = if (ev == 0) 8.dp.toPx() else 3.dp.toPx()
-                                drawLine(
-                                    color = if (ev == 0) Color.White.copy(alpha = 0.7f) else Color(0xFF3A3A3A),
-                                    start = Offset(x, centerY - tickH),
-                                    end = Offset(x, centerY + tickH),
-                                    strokeWidth = if (ev == 0) 2.dp.toPx() else 1.dp.toPx()
-                                )
-                            }
-                        }
-                    } else {
-                        val range = maxVal - minVal
-                        val stepUnit = when {
-                            range <= 20f -> 5f
-                            range <= 100f -> 25f
-                            range <= 200f -> 25f
-                            else -> 50f
-                        }
-                        var tickVal = minVal + stepUnit
-                        while (tickVal < maxVal) {
-                            val norm = (tickVal - minVal) / range
-                            val x = norm * size.width
-                            val isCenter = abs(tickVal - defaultValue) < 0.01f
-                            if (!isCenter) {
-                                drawLine(
-                                    color = Color(0xFF3A3A3A),
-                                    start = Offset(x, centerY - 1.5.dp.toPx()),
-                                    end = Offset(x, centerY + 1.5.dp.toPx()),
-                                    strokeWidth = 1.dp.toPx()
-                                )
-                            }
-                            tickVal += stepUnit
-                        }
-                    }
-                }
-
-                if (isBipolar) {
-                    val midX = size.width / 2f
-
-                    // Center Tick
-                    drawLine(
-                        color = Color.White.copy(alpha = 0.7f),
-                        start = Offset(midX, centerY - 4.dp.toPx()),
-                        end = Offset(midX, centerY + 4.dp.toPx()),
-                        strokeWidth = 2.dp.toPx()
-                    )
-
-                    val thumbX = midX + (normalizedPos * (size.width / 2f))
-                    val left = minOf(midX, thumbX)
-                    val right = maxOf(midX, thumbX)
-
-                    // Tip 63: Active fill 3.dp #1473E6
-                    if (trackBrush == null && right > left) {
+                    val gradH = 2.4.dp.toPx()
+                    if (gapLeft > 1f) {
                         drawRoundRect(
-                            color = SpectrumBlue,
-                            topLeft = Offset(left, centerY - activeTrackHeight / 2f),
-                            size = Size(right - left, activeTrackHeight),
-                            cornerRadius = CornerRadius(activeTrackHeight / 2f)
+                            brush = trackBrush,
+                            topLeft = Offset(0f, centerY - gradH / 2f),
+                            size = Size(gapLeft, gradH),
+                            cornerRadius = CornerRadius(gradH / 2f)
+                        )
+                    }
+                    if (size.width - gapRight > 1f) {
+                        drawRoundRect(
+                            brush = trackBrush,
+                            topLeft = Offset(gapRight, centerY - gradH / 2f),
+                            size = Size(size.width - gapRight, gradH),
+                            cornerRadius = CornerRadius(gradH / 2f)
+                        )
+                    }
+                } else {
+                    // Inactive gray track on both sides of the handle gap
+                    if (gapLeft > 1f) {
+                        drawRoundRect(
+                            color = SpectrumSliderTrack,
+                            topLeft = Offset(0f, centerY - trackH / 2f),
+                            size = Size(gapLeft, trackH),
+                            cornerRadius = CornerRadius(trackH / 2f)
+                        )
+                    }
+                    if (size.width - gapRight > 1f) {
+                        drawRoundRect(
+                            color = SpectrumSliderTrack,
+                            topLeft = Offset(gapRight, centerY - trackH / 2f),
+                            size = Size(size.width - gapRight, trackH),
+                            cornerRadius = CornerRadius(trackH / 2f)
                         )
                     }
 
-                    // Tip 64: Preset marker diamond
-                    presetMarkerValue?.let { pmv ->
-                        val pmNorm = ColorScience.inverseRampedValue(pmv, maxAbsRange)
-                        val pmX = midX + (pmNorm * (size.width / 2f))
-                        drawPresetDiamond(pmX, centerY)
-                    }
-
-                    // Tip 44: Halo ring
-                    if (haloAlpha > 0.01f) {
-                        drawCircle(
-                            color = SpectrumBlue.copy(alpha = haloAlpha),
-                            radius = 14.dp.toPx(),
-                            center = Offset(thumbX, centerY)
-                        )
-                    }
-
-                    // Shadow
-                    drawCircle(
-                        color = Color(0x38000000),
-                        radius = thumbR + 1.5.dp.toPx(),
-                        center = Offset(thumbX, centerY + 1.5.dp.toPx())
-                    )
-
-                    // Tip 61: Hollow vs Solid thumb
-                    val thumbIsDefault = abs(animatedValue - defaultValue) < 0.001f
-                    if (thumbIsDefault) {
-                        // Hollow: dark fill + white border
-                        drawCircle(
-                            color = Color(0xFF1E1E1E),
-                            radius = thumbR,
-                            center = Offset(thumbX, centerY)
-                        )
-                        drawCircle(
-                            color = Color.White,
-                            radius = thumbR,
-                            center = Offset(thumbX, centerY),
-                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
-                        )
-                    } else {
-                        // Solid white
-                        drawCircle(
-                            color = Color.White,
-                            radius = thumbR,
-                            center = Offset(thumbX, centerY)
-                        )
-
-                        // Tip 62: Color dot inside thumb for gradient tracks
-                        if (trackBrush != null) {
-                            val thumbFrac = (thumbX / size.width).coerceIn(0f, 1f)
-                            // Approximate gradient color at thumb position
-                            drawCircle(
-                                color = SpectrumBlue.copy(alpha = 0.8f),
-                                radius = 3.dp.toPx(),
-                                center = Offset(thumbX, centerY)
+                    // Active white track segment (matching Lightroom v11.8.15 screenshots)
+                    if (isBipolar) {
+                        val midX = usableMinX + usableW * 0.5f
+                        if (thumbX > midX + thumbR + handleGap) {
+                            drawRoundRect(
+                                color = Color.White,
+                                topLeft = Offset(midX, centerY - trackH / 2f),
+                                size = Size((gapLeft - midX).coerceAtLeast(0f), trackH),
+                                cornerRadius = CornerRadius(trackH / 2f)
+                            )
+                        } else if (thumbX < midX - thumbR - handleGap) {
+                            drawRoundRect(
+                                color = Color.White,
+                                topLeft = Offset(gapRight, centerY - trackH / 2f),
+                                size = Size((midX - gapRight).coerceAtLeast(0f), trackH),
+                                cornerRadius = CornerRadius(trackH / 2f)
                             )
                         }
-                    }
-                } else {
-                    // Unipolar slider
-                    val thumbX = normalizedPos * size.width
-
-                    // Active fill
-                    if (trackBrush == null) {
-                        drawRoundRect(
-                            color = SpectrumBlue,
-                            topLeft = Offset(0f, centerY - activeTrackHeight / 2f),
-                            size = Size(thumbX, activeTrackHeight),
-                            cornerRadius = CornerRadius(activeTrackHeight / 2f)
-                        )
-                    }
-
-                    // Tip 64: Preset marker
-                    presetMarkerValue?.let { pmv ->
-                        val pmNorm = ((pmv - minVal) / (maxVal - minVal)).coerceIn(0f, 1f)
-                        val pmX = pmNorm * size.width
-                        drawPresetDiamond(pmX, centerY)
-                    }
-
-                    // Halo
-                    if (haloAlpha > 0.01f) {
-                        drawCircle(
-                            color = SpectrumBlue.copy(alpha = haloAlpha),
-                            radius = 14.dp.toPx(),
-                            center = Offset(thumbX, centerY)
-                        )
-                    }
-
-                    // Shadow
-                    drawCircle(
-                        color = Color(0x38000000),
-                        radius = thumbR + 1.5.dp.toPx(),
-                        center = Offset(thumbX, centerY + 1.5.dp.toPx())
-                    )
-
-                    // Tip 61: Hollow vs Solid
-                    val thumbIsDefault = abs(animatedValue - defaultValue) < 0.001f
-                    if (thumbIsDefault) {
-                        drawCircle(
-                            color = Color(0xFF1E1E1E),
-                            radius = thumbR,
-                            center = Offset(thumbX, centerY)
-                        )
-                        drawCircle(
-                            color = Color.White,
-                            radius = thumbR,
-                            center = Offset(thumbX, centerY),
-                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
-                        )
                     } else {
-                        drawCircle(
-                            color = Color.White,
-                            radius = thumbR,
-                            center = Offset(thumbX, centerY)
-                        )
-                        if (trackBrush != null) {
-                            drawCircle(
-                                color = SpectrumBlue.copy(alpha = 0.8f),
-                                radius = 3.dp.toPx(),
-                                center = Offset(thumbX, centerY)
+                        if (gapLeft > 1f) {
+                            drawRoundRect(
+                                color = Color.White,
+                                topLeft = Offset(0f, centerY - trackH / 2f),
+                                size = Size(gapLeft, trackH),
+                                cornerRadius = CornerRadius(trackH / 2f)
                             )
                         }
                     }
                 }
+
+                // Preset marker diamond if set
+                presetMarkerValue?.let { pmv ->
+                    val pmX = if (isBipolar) {
+                        usableMinX + usableW * 0.5f + ColorScience.inverseRampedValue(pmv, maxAbsRange) * (usableW * 0.5f)
+                    } else {
+                        usableMinX + ((pmv - minVal) / (maxVal - minVal)).coerceIn(0f, 1f) * usableW
+                    }
+                    drawPresetDiamond(pmX, centerY)
+                }
+
+                // Pressed halo ring
+                if (haloAlpha > 0.01f) {
+                    drawCircle(
+                        color = Color.White.copy(alpha = haloAlpha),
+                        radius = thumbR + 6.dp.toPx(),
+                        center = Offset(thumbX, centerY)
+                    )
+                }
+
+                // Adobe Spectrum 20dp Hollow Circle Thumb (dark center + crisp 2dp white ring)
+                drawCircle(
+                    color = Color(0xFF141414),
+                    radius = thumbR,
+                    center = Offset(thumbX, centerY)
+                )
+                drawCircle(
+                    color = Color.White,
+                    radius = thumbR - (thumbStrokeDp.dp.toPx() * 0.5f),
+                    center = Offset(thumbX, centerY),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = thumbStrokeDp.dp.toPx())
+                )
             }
         }
     }
@@ -837,5 +700,56 @@ private fun computeValueFromNorm(
         ColorScience.rampedValue(sPos, maxAbsRange)
     } else {
         minVal + norm * (maxVal - minVal)
+    }
+}
+
+/**
+ * Exact Adobe Spectrum Darkest Toggle Switch (Lightroom v11.8.15 Optics, Crop Expand, Remove).
+ * spectrum_switch_default_dimensions_track_width = 36dp, track_height = 18dp, hollow ring thumb.
+ */
+@Composable
+fun SpectrumToggleSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val thumbProgress by animateFloatAsState(
+        targetValue = if (checked) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.78f, stiffness = 700f),
+        label = "spectrumSwitch"
+    )
+    Box(
+        modifier = modifier
+            .size(width = 38.dp, height = 22.dp)
+            .clip(RoundedCornerShape(11.dp))
+            .clickable { onCheckedChange(!checked) },
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val trackH = 18.dp.toPx()
+            val trackY = (size.height - trackH) / 2f
+            val trackColor = if (checked) Color(0xFF2680EB) else Color(0xFF2C2C2E)
+            drawRoundRect(
+                color = trackColor,
+                topLeft = Offset(0f, trackY),
+                size = Size(size.width, trackH),
+                cornerRadius = CornerRadius(trackH / 2f)
+            )
+            val strokeW = 2.dp.toPx()
+            val thumbR = (trackH / 2f) - 0.5.dp.toPx()
+            val cx = thumbR + 1.dp.toPx() + thumbProgress * (size.width - (thumbR + 1.dp.toPx()) * 2f)
+            val cy = size.height / 2f
+            drawCircle(
+                color = if (checked) Color(0xFF2680EB) else Color(0xFF1A1A1A),
+                radius = thumbR,
+                center = Offset(cx, cy)
+            )
+            drawCircle(
+                color = if (checked) Color.White else Color(0xFFD0D0D0),
+                radius = thumbR - strokeW / 2f,
+                center = Offset(cx, cy),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW)
+            )
+        }
     }
 }

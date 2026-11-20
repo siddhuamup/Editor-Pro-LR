@@ -44,6 +44,7 @@ class StageOpticalLensBlur(private val context: Context) {
     private var locNoiseSigma = -1
     private var locImageAspect = -1
     private var locDepthTexSize = -1
+    private var locVisualizeDepth = -1
 
     private var cleanPlateTexId = 0
     private var alphaMatteTexId = 0
@@ -83,6 +84,7 @@ class StageOpticalLensBlur(private val context: Context) {
         locNoiseSigma = GLES30.glGetUniformLocation(programId, "uNoiseSigma")
         locImageAspect = GLES30.glGetUniformLocation(programId, "uImageAspect")
         locDepthTexSize = GLES30.glGetUniformLocation(programId, "uDepthTexSize")
+        locVisualizeDepth = GLES30.glGetUniformLocation(programId, "uVisualizeDepth")
 
         isInitialized = true
         Log.i(TAG, "StageOpticalLensBlur 5-stage GLSL pipeline initialized (Hair Decontam + RG16 Bilinear)")
@@ -137,9 +139,11 @@ class StageOpticalLensBlur(private val context: Context) {
         pingPong: PingPongFbo,
         vaoId: Int,
         imageWidth: Int,
-        imageHeight: Int
+        imageHeight: Int,
+        visualizeDepth: Boolean = false
     ): Boolean {
-        if (!isInitialized || blur.amount <= 0.5f) return false
+        if (!isInitialized) return false
+        if (!visualizeDepth && blur.amount <= 0.5f) return false
         val inputTex = pingPong.currentRead?.textureId ?: return false
 
         pingPong.bindWrite()
@@ -177,6 +181,7 @@ class StageOpticalLensBlur(private val context: Context) {
         GLES30.glUniform1f(locNoiseSigma, noiseSigma)
         GLES30.glUniform1f(locImageAspect, imageWidth.coerceAtLeast(1).toFloat() / imageHeight.coerceAtLeast(1).toFloat())
         GLES30.glUniform2f(locDepthTexSize, depthTexWidth, depthTexHeight)
+        GLES30.glUniform1i(locVisualizeDepth, if (visualizeDepth) 1 else 0)
 
         GLES30.glBindVertexArray(vaoId)
         GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4)

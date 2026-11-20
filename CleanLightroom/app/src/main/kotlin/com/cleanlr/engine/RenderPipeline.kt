@@ -573,21 +573,23 @@ class RenderPipeline(private val context: Context) {
             stage8Details.process(
                 detail = effectiveDetail,
                 pingPong = pingPong,
-                vaoId = vaoFboId
+                vaoId = vaoFboId,
+                altClippingMode = altClippingMode
             )
 
             // -----------------------------------------------------------------
             // STAGE 8.5: 5-Stage Optical Lens Blur (Clean-Plate + 16-bit Depth CoC
             // + Linear HDR Specular Bokeh + Partial Occlusion + Sensor Grain)
-            // Bypassed cleanly at 0ms when blur.amount <= 0.5f.
+            // Bypassed cleanly at 0ms when blur.amount <= 0.5f and not visualizing depth.
             // -----------------------------------------------------------------
-            if (activeRecipe.blur.amount > 0.5f) {
+            if (activeRecipe.blur.amount > 0.5f || isLensBlurVisualizeDepth) {
                 stageOpticalLensBlur.process(
                     blur = activeRecipe.blur,
                     pingPong = pingPong,
                     vaoId = vaoFboId,
                     imageWidth = imageWidth,
-                    imageHeight = imageHeight
+                    imageHeight = imageHeight,
+                    visualizeDepth = isLensBlurVisualizeDepth
                 )
             }
         }
@@ -751,6 +753,8 @@ class RenderPipeline(private val context: Context) {
         isInitialized = false
     }
 
+    var isLensBlurVisualizeDepth: Boolean = false
+
     /**
      * Uploads a single-channel 8-bit alpha mask into GPU texture for Stage 5 Delta Masking.
      */
@@ -776,6 +780,20 @@ class RenderPipeline(private val context: Context) {
             GLES30.GL_RED, GLES30.GL_UNSIGNED_BYTE, buffer
         )
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0)
+    }
+
+    /**
+     * Uploads an ARGB_8888 mask bitmap (using its alpha channel) for Stage 5 GPU Delta Masking.
+     */
+    fun uploadMaskBitmap(bitmap: Bitmap) {
+        val w = bitmap.width
+        val h = bitmap.height
+        val pixels = IntArray(w * h)
+        bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
+        val alphaData = ByteArray(w * h) { i ->
+            android.graphics.Color.alpha(pixels[i]).toByte()
+        }
+        uploadMaskAlpha(w, h, alphaData)
     }
 
     fun clearMaskTexture() {

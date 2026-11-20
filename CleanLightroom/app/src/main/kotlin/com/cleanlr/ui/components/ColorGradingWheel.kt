@@ -308,6 +308,33 @@ fun ColorGradingWheelWidget(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
+                // Live HSL Fine Tuning Sliders (Hue, Saturation, Luminance for Shadows, Midtones, Highlights, Global)
+                RampedSlider(
+                    label = "Hue",
+                    value = activeWheel.hue,
+                    minVal = 0f,
+                    maxVal = 360f,
+                    defaultValue = 0f,
+                    isBipolar = false,
+                    formatPattern = "%.0f°",
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = { updateActiveWheel(activeWheel.copy(hue = it)) },
+                    onValueChangeEnd = { onTouchEnd("${activeTarget.label} Hue") }
+                )
+
+                RampedSlider(
+                    label = "Saturation",
+                    value = activeWheel.saturation,
+                    minVal = 0f,
+                    maxVal = 100f,
+                    defaultValue = 0f,
+                    isBipolar = false,
+                    formatPattern = "%.0f",
+                    onValueChangeStart = onTouchStart,
+                    onValueChange = { updateActiveWheel(activeWheel.copy(saturation = it)) },
+                    onValueChangeEnd = { onTouchEnd("${activeTarget.label} Saturation") }
+                )
+
                 // Luminance Slider
                 RampedSlider(
                     label = "Luminance",
@@ -344,32 +371,6 @@ fun ColorGradingWheelWidget(
                         onValueChangeStart = onTouchStart,
                         onValueChange = { onColorGradingChanged(colorGrading.copy(balance = it)) },
                         onValueChangeEnd = { onTouchEnd("Grading Balance") }
-                    )
-                } else {
-                    // Global Fine Sliders
-                    RampedSlider(
-                        label = "Global Hue",
-                        value = activeWheel.hue,
-                        minVal = 0f,
-                        maxVal = 360f,
-                        defaultValue = 0f,
-                        isBipolar = false,
-                        formatPattern = "%.0f°",
-                        onValueChangeStart = onTouchStart,
-                        onValueChange = { updateActiveWheel(activeWheel.copy(hue = it)) },
-                        onValueChangeEnd = { onTouchEnd("Global Hue") }
-                    )
-                    RampedSlider(
-                        label = "Global Sat",
-                        value = activeWheel.saturation,
-                        minVal = 0f,
-                        maxVal = 100f,
-                        defaultValue = 0f,
-                        isBipolar = false,
-                        formatPattern = "%.0f",
-                        onValueChangeStart = onTouchStart,
-                        onValueChange = { updateActiveWheel(activeWheel.copy(saturation = it)) },
-                        onValueChangeEnd = { onTouchEnd("Global Saturation") }
                     )
                 }
             }

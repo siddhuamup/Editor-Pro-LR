@@ -1,5 +1,6 @@
 package com.cleanlr.ui.editor
 
+import android.graphics.Bitmap
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -102,6 +104,7 @@ fun MaskRubyRedOverlay(
     mask: MaskLayer?,
     isVisible: Boolean = true,
     overlayColor: Color = Color(0x80FF0033), // Ruby Red 50% alpha
+    maskBitmap: Bitmap? = null,
     modifier: Modifier = Modifier
 ) {
     if (mask == null || !mask.enabled || !isVisible || mask.subMasks.isEmpty()) return
@@ -112,6 +115,15 @@ fun MaskRubyRedOverlay(
     Canvas(modifier = modifier.fillMaxSize()) {
         val canvasWidth = size.width
         val canvasHeight = size.height
+
+        if (maskBitmap != null) {
+            drawImage(
+                image = maskBitmap.asImageBitmap(),
+                dstSize = androidx.compose.ui.unit.IntSize(canvasWidth.toInt(), canvasHeight.toInt()),
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(tint, androidx.compose.ui.graphics.BlendMode.SrcIn)
+            )
+            return@Canvas
+        }
 
         for (sub in mask.subMasks) {
             when (sub) {
@@ -282,6 +294,7 @@ fun MaskOverlayCanvas(
     masks: List<MaskLayer>,
     activeMaskIndex: Int,
     isOverlayVisible: Boolean = true,
+    maskBitmap: Bitmap? = null,
     onPinClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -290,6 +303,7 @@ fun MaskOverlayCanvas(
         MaskRubyRedOverlay(
             mask = activeMask,
             isVisible = isOverlayVisible,
+            maskBitmap = maskBitmap,
             modifier = Modifier.fillMaxSize()
         )
         if (activeMask != null && activeMask.enabled && isOverlayVisible) {
@@ -742,187 +756,211 @@ fun MaskingSlidersPanel(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color(0xFF1D1D1D))
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .background(Color(0xFF1A1A1A))
+            .padding(top = 6.dp, bottom = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        // 1. Header Sub-Row: [Mask 1] [◐ Invert] ... [Reset] [+ Combine] [Delete]
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = activeLayer.name.ifEmpty { "Mask ${activeLayerIndex + 1}" },
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                // Invert Toggle Pill Button (◐): flips inverted state on active layer
-                val isFirstInverted = activeLayer.subMasks.firstOrNull()?.isInverted == true
-                Surface(
-                    color = if (isFirstInverted) Color(0xFF1473E6) else Color(0xFF2C2C2C),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, if (isFirstInverted) Color(0xFF1473E6) else Color(0xFF444444)),
-                    modifier = Modifier.clickable {
-                        val isAnyInverted = activeLayer.subMasks.any { it.isInverted }
-                        val updatedSubMasks = activeLayer.subMasks.map { sub ->
-                            when (sub) {
-                                is SubMask.Brush -> sub.copy(isInverted = !isAnyInverted)
-                                is SubMask.LinearGradient -> sub.copy(isInverted = !isAnyInverted)
-                                is SubMask.RadialGradient -> sub.copy(isInverted = !isAnyInverted)
-                                is SubMask.AISubject -> sub.copy(isInverted = !isAnyInverted)
-                                is SubMask.AISky -> sub.copy(isInverted = !isAnyInverted)
-                                is SubMask.AIBackground -> sub.copy(isInverted = !isAnyInverted)
-                                is SubMask.ColorRange -> sub.copy(isInverted = !isAnyInverted)
-                                is SubMask.LuminanceRange -> sub.copy(isInverted = !isAnyInverted)
-                            }
-                        }
-                        onUpdateLayerAdjustments(activeLayer.copy(subMasks = updatedSubMasks))
-                    }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_lr_mask_invert),
-                            contentDescription = "Invert",
-                            tint = if (isFirstInverted) Color.White else Color(0xFFCCCCCC),
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Text(
-                            text = if (isFirstInverted) "Inverted" else "Invert",
-                            color = if (isFirstInverted) Color.White else Color(0xFFCCCCCC),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                // Reset Adjustments
-                IconButton(
-                    onClick = {
-                        moireValue = 0f
-                        defringeValue = 0f
-                        currentHue = 0f
-                        onUpdateLayerAdjustments(
-                            activeLayer.copy(
-                                localAdjustments = BasicAdjustments(),
-                                effectsAdjustments = EffectsAdjustments(),
-                                detailAdjustments = DetailAdjustments()
-                            )
-                        )
-                    },
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_lr_reset_all),
-                        contentDescription = "Reset Adjustments",
-                        tint = Color(0xFFAAAAAA),
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-
-                // + Combine Pill Button: triggers CombineSubMaskBottomSheet
-                Surface(
-                    color = Color(0xFF2C2C2C),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, Color(0xFF444444)),
-                    modifier = Modifier.clickable { showCombineSheet = true }
-                ) {
-                    Text(
-                        text = "+ Combine",
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-
-                // Delete Mask
-                IconButton(
-                    onClick = onDeleteActiveLayer,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_lr_close),
-                        contentDescription = "Delete Mask",
-                        tint = Color(0xFFFF5252),
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        }
-
-        // Sub-mask combine badges (if active layer has combined sub-masks)
-        if (activeLayer.subMasks.size > 1) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                activeLayer.subMasks.forEachIndexed { sIdx, sub ->
-                    val opSymbol = when (sub.combineMode) {
-                        MaskCombineMode.ADD -> if (sIdx == 0) "" else "+"
-                        MaskCombineMode.SUBTRACT -> "-"
-                        MaskCombineMode.INTERSECT -> "∩"
-                    }
-                    Surface(
-                        color = Color(0xFF242424),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(0.5.dp, Color(0xFF404040))
+        // Authentic Lightroom Masking Sliders Header: clean uppercase category label + divider (Screenshots 201104 & 201109)
+        val primarySub = activeLayer.subMasks.firstOrNull()
+        if (primarySub != null) {
+            when (primarySub) {
+                is SubMask.LuminanceRange -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                painter = painterResource(getSubMaskIconRes(sub)),
-                                contentDescription = null,
-                                tint = Color(0xFF38A9FF),
-                                modifier = Modifier.size(12.dp)
-                            )
                             Text(
-                                text = "$opSymbol ${getSubMaskDisplayName(sub)}",
-                                color = Color(0xFFE0E0E0),
-                                fontSize = 10.sp
+                                text = "LUMINANCE RANGE",
+                                color = Color(0xFF38A9FF),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Invert", color = Color(0xFFAAAAAA), fontSize = 11.sp)
+                                Spacer(Modifier.width(6.dp))
+                                Switch(
+                                    checked = primarySub.isInverted,
+                                    onCheckedChange = { inv ->
+                                        val updatedSub = primarySub.copy(isInverted = inv)
+                                        val updatedSubs = activeLayer.subMasks.toMutableList().apply { set(0, updatedSub) }
+                                        onUpdateLayerAdjustments(activeLayer.copy(subMasks = updatedSubs))
+                                    },
+                                    modifier = Modifier.scale(0.8f)
+                                )
+                            }
+                        }
+                        RampedSlider(
+                            label = "Min Luminance",
+                            value = primarySub.minLuminance,
+                            minVal = 0f,
+                            maxVal = 100f,
+                            defaultValue = 60f,
+                            isBipolar = false,
+                            onValueChange = { minL ->
+                                val updatedSub = primarySub.copy(minLuminance = minL)
+                                val updatedSubs = activeLayer.subMasks.toMutableList().apply { set(0, updatedSub) }
+                                onUpdateLayerAdjustments(activeLayer.copy(subMasks = updatedSubs))
+                            }
+                        )
+                        RampedSlider(
+                            label = "Max Luminance",
+                            value = primarySub.maxLuminance,
+                            minVal = 0f,
+                            maxVal = 100f,
+                            defaultValue = 100f,
+                            isBipolar = false,
+                            onValueChange = { maxL ->
+                                val updatedSub = primarySub.copy(maxLuminance = maxL)
+                                val updatedSubs = activeLayer.subMasks.toMutableList().apply { set(0, updatedSub) }
+                                onUpdateLayerAdjustments(activeLayer.copy(subMasks = updatedSubs))
+                            }
+                        )
+                        RampedSlider(
+                            label = "Feather / Smoothness",
+                            value = primarySub.feather,
+                            minVal = 0f,
+                            maxVal = 100f,
+                            defaultValue = 25f,
+                            isBipolar = false,
+                            onValueChange = { f ->
+                                val updatedSub = primarySub.copy(feather = f)
+                                val updatedSubs = activeLayer.subMasks.toMutableList().apply { set(0, updatedSub) }
+                                onUpdateLayerAdjustments(activeLayer.copy(subMasks = updatedSubs))
+                            }
+                        )
+                        HorizontalDivider(color = Color(0xFF2E2E32), thickness = 0.8.dp, modifier = Modifier.padding(vertical = 4.dp))
+                    }
+                }
+                is SubMask.ColorRange -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "COLOR RANGE",
+                                color = Color(0xFF38A9FF),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Invert", color = Color(0xFFAAAAAA), fontSize = 11.sp)
+                                Spacer(Modifier.width(6.dp))
+                                Switch(
+                                    checked = primarySub.isInverted,
+                                    onCheckedChange = { inv ->
+                                        val updatedSub = primarySub.copy(isInverted = inv)
+                                        val updatedSubs = activeLayer.subMasks.toMutableList().apply { set(0, updatedSub) }
+                                        onUpdateLayerAdjustments(activeLayer.copy(subMasks = updatedSubs))
+                                    },
+                                    modifier = Modifier.scale(0.8f)
+                                )
+                            }
+                        }
+                        RampedSlider(
+                            label = "Target Hue",
+                            value = primarySub.targetHue,
+                            minVal = 0f,
+                            maxVal = 360f,
+                            defaultValue = 210f,
+                            isBipolar = false,
+                            onValueChange = { hue ->
+                                val updatedSub = primarySub.copy(targetHue = hue)
+                                val updatedSubs = activeLayer.subMasks.toMutableList().apply { set(0, updatedSub) }
+                                onUpdateLayerAdjustments(activeLayer.copy(subMasks = updatedSubs))
+                            }
+                        )
+                        RampedSlider(
+                            label = "Refine / Tolerance",
+                            value = primarySub.hueTolerance,
+                            minVal = 5f,
+                            maxVal = 90f,
+                            defaultValue = 30f,
+                            isBipolar = false,
+                            onValueChange = { tol ->
+                                val updatedSub = primarySub.copy(hueTolerance = tol)
+                                val updatedSubs = activeLayer.subMasks.toMutableList().apply { set(0, updatedSub) }
+                                onUpdateLayerAdjustments(activeLayer.copy(subMasks = updatedSubs))
+                            }
+                        )
+                        RampedSlider(
+                            label = "Feather",
+                            value = primarySub.feather,
+                            minVal = 0f,
+                            maxVal = 60f,
+                            defaultValue = 25f,
+                            isBipolar = false,
+                            onValueChange = { f ->
+                                val updatedSub = primarySub.copy(feather = f)
+                                val updatedSubs = activeLayer.subMasks.toMutableList().apply { set(0, updatedSub) }
+                                onUpdateLayerAdjustments(activeLayer.copy(subMasks = updatedSubs))
+                            }
+                        )
+                        HorizontalDivider(color = Color(0xFF2E2E32), thickness = 0.8.dp, modifier = Modifier.padding(vertical = 4.dp))
+                    }
+                }
+                is SubMask.LinearGradient, is SubMask.RadialGradient, is SubMask.AISubject, is SubMask.AISky, is SubMask.AIBackground -> {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = getSubMaskDisplayName(primarySub).uppercase(),
+                            color = Color(0xFFC0C0C4),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Invert", color = Color(0xFFAAAAAA), fontSize = 11.sp)
+                            Spacer(Modifier.width(6.dp))
+                            Switch(
+                                checked = primarySub.isInverted,
+                                onCheckedChange = { inv ->
+                                    val updatedSub = when (primarySub) {
+                                        is SubMask.LinearGradient -> primarySub.copy(isInverted = inv)
+                                        is SubMask.RadialGradient -> primarySub.copy(isInverted = inv)
+                                        is SubMask.AISubject -> primarySub.copy(isInverted = inv)
+                                        is SubMask.AISky -> primarySub.copy(isInverted = inv)
+                                        is SubMask.AIBackground -> primarySub.copy(isInverted = inv)
+                                        else -> primarySub
+                                    }
+                                    val updatedSubs = activeLayer.subMasks.toMutableList().apply { set(0, updatedSub) }
+                                    onUpdateLayerAdjustments(activeLayer.copy(subMasks = updatedSubs))
+                                },
+                                modifier = Modifier.scale(0.8f)
                             )
                         }
                     }
                 }
+                else -> {}
             }
         }
 
-        // 2. Master Mask Opacity Slider (0% - 100%)
-        RampedSlider(
-            label = "Mask Opacity",
-            value = activeLayer.opacity * 100f,
-            minVal = 0f,
-            maxVal = 100f,
-            defaultValue = 100f,
-            isBipolar = false,
-            unitSuffix = "%",
-            onValueChange = { newOp ->
-                onUpdateLayerAdjustments(activeLayer.copy(opacity = newOp / 100f))
-            }
+        Text(
+            text = currentCategory.title.uppercase(),
+            color = Color(0xFFB8B8BE),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Normal,
+            letterSpacing = 0.5.sp,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
         )
-
-        HorizontalDivider(color = Color(0xFF2C2C2C), thickness = 0.5.dp)
+        HorizontalDivider(color = Color(0xFF323236), thickness = 0.8.dp)
 
         if (showCategoryTabs) {
         // 3. Category Header & Tab Selector Strip (Light | Color | Effects | Detail | Optics)
@@ -950,16 +988,6 @@ fun MaskingSlidersPanel(
                 )
             }
         }
-    } else {
-        // Authentic Landscape Category Title (Reference Screenshot 201104)
-        Text(
-            text = currentCategory.title.uppercase(),
-            color = SpectrumTextSecondary,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
-            modifier = Modifier.padding(vertical = 4.dp)
-        )
     }
 
         // 4. 5 Local Adjustment Categories with Sliders
@@ -1321,9 +1349,10 @@ fun MaskingSlidersPanel(
 @Composable
 fun CombineSubMaskBottomSheet(
     onDismissRequest: () -> Unit,
-    onSelectSubMask: (SubMask) -> Unit
+    onSelectSubMask: (SubMask) -> Unit,
+    initialCombineMode: MaskCombineMode = MaskCombineMode.ADD
 ) {
-    var combineMode by remember { mutableStateOf(MaskCombineMode.ADD) }
+    var combineMode by remember(initialCombineMode) { mutableStateOf(initialCombineMode) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
@@ -1465,10 +1494,10 @@ fun CombineSubMaskBottomSheet(
                         onSelectSubMask(
                             SubMask.LinearGradient(
                                 id = UUID.randomUUID().toString(),
-                                startX = 0f,
-                                startY = 0f,
-                                endX = 0f,
-                                endY = 1f,
+                                startX = 0.5f,
+                                startY = 0.18f,
+                                endX = 0.5f,
+                                endY = 0.62f,
                                 combineMode = combineMode
                             )
                         )
@@ -1504,7 +1533,7 @@ fun CombineSubMaskBottomSheet(
                     iconRes = R.drawable.ic_lr_mask_color_range,
                     showCloud = false,
                     onClick = {
-                        onSelectSubMask(SubMask.ColorRange(id = UUID.randomUUID().toString(), combineMode = combineMode))
+                        onSelectSubMask(SubMask.ColorRange(id = UUID.randomUUID().toString(), targetHue = 210f, hueTolerance = 30f, feather = 25f, combineMode = combineMode))
                     }
                 )
                 MaskSheetItem(
@@ -1512,7 +1541,7 @@ fun CombineSubMaskBottomSheet(
                     iconRes = R.drawable.ic_lr_mask_luminance_range,
                     showCloud = false,
                     onClick = {
-                        onSelectSubMask(SubMask.LuminanceRange(id = UUID.randomUUID().toString(), combineMode = combineMode))
+                        onSelectSubMask(SubMask.LuminanceRange(id = UUID.randomUUID().toString(), minLuminance = 60f, maxLuminance = 100f, feather = 25f, combineMode = combineMode))
                     }
                 )
             }
@@ -1542,10 +1571,10 @@ fun CreateNewMaskBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        containerColor = Color(0xFF141414),
+        containerColor = Color(0xFF1E1E20),
         contentColor = Color.White,
         dragHandle = null,
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
     ) {
         Column(
             modifier = Modifier
@@ -1554,29 +1583,29 @@ fun CreateNewMaskBottomSheet(
                 .padding(bottom = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header Row: "Create new Mask" + Help Icon (Screenshot 083730)
+            // Header Row: "Create new Mask" + crisp white Help Icon (Screenshots 083730 & 201045)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                    .padding(horizontal = 18.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Create new Mask",
                     color = Color.White,
-                    fontSize = 16.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Icon(
                     painter = painterResource(R.drawable.ic_lr_context_help),
                     contentDescription = "Help",
-                    tint = Color(0xFF8E8E93),
-                    modifier = Modifier.size(20.dp)
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
-            HorizontalDivider(color = Color(0xFF282828), thickness = 1.dp)
+            HorizontalDivider(color = Color(0xFF2E2E32), thickness = 0.8.dp)
 
             Column(
                 modifier = Modifier
@@ -1634,10 +1663,10 @@ fun CreateNewMaskBottomSheet(
                         onSelectSubMask(
                             SubMask.LinearGradient(
                                 id = UUID.randomUUID().toString(),
-                                startX = 0f,
-                                startY = 0f,
-                                endX = 0f,
-                                endY = 1f
+                                startX = 0.5f,
+                                startY = 0.18f,
+                                endX = 0.5f,
+                                endY = 0.62f
                             )
                         )
                     }
@@ -1669,13 +1698,13 @@ fun CreateNewMaskBottomSheet(
                     title = "Color Range",
                     iconRes = R.drawable.ic_lr_mask_color_range,
                     showCloud = false,
-                    onClick = { onSelectSubMask(SubMask.ColorRange(id = UUID.randomUUID().toString())) }
+                    onClick = { onSelectSubMask(SubMask.ColorRange(id = UUID.randomUUID().toString(), targetHue = 210f, hueTolerance = 30f, feather = 25f)) }
                 )
                 MaskSheetItem(
                     title = "Luminance Range",
                     iconRes = R.drawable.ic_lr_mask_luminance_range,
                     showCloud = false,
-                    onClick = { onSelectSubMask(SubMask.LuminanceRange(id = UUID.randomUUID().toString())) }
+                    onClick = { onSelectSubMask(SubMask.LuminanceRange(id = UUID.randomUUID().toString(), minLuminance = 60f, maxLuminance = 100f, feather = 25f)) }
                 )
             }
         }
@@ -1683,7 +1712,7 @@ fun CreateNewMaskBottomSheet(
 }
 
 /**
- * Individual rounded dark button item for mask creation (#222222 surface)
+ * Individual recessed dark button item for mask creation (Exact Screenshots 083730 & 201045: #111113 card inside #1E1E20 sheet!)
  */
 @Composable
 private fun MaskSheetItem(
@@ -1693,38 +1722,38 @@ private fun MaskSheetItem(
     onClick: () -> Unit
 ) {
     Surface(
-        color = Color(0xFF222222),
-        shape = RoundedCornerShape(10.dp),
+        color = Color(0xFF111113),
+        shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(52.dp)
+            .height(50.dp)
             .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 painter = painterResource(iconRes),
                 contentDescription = title,
-                tint = Color(0xFFD4D4D4),
+                tint = Color(0xFFD0D0D4),
                 modifier = Modifier.size(22.dp)
             )
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(14.dp))
             Text(
                 text = title,
-                color = Color.White,
+                color = Color(0xFFEAEAEF),
                 fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.Normal,
                 modifier = Modifier.weight(1f)
             )
             if (showCloud) {
                 Icon(
                     painter = painterResource(R.drawable.ic_lr_cloud_filled),
-                    contentDescription = "Cloud AI",
-                    tint = Color(0xFFA0A0A0),
+                    contentDescription = "AI Mask",
+                    tint = Color(0xFFA0A0A4),
                     modifier = Modifier.size(20.dp)
                 )
             }

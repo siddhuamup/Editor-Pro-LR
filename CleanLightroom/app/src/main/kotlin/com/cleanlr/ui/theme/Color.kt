@@ -10,17 +10,23 @@ import androidx.compose.ui.graphics.Color
 val loupe_background = Color(0xFF000000)
 val SpectrumCanvas = loupe_background
 
-// Surface Panels (spectrum_surface_dark): #1D1D1D (बॉटम बार आणि अॅडजस्टमेंट पॅनेल्स)
-val spectrum_surface_dark = Color(0xFF1D1D1D)
+// Surface Panels (spectrum_darkest_gray75): #1A1A1A (बॉटम बार आणि अॅडजस्टमेंट पॅनेल्स)
+val spectrum_surface_dark = Color(0xFF1A1A1A)
 val SpectrumSurface = spectrum_surface_dark
 
-// Surface Elevated (spectrum_surface_elevated): #2A2A2A (फ्लोटिंग टूल्स, कार्ड्स आणि डायलॉग्स)
-val spectrum_surface_elevated = Color(0xFF2A2A2A)
+// Surface Elevated (spectrum_darkest_gray2): #2C2C2C (अॅक्टिव्ह टॅब, फ्लोटिंग टूल्स, कार्ड्स)
+val spectrum_surface_elevated = Color(0xFF2C2C2C)
 val SpectrumElevated = spectrum_surface_elevated
 
-// Border / Divider (loupe_bottombar_border): #383838 (टूल्स आणि पॅनेल विभाजक रेषा)
-val loupe_bottombar_border = Color(0xFF383838)
+// Border / Divider (spectrum_darkest_gray3): #393939 (टूल्स आणि पॅनेल विभाजक रेषा)
+val loupe_bottombar_border = Color(0xFF393939)
 val SpectrumBorder = loupe_bottombar_border
+
+// Outlined Button Border (spectrum_darkest_gray4): #494949 (Curve, B&W, Grading, Mix borders)
+val SpectrumButtonBorder = Color(0xFF494949)
+
+// Slider Inactive Track (spectrum_darkest_gray5 / gray5): #626262
+val SpectrumSliderTrack = Color(0xFF626262)
 
 // Primary Accent (spectrum_400_blue): #1473E6 (सेव्ह बटण, चेकबॉक्स)
 val spectrum_400_blue = Color(0xFF1473E6)
@@ -104,10 +110,10 @@ val SdrNitLockedWhite = Color(0xFFB0B0B0)
 // Tip 23: Active modification indicator dot
 val SpectrumActiveDot = Color(0xFF2680EB)
 
-// Tip 29 & 30: Typography & Value states
-val SpectrumSliderLabel = Color(0xFFB0B0B0)
-val SpectrumSliderDefault = Color(0xFF8E8E8E)
-val SpectrumSliderModified = Color(0xFF38A9FF)
+// Tip 29 & 30: Typography & Value states (Adobe Spectrum Darkest Gray8 #E3E3E3)
+val SpectrumSliderLabel = Color(0xFFE3E3E3)
+val SpectrumSliderDefault = Color(0xFFE3E3E3)
+val SpectrumSliderModified = Color(0xFFFFFFFF)
 
 // Tip 31 & 32: Group Header & Divider
 val SpectrumGroupHeader = Color(0xFF7A7A7A)

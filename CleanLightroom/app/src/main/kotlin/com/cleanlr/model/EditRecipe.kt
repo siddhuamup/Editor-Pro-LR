@@ -210,16 +210,17 @@ data class DetailAdjustments(
     val colorNoise: Float = 25.0f,      // 0f to 100f (25 default)
     val colorDetail: Float = 50.0f,     // 0f to 100f (50 default)
     val colorSmoothness: Float = 50.0f, // 0f to 100f (50 default)
-    // Backward compatibility aliases
-    val masking: Float = sharpenMasking,
-    val noiseReduction: Float = luminanceNoise,
     val vignetteAmount: Float = 0.0f,
     val vignetteMidpoint: Float = 50.0f,
     val vignetteFeather: Float = 50.0f,
     val grainAmount: Float = 0.0f,
     val grainSize: Float = 25.0f,
     val grainRoughness: Float = 50.0f
-)
+) {
+    // Backward compatibility aliases synced to primary fields
+    val masking: Float get() = sharpenMasking
+    val noiseReduction: Float get() = luminanceNoise
+}
 
 @Serializable
 data class CurvePoint(val x: Float, val y: Float)

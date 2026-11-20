@@ -38,6 +38,7 @@ class Stage8Details(private val context: Context) {
     private var locGrainSize = -1
     private var locGrainRoughness = -1
     private var locTimeSeed = -1
+    private var locAltClippingMode = -1
 
     var isInitialized = false
         private set
@@ -71,6 +72,7 @@ class Stage8Details(private val context: Context) {
         locGrainSize = GLES30.glGetUniformLocation(programId, "uGrainSize")
         locGrainRoughness = GLES30.glGetUniformLocation(programId, "uGrainRoughness")
         locTimeSeed = GLES30.glGetUniformLocation(programId, "uTimeSeed")
+        locAltClippingMode = GLES30.glGetUniformLocation(programId, "uAltClippingMode")
 
         isInitialized = true
         Log.d(TAG, "Stage 8 Details & Effects initialized successfully")
@@ -96,11 +98,12 @@ class Stage8Details(private val context: Context) {
         detail: DetailAdjustments,
         pingPong: PingPongFbo,
         vaoId: Int,
-        seed: Float = 0.0f
+        seed: Float = 0.0f,
+        altClippingMode: Int = 0
     ): Boolean {
         if (!isInitialized) return false
 
-        if (shouldSkip(detail)) {
+        if (altClippingMode != 3 && shouldSkip(detail)) {
             // Skipped to maintain 120 FPS!
             return false
         }
@@ -128,6 +131,7 @@ class Stage8Details(private val context: Context) {
         GLES30.glUniform1f(locSharpenRadius, detail.sharpenRadius.coerceIn(0.5f, 3.0f))
         GLES30.glUniform1f(locSharpenDetail, detail.sharpenDetail / 100.0f)
         GLES30.glUniform1f(locSharpenMasking, detail.masking / 100.0f)
+        GLES30.glUniform1i(locAltClippingMode, altClippingMode)
 
         // Noise Reduction uniforms (Tip 294)
         GLES30.glUniform1f(locLuminanceNoise, detail.noiseReduction / 100.0f)

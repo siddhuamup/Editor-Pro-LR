@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
@@ -88,8 +89,21 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val documentStore = LocalDocumentStore(application.applicationContext)
     private val autoSaver = DebouncedAutoSaver(documentStore, viewModelScope, 300L)
 
-    init {
-        com.cleanlr.preset.MinedPresetLibrary.init(application.applicationContext)
+    private val _transientToast = MutableStateFlow<String?>(null)
+    val transientToast: StateFlow<String?> = _transientToast.asStateFlow()
+
+    fun showTransientToast(msg: String) {
+        _transientToast.value = msg
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(2500)
+            if (_transientToast.value == msg) {
+                _transientToast.value = null
+            }
+        }
+    }
+
+    fun clearTransientToast() {
+        _transientToast.value = null
     }
 
     val presetGroups = listOf("All") + PresetManager.getGroups() + listOf("User Presets")
@@ -112,6 +126,14 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     private val _recipe = MutableStateFlow(EditRecipe())
     val recipe: StateFlow<EditRecipe> = _recipe.asStateFlow()
+
+    init {
+        com.cleanlr.preset.MinedPresetLibrary.init(application.applicationContext)
+        val saved = documentStore.loadRecipe("current_photo")
+        if (saved != null) {
+            _recipe.value = saved
+        }
+    }
 
     private val _bitmap = MutableStateFlow<Bitmap?>(null)
     val bitmap: StateFlow<Bitmap?> = _bitmap.asStateFlow()
@@ -198,7 +220,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val _isCleanScreenMode = MutableStateFlow(false)
     val isCleanScreenMode: StateFlow<Boolean> = _isCleanScreenMode.asStateFlow()
 
-    private val _canvasBackground = MutableStateFlow(com.cleanlr.ui.theme.CanvasBackground.DARK_GRAY)
+    private val _canvasBackground = MutableStateFlow(com.cleanlr.ui.theme.CanvasBackground.PURE_BLACK)
     val canvasBackground: StateFlow<com.cleanlr.ui.theme.CanvasBackground> = _canvasBackground.asStateFlow()
 
     private val _isCanvasMattingActive = MutableStateFlow(false)
@@ -277,11 +299,18 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val _isGenAiProcessing = MutableStateFlow(false)
     val isGenAiProcessing: StateFlow<Boolean> = _isGenAiProcessing.asStateFlow()
 
+    private val _isLensBlurDetecting = MutableStateFlow(false)
+    val isLensBlurDetecting: StateFlow<Boolean> = _isLensBlurDetecting.asStateFlow()
+    private var lensBlurDepthJob: kotlinx.coroutines.Job? = null
+
     private val _showGenAiSettingsDialog = MutableStateFlow(false)
     val showGenAiSettingsDialog: StateFlow<Boolean> = _showGenAiSettingsDialog.asStateFlow()
 
     private val _removeBrushPoints = MutableStateFlow<List<BrushStrokePoint>>(emptyList())
     val removeBrushPoints: StateFlow<List<BrushStrokePoint>> = _removeBrushPoints.asStateFlow()
+
+    private val _removeStrokeBreakIndices = MutableStateFlow<Set<Int>>(emptySet())
+    val removeStrokeBreakIndices: StateFlow<Set<Int>> = _removeStrokeBreakIndices.asStateFlow()
 
     private val _useGenerativeAiRemove = MutableStateFlow(true)
     val useGenerativeAiRemove: StateFlow<Boolean> = _useGenerativeAiRemove.asStateFlow()
@@ -1261,15 +1290,23 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         _exportStatus.value = "Connected to LAN Desktop: ${server.serviceName}"
     }
 
+    fun cancelLensBlurDepthDetection() {
+        lensBlurDepthJob?.cancel()
+        lensBlurDepthJob = null
+        _isLensBlurDetecting.value = false
+    }
+
     /**
      * Phase 3: Builds the complete 5-Stage Optical Lens Blur Pack sequentially:
      * BiRefNet AlphaMatte -> DepthAnythingV2 16-bit Depth -> LaMa Clean-Plate -> Noise Sigma.
+     * Runs non-blocking on its own cancellable job (never blocks UI touches with GenAI modal).
      */
     fun buildOpticalCleanPlateAndDepth() {
         val bmp = _bitmap.value ?: return
-        if (_isGenAiProcessing.value) return
-        _isGenAiProcessing.value = true
-        viewModelScope.launch(Dispatchers.Default) {
+        if (_isLensBlurDetecting.value || _opticalBlurPack.value != null) return
+        _isLensBlurDetecting.value = true
+        lensBlurDepthJob?.cancel()
+        lensBlurDepthJob = viewModelScope.launch(Dispatchers.Default) {
             try {
                 val pack = com.cleanlr.ai.AiVisionPipeline.buildOpticalBlurPack(
                     bitmap = bmp,
@@ -1278,14 +1315,18 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
                 )
                 withContext(Dispatchers.Main) {
                     _opticalBlurPack.value = pack
-                    _opticalStageStatus.value = "Clean-Plate Ready • Focal S=${String.format(java.util.Locale.US, "%.2f", pack.focalPlaneDepthS)} • Grain σ=${String.format(java.util.Locale.US, "%.3f", pack.subjectNoiseSigma)}"
-                    _isGenAiProcessing.value = false
-                    _exportStatus.value = "5-Stage Optical Clean-Plate & 16-bit Depth ready!"
+                    _opticalStageStatus.value = "Depth ready"
+                    _isLensBlurDetecting.value = false
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                withContext(Dispatchers.Main) {
+                    _isLensBlurDetecting.value = false
+                }
+                throw e
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    _isGenAiProcessing.value = false
-                    _opticalStageStatus.value = "Optical build failed: ${e.message}"
+                    _isLensBlurDetecting.value = false
+                    _opticalStageStatus.value = "Depth unavailable: ${e.message}"
                 }
             }
         }
@@ -1343,26 +1384,49 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         _healCloneSourceNorm.value = Pair(nx.coerceIn(0.02f, 0.98f), ny.coerceIn(0.02f, 0.98f))
     }
 
-    fun addRemoveBrushPoint(normX: Float, normY: Float) {
+    fun addRemoveBrushPoint(normX: Float, normY: Float, isNewStroke: Boolean = false) {
         val cx = normX.coerceIn(0f, 1f)
         val cy = normY.coerceIn(0f, 1f)
+        val curRadius = _brushSize.value.coerceIn(4f, 100f)
+
         if (_isRefineEraseMode.value) {
-            val eraseRadiusNorm = (_brushSize.value.coerceIn(4f, 100f) / 360f).coerceIn(0.015f, 0.25f)
+            val eraseRadiusNorm = (curRadius / 360f).coerceIn(0.015f, 0.25f)
             _removeBrushPoints.value = _removeBrushPoints.value.filter { pt ->
                 kotlin.math.hypot(pt.x - cx, pt.y - cy) > eraseRadiusNorm
             }
             if (_removeBrushPoints.value.isEmpty()) {
                 _isRefineEraseMode.value = false
                 _healCloneSourceNorm.value = null
+                _removeStrokeBreakIndices.value = emptySet()
             }
             return
         }
-        val pt = BrushStrokePoint(
-            x = cx,
-            y = cy,
-            radius = _brushSize.value.coerceIn(4f, 100f)
-        )
-        _removeBrushPoints.value = _removeBrushPoints.value + pt
+
+        val existing = _removeBrushPoints.value
+        val added = ArrayList<BrushStrokePoint>()
+        if (isNewStroke || existing.isEmpty()) {
+            _removeStrokeBreakIndices.value = _removeStrokeBreakIndices.value + existing.size
+            added.add(BrushStrokePoint(x = cx, y = cy, radius = curRadius))
+        } else {
+            val prev = existing.last()
+            val dx = cx - prev.x
+            val dy = cy - prev.y
+            val dist = kotlin.math.hypot(dx, dy)
+            // Dense sub-radius interpolation prevents dot-dot gaps during fast finger swipes
+            val stepNorm = ((curRadius / 400f) * 0.22f).coerceIn(0.0035f, 0.018f)
+            val steps = kotlin.math.ceil(dist / stepNorm).toInt().coerceIn(1, 36)
+            for (s in 1..steps) {
+                val t = s.toFloat() / steps.toFloat()
+                added.add(
+                    BrushStrokePoint(
+                        x = (prev.x + dx * t).coerceIn(0f, 1f),
+                        y = (prev.y + dy * t).coerceIn(0f, 1f),
+                        radius = curRadius
+                    )
+                )
+            }
+        }
+        _removeBrushPoints.value = existing + added
 
         // Auto-place draggable Lightroom source pin for Heal & Clone on first painted stroke
         if (_removeToolMode.value != com.cleanlr.engine.RemoveToolMode.REMOVE && _healCloneSourceNorm.value == null) {
@@ -1373,6 +1437,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
 
     fun clearRemoveBrushPoints() {
         _removeBrushPoints.value = emptyList()
+        _removeStrokeBreakIndices.value = emptySet()
         _isRefineEraseMode.value = false
         _healCloneSourceNorm.value = null
     }
@@ -1877,7 +1942,9 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     override fun selectRadialGradientMask() = setActiveTool(ActiveTool.RADIAL_GRADIENT)
 
     override fun toggleMaskOverlay() {
-        _isMaskOverlayVisible.value = !_isMaskOverlayVisible.value
+        val next = !_showMaskOverlay.value
+        _showMaskOverlay.value = next
+        _isMaskOverlayVisible.value = next
     }
 
     override fun cycleMaskOverlayColor() {
@@ -1894,14 +1961,93 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         _brushFeather.value = (_brushFeather.value + delta).coerceIn(0.0f, 100.0f)
     }
 
+    private val _clipboardSelection = MutableStateFlow(CopySettingsSelection())
+    val clipboardSelection: StateFlow<CopySettingsSelection> = _clipboardSelection.asStateFlow()
+
     override fun copyEditSettings() {
         _clipboardRecipe.value = _recipe.value
+        showTransientToast("Settings copied")
+    }
+
+    fun copyEditSettingsSelective(selection: CopySettingsSelection) {
+        _clipboardRecipe.value = _recipe.value
+        _clipboardSelection.value = selection
+        showTransientToast("Settings copied")
     }
 
     override fun pasteEditSettings() {
+        pasteEditSettingsSelective()
+    }
+
+    fun pasteEditSettingsSelective() {
         val copied = _clipboardRecipe.value ?: return
-        historyManager.commitState(copied, "Paste Settings")
-        _recipe.value = copied
+        val sel = _clipboardSelection.value
+        val cur = _recipe.value
+        var next = cur
+        if (sel.tools) {
+            next = next.copy(crop = copied.crop)
+        }
+        if (sel.profile) {
+            next = next.copy(profile = copied.profile)
+        }
+        if (sel.light) {
+            next = next.copy(
+                basic = next.basic.copy(
+                    exposure = copied.basic.exposure,
+                    contrast = copied.basic.contrast,
+                    highlights = copied.basic.highlights,
+                    shadows = copied.basic.shadows,
+                    whites = copied.basic.whites,
+                    blacks = copied.basic.blacks
+                ),
+                curves = copied.curves
+            )
+        }
+        if (sel.color) {
+            next = next.copy(
+                basic = next.basic.copy(
+                    temperature = copied.basic.temperature,
+                    tint = copied.basic.tint,
+                    vibrance = copied.basic.vibrance,
+                    saturation = copied.basic.saturation
+                ),
+                hsl = copied.hsl,
+                colorGrading = copied.colorGrading
+            )
+        }
+        if (sel.effects) {
+            next = next.copy(effects = copied.effects)
+        }
+        if (sel.detail) {
+            next = next.copy(detail = copied.detail)
+        }
+        if (sel.optics) {
+            next = next.copy(optics = copied.optics)
+        }
+        if (sel.geometry) {
+            next = next.copy(
+                crop = next.crop.copy(
+                    distortion = copied.crop.distortion,
+                    verticalPerspective = copied.crop.verticalPerspective,
+                    horizontalPerspective = copied.crop.horizontalPerspective,
+                    uprightMode = copied.crop.uprightMode,
+                    geometryRotate = copied.crop.geometryRotate,
+                    geometryAspect = copied.crop.geometryAspect,
+                    geometryScale = copied.crop.geometryScale,
+                    geometryXOffset = copied.crop.geometryXOffset,
+                    geometryYOffset = copied.crop.geometryYOffset,
+                    guidedLines = copied.crop.guidedLines
+                )
+            )
+        }
+        if (sel.masks) {
+            next = next.copy(masks = copied.masks)
+        }
+        next = next.syncLegacyFields()
+        historyManager.commitState(next, "Paste Settings")
+        _recipe.value = next
+        autoSaver.scheduleSave("current_photo", next)
+        showTransientToast("Settings applied")
     }
 
     fun setActiveTab(tab: EditorToolTab) {
@@ -2060,20 +2206,87 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
     private val _activeMaskLayerIndex = MutableStateFlow(0)
     val activeMaskLayerIndex: StateFlow<Int> = _activeMaskLayerIndex.asStateFlow()
 
+    private val _activeSubMaskIndex = MutableStateFlow(0)
+    val activeSubMaskIndex: StateFlow<Int> = _activeSubMaskIndex.asStateFlow()
+
+    private val _showMaskOverlay = MutableStateFlow(true)
+    val showMaskOverlay: StateFlow<Boolean> = _showMaskOverlay.asStateFlow()
+
+    private val _maskOverlayMode = MutableStateFlow("Ruby") // "Ruby", "Green", "WhiteOnBlack"
+    val maskOverlayMode: StateFlow<String> = _maskOverlayMode.asStateFlow()
+
+    private val _maskBrushSize = MutableStateFlow(28f)
+    val maskBrushSize: StateFlow<Float> = _maskBrushSize.asStateFlow()
+
+    private val _maskBrushFeather = MutableStateFlow(50f)
+    val maskBrushFeather: StateFlow<Float> = _maskBrushFeather.asStateFlow()
+
+    private val _maskBrushFlow = MutableStateFlow(100f)
+    val maskBrushFlow: StateFlow<Float> = _maskBrushFlow.asStateFlow()
+
+    private val _isMaskBrushErasing = MutableStateFlow(false)
+    val isMaskBrushErasing: StateFlow<Boolean> = _isMaskBrushErasing.asStateFlow()
+
+    // Live evaluated B&W silhouette bitmaps per MaskLayer.id (powers real Ruby Red canvas overlay + B&W dock thumbnails)
+    private val _maskPreviewBitmaps = MutableStateFlow<Map<String, Bitmap>>(emptyMap())
+    val maskPreviewBitmaps: StateFlow<Map<String, Bitmap>> = _maskPreviewBitmaps.asStateFlow()
+
+    val activeMaskBitmap: StateFlow<Bitmap?> = kotlinx.coroutines.flow.combine(_maskPreviewBitmaps, _activeMaskLayerIndex, _recipe) { map, idx, r ->
+        val layer = r.masks.getOrNull(idx) ?: return@combine null
+        map[layer.id]
+    }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, null)
+
+    fun cycleMaskOverlayMode() {
+        _maskOverlayMode.value = when (_maskOverlayMode.value) {
+            "Ruby" -> "Green"
+            "Green" -> "WhiteOnBlack"
+            else -> "Ruby"
+        }
+    }
+
+    fun setMaskBrushSize(v: Float) { _maskBrushSize.value = v.coerceIn(4f, 100f) }
+    fun setMaskBrushFeather(v: Float) { _maskBrushFeather.value = v.coerceIn(0f, 100f) }
+    fun setMaskBrushFlow(v: Float) { _maskBrushFlow.value = v.coerceIn(5f, 100f) }
+    fun setMaskBrushErasing(erasing: Boolean) { _isMaskBrushErasing.value = erasing }
+
     fun selectMaskLayer(index: Int) {
         _activeMaskLayerIndex.value = index
+        _activeSubMaskIndex.value = 0
+    }
+
+    fun selectSubMask(index: Int) {
+        _activeSubMaskIndex.value = index.coerceAtLeast(0)
     }
 
     fun addMaskLayer(subMask: SubMask) {
         val currentLayers = _recipe.value.masks
+        val baseTitle = when (subMask) {
+            is SubMask.AISubject -> "Subject"
+            is SubMask.AISky -> "Sky"
+            is SubMask.AIBackground -> "Background"
+            is SubMask.Brush -> "Brush"
+            is SubMask.LinearGradient -> "Linear"
+            is SubMask.RadialGradient -> "Radial"
+            is SubMask.ColorRange -> "Color"
+            is SubMask.LuminanceRange -> "Luminance"
+        }
+        val initializedSub = when (subMask) {
+            is SubMask.LinearGradient -> if (subMask.startX == 0f && subMask.startY == 0f && subMask.endX == 0f && subMask.endY == 0f) {
+                subMask.copy(startX = 0.5f, startY = 0.18f, endX = 0.5f, endY = 0.62f)
+            } else subMask
+            else -> subMask
+        }
         val newLayer = MaskLayer(
             id = java.util.UUID.randomUUID().toString(),
-            name = "Mask ${currentLayers.size + 1}",
-            subMasks = listOf(subMask)
+            name = "$baseTitle ${currentLayers.size + 1}",
+            subMasks = listOf(initializedSub)
         )
         val updated = currentLayers + newLayer
-        updateRecipe("Add Mask") { it.copy(masks = updated) }
+        updateRecipe("Add Mask: $baseTitle") { it.copy(masks = updated) }
         _activeMaskLayerIndex.value = updated.size - 1
+        _activeSubMaskIndex.value = 0
+        _showMaskOverlay.value = true
+        evaluateMaskPreviewAsync(newLayer)
     }
 
     fun addSubMaskToActive(subMask: SubMask) {
@@ -2082,8 +2295,79 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         if (currentLayers.isEmpty()) return
         if (idx in currentLayers.indices) {
             val layer = currentLayers[idx]
-            currentLayers[idx] = layer.copy(subMasks = layer.subMasks + subMask)
+            val initSub = when (subMask) {
+                is SubMask.LinearGradient -> if (subMask.startX == 0f && subMask.startY == 0f && subMask.endX == 0f && subMask.endY == 0f) {
+                    subMask.copy(startX = 0.5f, startY = 0.18f, endX = 0.5f, endY = 0.62f)
+                } else subMask
+                else -> subMask
+            }
+            val updatedLayer = layer.copy(subMasks = layer.subMasks + initSub)
+            currentLayers[idx] = updatedLayer
             updateRecipe("Add Component to Mask") { it.copy(masks = currentLayers) }
+            _activeSubMaskIndex.value = updatedLayer.subMasks.lastIndex
+            evaluateMaskPreviewAsync(updatedLayer)
+        }
+    }
+
+    fun updateActiveSubMask(transform: (SubMask) -> SubMask) {
+        val currentLayers = _recipe.value.masks.toMutableList()
+        val lIdx = _activeMaskLayerIndex.value
+        if (lIdx !in currentLayers.indices) return
+        val layer = currentLayers[lIdx]
+        val sIdx = _activeSubMaskIndex.value.coerceIn(0, (layer.subMasks.lastIndex).coerceAtLeast(0))
+        if (sIdx !in layer.subMasks.indices) return
+        val updatedSubs = layer.subMasks.toMutableList()
+        updatedSubs[sIdx] = transform(updatedSubs[sIdx])
+        val updatedLayer = layer.copy(subMasks = updatedSubs)
+        currentLayers[lIdx] = updatedLayer
+        updateRecipe { it.copy(masks = currentLayers) }
+        evaluateMaskPreviewAsync(updatedLayer)
+    }
+
+    fun appendMaskBrushPoint(normX: Float, normY: Float, isNewStroke: Boolean) {
+        val cx = normX.coerceIn(0f, 1f)
+        val cy = normY.coerceIn(0f, 1f)
+        val rad = _maskBrushSize.value.coerceIn(4f, 100f)
+        val feather = _maskBrushFeather.value
+        val flow = (_maskBrushFlow.value / 100f).coerceIn(0.05f, 1f)
+        val erasing = _isMaskBrushErasing.value
+
+        updateActiveSubMask { sub ->
+            if (sub !is SubMask.Brush) return@updateActiveSubMask sub
+            if (erasing) {
+                val eraseR = (rad / 360f).coerceIn(0.015f, 0.25f)
+                sub.copy(points = sub.points.filter { kotlin.math.hypot(it.x - cx, it.y - cy) > eraseR })
+            } else {
+                val pts = sub.points
+                val added = ArrayList<BrushStrokePoint>()
+                if (isNewStroke || pts.isEmpty()) {
+                    added.add(BrushStrokePoint(cx, cy, rad, feather, flow))
+                } else {
+                    val prev = pts.last()
+                    val dx = cx - prev.x
+                    val dy = cy - prev.y
+                    val dist = kotlin.math.hypot(dx, dy)
+                    val step = ((rad / 400f) * 0.25f).coerceIn(0.004f, 0.02f)
+                    val n = kotlin.math.ceil(dist / step).toInt().coerceIn(1, 28)
+                    for (i in 1..n) {
+                        val t = i.toFloat() / n
+                        added.add(BrushStrokePoint((prev.x + dx * t).coerceIn(0f, 1f), (prev.y + dy * t).coerceIn(0f, 1f), rad, feather, flow))
+                    }
+                }
+                sub.copy(points = pts + added)
+            }
+        }
+    }
+
+    fun sampleColorRangeAt(normX: Float, normY: Float) {
+        val bmp = _bitmap.value ?: return
+        val px = (normX.coerceIn(0f, 1f) * (bmp.width - 1)).toInt()
+        val py = (normY.coerceIn(0f, 1f) * (bmp.height - 1)).toInt()
+        val color = bmp.getPixel(px, py)
+        val hsv = FloatArray(3)
+        android.graphics.Color.colorToHSV(color, hsv)
+        updateActiveSubMask { sub ->
+            if (sub is SubMask.ColorRange) sub.copy(targetHue = hsv[0]) else sub
         }
     }
 
@@ -2094,6 +2378,86 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
         if (idx in currentLayers.indices) {
             currentLayers[idx] = layer
             updateRecipe("Update Mask Adjustments") { it.copy(masks = currentLayers) }
+            evaluateMaskPreviewAsync(layer)
+        }
+    }
+
+    /**
+     * Evaluates a real continuous B&W alpha silhouette bitmap for [layer] using bundled
+     * BiRefNet-Lite FP16 (Subject/Background), Depth/Sky matte (Sky), or MaskEvaluator (Gradients/Ranges/Brush).
+     */
+    private fun evaluateMaskPreviewAsync(layer: MaskLayer) {
+        val src = _bitmap.value ?: return
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                val maxEdge = 256
+                val scale = kotlin.math.min(1f, maxEdge.toFloat() / kotlin.math.max(src.width, src.height).coerceAtLeast(1))
+                val w = (src.width * scale).toInt().coerceAtLeast(48)
+                val h = (src.height * scale).toInt().coerceAtLeast(48)
+
+                val needsBiRefNet = layer.subMasks.any { it is SubMask.AISubject || it is SubMask.AIBackground }
+                val cachedAiAlpha: FloatArray? = if (needsBiRefNet) {
+                    // Use existing opticalBlurPack alpha if already computed, else run bundled BiRefNet-Lite
+                    val existingPack = _opticalBlurPack.value
+                    if (existingPack != null) {
+                        val scaledA = Bitmap.createScaledBitmap(existingPack.alphaMatte, w, h, true)
+                        val px = IntArray(w * h)
+                        scaledA.getPixels(px, 0, w, 0, 0, w, h)
+                        if (scaledA !== existingPack.alphaMatte) scaledA.recycle()
+                        FloatArray(w * h) { i -> android.graphics.Color.red(px[i]) / 255f }
+                    } else {
+                        val pack = com.cleanlr.ai.AiVisionPipeline.buildOpticalBlurPack(
+                            bitmap = src,
+                            modelManager = modelManager
+                        )
+                        withContext(Dispatchers.Main) { _opticalBlurPack.value = pack }
+                        val scaledA = Bitmap.createScaledBitmap(pack.alphaMatte, w, h, true)
+                        val px = IntArray(w * h)
+                        scaledA.getPixels(px, 0, w, 0, 0, w, h)
+                        if (scaledA !== pack.alphaMatte) scaledA.recycle()
+                        FloatArray(w * h) { i -> android.graphics.Color.red(px[i]) / 255f }
+                    }
+                } else null
+
+                val acc = FloatArray(w * h)
+                var isFirst = true
+                for (sub in layer.subMasks) {
+                    val subAlpha = when {
+                        sub is SubMask.AISubject && cachedAiAlpha != null -> {
+                            if (sub.isInverted) FloatArray(w * h) { 1f - cachedAiAlpha[it] } else cachedAiAlpha.copyOf()
+                        }
+                        sub is SubMask.AIBackground && cachedAiAlpha != null -> {
+                            val bg = FloatArray(w * h) { 1f - cachedAiAlpha[it] }
+                            if (sub.isInverted) FloatArray(w * h) { 1f - bg[it] } else bg
+                        }
+                        else -> com.cleanlr.mask.MaskEvaluator.evaluateSubMask(sub, w, h, src)
+                    }
+                    if (isFirst) {
+                        System.arraycopy(subAlpha, 0, acc, 0, acc.size)
+                        isFirst = false
+                    } else {
+                        when (sub.combineMode) {
+                            MaskCombineMode.ADD -> for (i in acc.indices) acc[i] = (acc[i] + subAlpha[i]).coerceAtMost(1f)
+                            MaskCombineMode.SUBTRACT -> for (i in acc.indices) acc[i] = (acc[i] - subAlpha[i]).coerceAtLeast(0f)
+                            MaskCombineMode.INTERSECT -> for (i in acc.indices) acc[i] = (acc[i] * subAlpha[i]).coerceIn(0f, 1f)
+                        }
+                    }
+                }
+                val bwPixels = IntArray(w * h) { i ->
+                    val v = (acc[i].coerceIn(0f, 1f) * 255f).toInt().coerceIn(0, 255)
+                    android.graphics.Color.argb(v, 255, 255, 255)
+                }
+                val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).apply {
+                    setPixels(bwPixels, 0, w, 0, 0, w, h)
+                }
+                withContext(Dispatchers.Main) {
+                    val map = _maskPreviewBitmaps.value.toMutableMap()
+                    map[layer.id] = bmp
+                    _maskPreviewBitmaps.value = map
+                }
+            } catch (_: Exception) {
+                // Keep geometric overlay fallback if background evaluation is interrupted
+            }
         }
     }
 
@@ -2137,6 +2501,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
             }
             currentLayers[idx] = layer.copy(subMasks = invertedSubMasks)
             updateRecipe("Invert Mask") { it.copy(masks = currentLayers) }
+            evaluateMaskPreviewAsync(currentLayers[idx])
         }
     }
 
@@ -2152,6 +2517,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application),
             currentLayers.add(idx + 1, duplicated)
             _activeMaskLayerIndex.value = idx + 1
             updateRecipe("Duplicate Mask") { it.copy(masks = currentLayers) }
+            evaluateMaskPreviewAsync(duplicated)
         }
     }
 
